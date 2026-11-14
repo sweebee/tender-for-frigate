@@ -51,6 +51,14 @@ struct CameraView: View {
 
     private var conn: ServerConnection? { model.connection(for: route.serverID) }
     private var camera: CameraConfig? { conn?.config?.cameras[route.camera] }
+    /// Frigate runs the camera; one switched off has no picture, detection or recording.
+    private var cameraOn: Bool {
+        guard let conn, let camera else { return true }
+        return conn.isCameraEnabled(camera)
+    }
+    /// Just switched on: Frigate takes a few seconds to start the camera; until the video
+    /// plays the screen says so.
+    @State private var switchingOn = false
     /// Streams to choose from; empty when the camera has no go2rtc restream.
     private var streams: [(title: String, name: String)] {
         guard let conn, let camera else { return [] }
@@ -131,18 +139,34 @@ struct CameraView: View {
         .onChange(of: player.micError) { _, err in
             if err != nil { player.talking = false; player.micError = nil; micDenied = true }
         }
+        .onChange(of: cameraOn) { _, on in
+            player.suspended = !on || scenePhase != .active
+            if on { switchingOn = true } else { switchingOn = false; stopManualRecording() }
+        }
+        .onChange(of: player.playing) { _, playing in if playing { switchingOn = false } }
+        // Frigate starts the camera's stream a moment after it is switched on: try again
+        // while it is not there yet, for half a minute.
+        .task(id: switchingOn) {
+            guard switchingOn else { return }
+            for _ in 0..<10 {
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled, switchingOn else { return }
+                if player.status.hasPrefix("Stream unavailable") { player.reloadToken += 1 }
+            }
+            switchingOn = false
+        }
         // Turned back to portrait by hand: no longer "full screen".
         .onChange(of: isLandscape) { _, landscape in if !landscape { turnedForFullscreen = false } }
         .onChange(of: scenePhase) { _, phase in
             // Stop in the background, start fresh when the app is back; picture in picture keeps
             // it running (and a manual recording with it).
             guard !player.pipActive else { return }
-            player.suspended = phase != .active
+            player.suspended = phase != .active || !cameraOn
             if phase == .background { stopManualRecording() }
         }
         .onAppear {
             depthOnAppear = navigationDepth
-            player.suspended = false
+            player.suspended = !cameraOn
             // Sound as the user last left it on a camera (the overview always stays silent).
             if UserDefaults.standard.bool(forKey: LivePlayerState.soundKey) && player.muted { player.setMuted(false) }
             if player.stream.isEmpty {
@@ -284,6 +308,10 @@ struct CameraView: View {
                     Text("MJPEG").tag(LivePlayerState.Mode.mjpeg)
                 }
                 Button { player.reloadToken += 1 } label: { Label("Reload stream", systemImage: "arrow.clockwise") }
+                if let conn, let camera, camera.canSwitchOff {
+                    Divider()
+                    CameraSwitchButton(conn: conn, camera: camera)
+                }
             } label: {
                 HeaderIconLabel(systemName: "ellipsis")
             }
@@ -292,6 +320,7 @@ struct CameraView: View {
 
     private var subtitle: String {
         var parts = [conn?.server.name ?? ""]
+        guard cameraOn else { return parts[0] }
         if player.videoSize.width > 0 {
             parts.append("\(Int(player.videoSize.width)) × \(Int(player.videoSize.height))")
         }
@@ -310,12 +339,14 @@ struct CameraView: View {
                 .onTapGesture { if isWide { toggleOverlay() } }
             if !player.playing { LivePoster(client: client, camera: camera.name).allowsHitTesting(false) }
             streamStatus
+            offCover(camera: camera)
         }
         .aspectRatio(player.videoSize.width > 0 ? player.videoSize.width / player.videoSize.height : camera.aspectRatio, contentMode: .fit)
         // Wide: the video fits the height too, so its overlays must hug the picture.
         .frame(maxWidth: isWide ? nil : .infinity)
         // Time top left, like the playback screens.
         .overlay(alignment: .topLeading) {
+            if cameraOn {
             HStack(spacing: 6) {
                 clock(size: 12)
                 recBadge
@@ -324,10 +355,11 @@ struct CameraView: View {
                 ForEach(conn?.activeObjects[camera.name] ?? [], id: \.self) { LabelIcon(label: $0, size: VideoChip.height) }
             }
             .padding(10)
+            }
         }
         // Phone: picture in picture on the video itself (the row under it is full).
         .overlay(alignment: .topTrailing) {
-            if !isWide && (player.pipSupported || player.pipActive) {
+            if !isWide && cameraOn && (player.pipSupported || player.pipActive) {
                 Button { player.togglePiP?() } label: {
                     Image(systemName: "pip.enter").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
                         .frame(width: 32, height: VideoChip.height + 6)
@@ -339,8 +371,41 @@ struct CameraView: View {
                 .accessibilityLabel("Picture in picture")
             }
         }
-        .overlay(alignment: .bottomTrailing) { streamChip.padding(8) }
+        .overlay(alignment: .bottomTrailing) { if cameraOn { streamChip.padding(8) } }
 
+    }
+
+    /// Instead of the video while the camera is switched off in Frigate, or while it starts
+    /// after being switched on.
+    @ViewBuilder
+    private func offCover(camera: CameraConfig) -> some View {
+        if !cameraOn || (switchingOn && !player.playing) {
+            VStack(spacing: 8) {
+                if cameraOn {
+                    ProgressView().tint(.white)
+                } else {
+                    Image(systemName: "video.slash").font(.system(size: 30)).foregroundStyle(Theme.textSecondary)
+                }
+                Text(cameraOn ? "Switching the camera on…" : "Camera is off")
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(.white)
+                Text(cameraOn ? "The picture appears once Frigate has the stream." : "Frigate does not fetch its picture, detect or record.")
+                    .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                if !cameraOn, let conn, camera.canSwitchOff {
+                    Button { conn.setCameraEnabled(camera, true) } label: {
+                        Text("Switch on")
+                            .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.onColor)
+                            .padding(.horizontal, 18).padding(.vertical, 8)
+                            .background(Theme.accent, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(hex: 0x0D0E10))
+        }
     }
 
     /// "Connecting…" shows only when the video takes a moment: a stream that already plays
@@ -444,6 +509,7 @@ struct CameraView: View {
                 .onTapGesture { toggleOverlay() }
             if !player.playing { LivePoster(client: client, camera: camera.name).ignoresSafeArea().allowsHitTesting(false) }
             streamStatus
+            offCover(camera: camera).ignoresSafeArea()
             if landscapePTZ {
                 PTZControls(client: client, camera: camera.name, overlay: true)
                     .padding(.leading, 24)
@@ -510,6 +576,8 @@ struct CameraView: View {
                             }
                         }
                         .padding(.trailing, 12)
+                        .disabled(!cameraOn)
+                        .opacity(cameraOn ? 1 : 0.4)
                     }
                     .frame(maxHeight: .infinity)
 
@@ -585,6 +653,9 @@ struct CameraView: View {
             // Full screen on the phone is the landscape view, as in playback: turn the screen.
             controlButton("arrow.up.left.and.arrow.down.right", "Fullscreen") { setPhoneFullscreen(true) }
         }
+        // Nothing to hear, capture or record while the camera is off.
+        .disabled(!cameraOn)
+        .opacity(cameraOn ? 1 : 0.35)
         .padding(.horizontal, 12)
         .padding(.top, 12)
         .padding(.bottom, 4)
@@ -632,6 +703,8 @@ struct CameraView: View {
             overlayButton(filling ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
                           filling ? "Exit full screen" : "Fullscreen") { setFilling(!filling) }
         }
+        .disabled(!cameraOn)
+        .opacity(cameraOn ? 1 : 0.4)
         .padding(16)
     }
 

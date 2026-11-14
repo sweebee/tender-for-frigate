@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><title>Camera aan/uit</title>
+<style>
+:root{--bg:#0A0B0D;--card:#15171B;--border:#23272E;--control:#1A1D22;--cborder:#2A2E35;--text:#F2F4F7;--sec:#9AA3AF;--ter:#C9CFD6;--accent:#5B9BFF;--off:#8E8E93;--rec:#FF453A;--warn:#FF9F43}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaec;font:14px -apple-system,system-ui,sans-serif;color:var(--text);padding:28px}
+h2{color:#222;font-size:20px;margin:0 0 6px}
+p.note{color:#555;font-size:13px;margin:0 0 16px;max-width:980px;line-height:1.5}
+.row{display:flex;gap:36px;align-items:flex-start;margin-bottom:44px;flex-wrap:wrap}
+.dev{background:var(--bg);border-radius:40px;border:10px solid #111;overflow:hidden;position:relative;width:340px;height:720px}
+.label{color:#333;font-weight:600;margin:10px 0 0 6px;font-size:13px;max-width:340px;line-height:1.4}
+.label span{display:block;font-weight:400;color:#666}
+.status{height:46px}
+.big{font-size:30px;font-weight:700;padding:4px 16px 10px}
+.chips{display:flex;gap:6px;padding:0 16px 12px}
+.chip{background:var(--card);border:1px solid var(--cborder);border-radius:16px;padding:5px 12px;font-size:12px;font-weight:600}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#0A0B0D}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+.tile .pic{aspect-ratio:16/10;border-radius:12px;border:1px solid var(--border);position:relative;overflow:hidden}
+.v1{background:linear-gradient(140deg,#56606b,#2b3138 60%,#4d4237)}
+.v2{background:linear-gradient(160deg,#3d4a3b,#262c27 55%,#59604a)}
+.v3{background:linear-gradient(120deg,#5b5f68,#30343b 60%,#6b6050)}
+.v4{background:linear-gradient(150deg,#47505c,#22262c 60%,#3e4a55)}
+.tile .meta{display:flex;justify-content:space-between;align-items:baseline;padding:6px 2px 0;font-size:13px;font-weight:600}
+.tile .meta span{font-size:11px;font-weight:400;color:var(--sec)}
+.badge{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.55);border-radius:6px;padding:3px 7px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:5px}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--off);display:block}
+.offpic{background:#111316;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;color:var(--sec)}
+.offpic svg{width:26px;height:26px}
+.dim{opacity:.4}
+.mdot{position:absolute;right:8px;top:8px;width:6px;height:6px;border-radius:50%;background:var(--rec);box-shadow:0 0 4px var(--rec)}
+/* context menu */
+.blur{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
+.lifted{position:absolute;left:24px;top:248px;width:190px}
+.menu{position:absolute;left:24px;top:390px;width:250px;background:rgba(40,42,48,.96);border-radius:14px;overflow:hidden;font-size:15px}
+.menu div{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.menu div:last-child{border:none}
+.menu svg{width:18px;height:18px;color:var(--text)}
+/* camera screen */
+.hdr{display:flex;align-items:center;padding:6px 14px 10px;gap:10px}
+.hdr .back{color:var(--accent);font-size:26px;width:30px}
+.hdr .title{flex:1;text-align:center;font-weight:600;font-size:16px}
+.hdr .title div{font-size:11px;color:var(--sec);font-weight:400;margin-top:2px}
+.hbtn{width:32px;height:32px;border-radius:16px;background:var(--control);border:1px solid var(--cborder);display:flex;align-items:center;justify-content:center;color:var(--text);font-weight:700}
+.video{height:191px;background:#000;position:relative;display:flex;align-items:center;justify-content:center}
+.offbox{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--sec);font-size:13px;text-align:center}
+.offbox svg{width:34px;height:34px}
+.offbox b{color:var(--text);font-size:15px}
+.pill{margin-top:6px;background:var(--accent);color:#0A0B0D;border-radius:18px;padding:7px 16px;font-weight:700;font-size:13px}
+.ctrls{display:flex;justify-content:space-around;padding:14px 16px}
+.cb{width:52px;height:52px;border-radius:26px;background:var(--control);border:1px solid var(--cborder);display:flex;align-items:center;justify-content:center;opacity:.35}
+.cb svg{width:20px;height:20px}
+.sec{color:var(--sec);font-size:11px;font-weight:700;letter-spacing:.5px;margin:6px 16px 8px}
+.ev{background:var(--card);border:1px solid var(--border);border-radius:12px;margin:0 16px 8px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+.th{width:64px;height:38px;border-radius:6px;background:linear-gradient(135deg,#59636e,#30363d)}
+.ev b{font-size:13px}.ev span{font-size:11px;color:var(--sec);display:block;margin-top:2px}
+.dd{position:absolute;right:14px;top:96px;width:240px;background:rgba(40,42,48,.97);border-radius:14px;overflow:hidden;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.dd div{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dd .grp{color:var(--sec);font-size:12px;padding:8px 14px 6px}
+.dd .gap{height:8px;background:rgba(0,0,0,.25);padding:0}
+.dd svg{width:17px;height:17px}
+.chk{color:var(--accent)}
+.tvideo{position:absolute;inset:0;background:linear-gradient(140deg,#4f5964,#262b31 60%,#4a4034)}
+.clock{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.6);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;display:flex;gap:5px;align-items:center}
+.clock i{width:7px;height:7px;border-radius:50%;background:var(--rec);display:block}
+.toast{position:absolute;left:50%;transform:translateX(-50%);top:54px;background:rgba(40,42,48,.97);border-radius:20px;padding:8px 14px;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.spin{width:12px;height:12px;border:2px solid var(--sec);border-top-color:transparent;border-radius:50%}
+</style></head><body>
+<svg style="display:none"><symbol id="vslash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M15 10.5l5-3v9l-2.2-1.3"/><path d="M13 17H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1m4 0h3a2 2 0 0 1 2 2v3"/></symbol>
+<symbol id="video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12" height="11" rx="2"/><path d="M15 10.5l5-3v9l-5-3"/></symbol>
+<symbol id="clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></symbol>
+<symbol id="cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M9 7l1.5-2h3L15 7"/></symbol>
+<symbol id="spk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9a4 4 0 0 1 0 6"/></symbol>
+<symbol id="rec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></symbol>
+<symbol id="reload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M19 12a7 7 0 1 1-2-5"/><path d="M19 4v4h-4"/></symbol>
+</svg>
+
+<h2>Camera aan- en uitzetten</h2>
+<p class="note">Frigate kan een camera tijdens het draaien uitzetten (en weer aan), zonder de config te wijzigen: dan stopt het ophalen van beeld, detectie en opnemen. Nu verdwijnt zo'n camera uit de app. Voorstel: hij blijft in het overzicht staan als "Uit", en je zet hem aan of uit via lang drukken op de tegel of het ⋯-menu van de camera. Werkt vanaf Frigate 0.16, alleen voor camera's die in de config aan staan. Opnames van vóór het uitzetten blijven gewoon terug te kijken.</p>
+
+<div class="row">
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="big">Live</div>
+   <div class="chips"><div class="chip on">Alles</div><div class="chip">Buiten</div><div class="chip">Binnen</div></div>
+   <div class="grid">
+    <div class="tile"><div class="pic v1"><div class="mdot"></div></div><div class="meta">Voordeur<span>2 min</span></div></div>
+    <div class="tile"><div class="pic v2"></div><div class="meta">Tuin<span>14 min</span></div></div>
+    <div class="tile"><div class="pic v3"></div><div class="meta">Oprit<span>1 u</span></div></div>
+    <div class="tile"><div class="pic offpic"><svg><use href="#vslash"/></svg></div><div class="meta">Woonkamer<span>Uit</span></div></div>
+    <div class="tile"><div class="pic v4"></div><div class="meta">Schuur<span>3 u</span></div></div>
+    <div class="tile"><div class="pic v2 dim"><div class="badge"><i></i>OFFLINE</div></div><div class="meta">Achterpad<span>Offline</span></div></div>
+   </div>
+  </div>
+  <div class="label">1. Overzicht<span>Een uitgezette camera blijft staan: donkere tegel met het "camera uit"-icoon in het midden, rechtsonder "Uit". Geen live beeld, geen snapshot (Frigate heeft dan geen nieuw beeld). Anders dan Offline, dat een storing is.</span></div>
+ </div>
+
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="big">Live</div>
+   <div class="chips"><div class="chip on">Alles</div><div class="chip">Buiten</div><div class="chip">Binnen</div></div>
+   <div class="grid">
+    <div class="tile"><div class="pic v1"></div><div class="meta">Voordeur<span>2 min</span></div></div>
+    <div class="tile"><div class="pic v2"></div><div class="meta">Tuin<span>14 min</span></div></div>
+    <div class="tile"><div class="pic v3"></div><div class="meta">Oprit<span>1 u</span></div></div>
+    <div class="tile"><div class="pic v4"></div><div class="meta">Woonkamer<span>8 min</span></div></div>
+   </div>
+   <div class="blur"></div>
+   <div class="tile lifted" style="left:174px;top:246px;width:150px"><div class="pic v4"></div></div>
+   <div class="menu" style="left:74px;top:350px">
+    <div>Open live <svg><use href="#video"/></svg></div>
+    <div>Terugkijken <svg><use href="#clock"/></svg></div>
+    <div>Camera uitzetten <svg><use href="#vslash"/></svg></div>
+   </div>
+  </div>
+  <div class="label">2. Lang drukken op een tegel<span>Menu met "Camera uitzetten". Op een uitgezette camera staat er "Camera aanzetten". Geen bevestiging nodig: het is meteen terug te draaien. Op de Mac: rechtsklik.</span></div>
+ </div>
+
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="hdr"><div class="back">‹</div><div class="title">Woonkamer<div>Thuis</div></div><div class="hbtn">⋯</div></div>
+   <div class="video">
+    <div class="offbox"><svg><use href="#vslash"/></svg><b>Camera staat uit</b>Frigate haalt geen beeld op, detecteert en neemt niet op.<div class="pill">Aanzetten</div></div>
+   </div>
+   <div class="ctrls">
+    <div class="cb"><svg><use href="#spk"/></svg></div><div class="cb"><svg><use href="#cam"/></svg></div><div class="cb"><svg><use href="#rec"/></svg></div><div class="cb" style="opacity:1"><svg style="color:var(--accent)"><use href="#clock"/></svg></div>
+   </div>
+   <div class="sec">VANDAAG</div>
+   <div class="ev"><div class="th"></div><div><b>Persoon · 07:42</b><span>Melding · 12 s</span></div></div>
+   <div class="ev"><div class="th"></div><div><b>Kat · 06:15</b><span>Detectie · 8 s</span></div></div>
+  </div>
+  <div class="label">3. Camerascherm, camera uit<span>In plaats van de video: uitleg en een knop "Aanzetten". Geluid, snapshot en opnemen zijn uitgegrijsd; Terugkijken en de gebeurtenissen van vandaag blijven werken.</span></div>
+ </div>
+
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="hdr"><div class="back">‹</div><div class="title">Woonkamer<div>Thuis · 1280 × 720 · MSE</div></div><div class="hbtn" style="background:#3A3F47">⋯</div></div>
+   <div class="video"><div class="tvideo"></div><div class="clock"><i></i>21:14:08</div></div>
+   <div class="ctrls">
+    <div class="cb" style="opacity:1"><svg><use href="#spk"/></svg></div><div class="cb" style="opacity:1"><svg><use href="#cam"/></svg></div><div class="cb" style="opacity:1"><svg><use href="#rec"/></svg></div><div class="cb" style="opacity:1"><svg style="color:var(--accent)"><use href="#clock"/></svg></div>
+   </div>
+   <div class="dd">
+    <div class="grp">Weergave</div>
+    <div><span class="chk">✓</span>&nbsp;Automatisch <span></span></div>
+    <div>MSE <span></span></div>
+    <div>WebRTC <span></span></div>
+    <div>MJPEG <span></span></div>
+    <div>Stream herladen <svg><use href="#reload"/></svg></div>
+    <div class="gap"></div>
+    <div>Camera uitzetten <svg><use href="#vslash"/></svg></div>
+   </div>
+  </div>
+  <div class="label">4. ⋯-menu van de camera<span>Onderaan, apart van de weergave-opties: "Camera uitzetten" (of "Camera aanzetten"). Ook in liggend beeld en op iPad/Mac, waar hetzelfde menu zit.</span></div>
+ </div>
+</div>
+
+<div class="row">
+ <div>
+  <div class="dev" style="height:420px">
+   <div class="status"></div>
+   <div class="hdr"><div class="back">‹</div><div class="title">Woonkamer<div>Thuis</div></div><div class="hbtn">⋯</div></div>
+   <div class="video" style="background:#0d0e10"><div class="offbox"><div class="spin" style="width:22px;height:22px"></div><b>Camera wordt aangezet…</b>Het beeld verschijnt zodra Frigate de stream heeft.</div></div>
+   <div class="ctrls">
+    <div class="cb"><svg><use href="#spk"/></svg></div><div class="cb"><svg><use href="#cam"/></svg></div><div class="cb"><svg><use href="#rec"/></svg></div><div class="cb" style="opacity:1"><svg style="color:var(--accent)"><use href="#clock"/></svg></div>
+   </div>
+  </div>
+  <div class="label">5. Net aangezet<span>Frigate heeft een paar seconden nodig om de camera op te starten. Tot er beeld is: "Camera wordt aangezet…", daarna start de video vanzelf.</span></div>
+ </div>
+ <div style="max-width:560px">
+  <p class="note" style="color:#333"><b>Wat niet verandert</b><br>
+  • Camera's die in de config uit staan (<code>enabled: false</code>) blijven verborgen, zoals in Frigate.<br>
+  • Terugkijken, Review en Explore tonen de camera gewoon, ook als hij uit staat.<br>
+  • Op Frigate ouder dan 0.16 of als kijker zonder beheerrechten verschijnt de optie niet / doet niets (Frigate weigert het dan).<br><br>
+  <b>Vraag</b><br>
+  • Uitgezette camera's achteraan in het overzicht zetten, of op hun eigen plek laten? (Mockup: eigen plek.)</p>
+ </div>
+</div>
+</body></html>

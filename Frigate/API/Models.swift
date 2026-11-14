@@ -33,10 +33,11 @@ struct FrigateConfig: Decodable {
         recognizesPlates = cameras.values.contains { $0.enabled != false && ($0.lpr?.enabled ?? global) }
     }
 
-    /// Cameras shown on the dashboard, in UI order.
+    /// Cameras shown on the dashboard, in UI order. A camera switched off at runtime stays (it
+    /// can be switched on again, and its recordings are there); one off in the config does not.
     var orderedCameras: [CameraConfig] {
         cameras.values
-            .filter { $0.enabled != false && $0.ui?.dashboard != false && ScreenshotMode.allows($0.name) }
+            .filter { ($0.enabledInConfig ?? $0.enabled) != false && $0.ui?.dashboard != false && ScreenshotMode.allows($0.name) }
             .sorted { ($0.ui?.order ?? 0, $0.name) < ($1.ui?.order ?? 0, $1.name) }
     }
 
@@ -56,7 +57,10 @@ struct CameraGroupConfig: Decodable {
 struct CameraConfig: Decodable {
     var name: String
     var friendlyName: String?
+    /// On right now; Frigate 0.16+ can switch a camera off and on while it runs.
     var enabled: Bool?
+    /// On in the config file (Frigate 0.16+): only then can it be switched on at runtime.
+    var enabledInConfig: Bool?
     var detect: Detect?
     var record: Toggle?
     var audio: Toggle?
@@ -89,7 +93,11 @@ struct CameraConfig: Decodable {
     enum CodingKeys: String, CodingKey {
         case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr
         case friendlyName = "friendly_name"
+        case enabledInConfig = "enabled_in_config"
     }
+
+    /// The server can switch this camera off and on (Frigate 0.16+, and on in the config).
+    var canSwitchOff: Bool { enabledInConfig == true }
 
     var displayName: String { friendlyName ?? FrigateFormat.prettyName(name) }
     var aspectRatio: Double {

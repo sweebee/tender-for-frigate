@@ -112,6 +112,20 @@ struct LiveView: View {
         return conn.cameras.filter { members.contains($0.name) }
     }
 
+    /// Long press on a tile (right click on the Mac).
+    @ViewBuilder
+    private func tileMenu(_ conn: ServerConnection, _ cam: CameraConfig) -> some View {
+        Button { model.livePath.append(CameraRoute(serverID: conn.server.id, camera: cam.name)) } label: {
+            Label("Open live", systemImage: "video")
+        }
+        Button {
+            model.livePath.append(PlaybackRoute(serverID: conn.server.id, camera: cam.name, day: Calendar.current.startOfDay(for: Date())))
+        } label: {
+            Label("Playback", systemImage: "clock.arrow.circlepath")
+        }
+        CameraSwitchButton(conn: conn, camera: cam)
+    }
+
     @ViewBuilder
     private var content: some View {
         let conns = model.scopedConnections
@@ -161,6 +175,7 @@ struct LiveView: View {
                             CameraTile(conn: conn, camera: cam)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu { tileMenu(conn, cam) }
                     }
                 }
             }
@@ -193,8 +208,9 @@ struct CameraTile: View {
     }
 
     var body: some View {
-        let online = conn.isCameraOnline(camera.name)
-        let objects = conn.activeObjects[camera.name] ?? []
+        let on = conn.isCameraEnabled(camera)
+        let online = on && conn.isCameraOnline(camera.name)
+        let objects = on ? conn.activeObjects[camera.name] ?? [] : []
         let activity = online ? conn.activity[camera.name] : nil
         let tracking = !(activity?.tracking.isEmpty ?? true)
         let active = activity?.motion == true || tracking
@@ -203,6 +219,14 @@ struct CameraTile: View {
                 Color.clear
                     .aspectRatio(16 / 10, contentMode: .fit)
                     .overlay {
+                        if !on {
+                            // Switched off in Frigate: no picture to show, and not a fault like Offline.
+                            Image(systemName: "video.slash")
+                                .font(.system(size: 24))
+                                .foregroundStyle(Theme.textSecondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Theme.placeholder)
+                        } else {
                         ZStack {
                             RemoteImage(url: conn.client?.latestImageURL(camera: camera.name, height: 270),
                                         session: conn.client?.session ?? .shared,
@@ -214,13 +238,14 @@ struct CameraTile: View {
                                     .id(stream.name)
                             }
                         }
+                        }
                     }
                     .clipped()
                     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { tileWidth = $0 }
-                    .opacity(online ? 1 : 0.4)
+                    .opacity(online || !on ? 1 : 0.4)
 
                 // Only flag cameras that are down; online is the normal state.
-                if !online {
+                if on && !online {
                     HStack(spacing: 5) {
                         StatusDot(color: Theme.offline, size: 6)
                         Text("OFFLINE")
@@ -255,7 +280,7 @@ struct CameraTile: View {
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 // Redrawn every minute, so "4 h ago" does not freeze.
-                TimelineView(.everyMinute) { _ in Text(meta(online: online)) }
+                TimelineView(.everyMinute) { _ in Text(on ? meta(online: online) : L("Off")) }
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
@@ -336,5 +361,27 @@ struct MotionDot: View {
             .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: dim)
             .onAppear { dim = true }
             .accessibilityLabel("Motion")
+    }
+}
+
+
+/// "Switch camera off" or "on", in a camera's menus. Only where Frigate can switch it (0.16+,
+/// and on in the config).
+struct CameraSwitchButton: View {
+    let conn: ServerConnection
+    let camera: CameraConfig
+    /// Runs after asking Frigate, with the new state.
+    var onSwitch: (Bool) -> Void = { _ in }
+
+    var body: some View {
+        if camera.canSwitchOff {
+            let on = conn.isCameraEnabled(camera)
+            Button {
+                conn.setCameraEnabled(camera, !on)
+                onSwitch(!on)
+            } label: {
+                Label(on ? "Switch camera off" : "Switch camera on", systemImage: on ? "video.slash" : "video")
+            }
+        }
     }
 }

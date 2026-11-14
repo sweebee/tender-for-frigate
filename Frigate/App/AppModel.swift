@@ -36,6 +36,9 @@ final class ServerConnection: Identifiable {
     private var configLoaded = Date.distantPast
     /// Live motion and tracking per camera, pushed by Frigate over its websocket.
     var activity: [String: CameraActivity] = [:]
+    /// Cameras switched on or off at runtime, as Frigate reports over its websocket (or as just
+    /// asked); the config's `enabled` until then.
+    var cameraEnabled: [String: Bool] = [:]
     private var activitySocket: URLSessionWebSocketTask?
 
     nonisolated var id: UUID { serverID }
@@ -65,6 +68,20 @@ final class ServerConnection: Identifiable {
         guard isOnline else { return false }
         guard let fps = stats?.cameras[name]?.cameraFps else { return true }
         return fps > 0
+    }
+
+    /// The camera runs: Frigate can switch one off (and on again) without changing its config.
+    func isCameraEnabled(_ cam: CameraConfig) -> Bool {
+        cameraEnabled[cam.name] ?? cam.enabled ?? true
+    }
+
+    /// Switches a camera on or off, as Frigate's own camera menu does (over the websocket).
+    func setCameraEnabled(_ cam: CameraConfig, _ on: Bool) {
+        startActivityFeed()
+        guard let task = activitySocket else { return }
+        cameraEnabled[cam.name] = on
+        let msg = #"{"topic":"\#(cam.name)/enabled/set","payload":"\#(on ? "ON" : "OFF")","retain":false}"#
+        task.send(.string(msg)) { _ in }
     }
 
     func isDetectEnabled(_ cam: CameraConfig) -> Bool {
@@ -228,12 +245,18 @@ final class ServerConnection: Identifiable {
                   let cams = try? JSONSerialization.jsonObject(with: payload) as? [String: [String: Any]] else { return }
             var next: [String: CameraActivity] = [:]
             for (cam, info) in cams {
+                // The first message after connecting carries each camera's switches.
+                if let on = (info["config"] as? [String: Any])?["enabled"] as? Bool { cameraEnabled[cam] = on }
                 let objects = info["objects"] as? [[String: Any]] ?? []
                 // Moving objects only: a parked car is tracked but not "active".
                 let moving = objects.filter { ($0["stationary"] as? Bool) != true }.compactMap { $0["label"] as? String }
                 next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving)
             }
             activity = next
+        } else if topic.hasSuffix("/enabled/state"), let state = msg["payload"] as? String {
+            let cam = String(topic.dropLast("/enabled/state".count))
+            guard !cam.contains("/") else { return }
+            cameraEnabled[cam] = state == "ON"
         } else if topic.hasSuffix("/motion"), let state = msg["payload"] as? String {
             let cam = String(topic.dropLast("/motion".count))
             guard !cam.contains("/") else { return }

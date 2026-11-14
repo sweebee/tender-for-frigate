@@ -1115,6 +1115,16 @@
         }
       }
     },
+    "Camera is off": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera staat uit"
+          }
+        }
+      }
+    },
     "Camera tiles": {
       "localizations": {
         "nl": {
@@ -1751,6 +1761,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "10 seconden vooruit"
+          }
+        }
+      }
+    },
+    "Frigate does not fetch its picture, detect or record.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate haalt geen beeld op, detecteert en neemt niet op."
           }
         }
       }
@@ -2556,6 +2576,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open in Safari"
+          }
+        }
+      }
+    },
+    "Open live": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open live"
           }
         }
       }
@@ -3626,6 +3656,36 @@
         }
       }
     },
+    "Switch camera off": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera uitzetten"
+          }
+        }
+      }
+    },
+    "Switch camera on": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera aanzetten"
+          }
+        }
+      }
+    },
+    "Switch on": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanzetten"
+          }
+        }
+      }
+    },
     "Switch server": {
       "localizations": {
         "nl": {
@@ -3642,6 +3702,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schakelt een camera naar live beeld zolang er beweging of een bewegend object is, en terug naar foto's als het weer rustig is."
+          }
+        }
+      }
+    },
+    "Switching the camera on…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera wordt aangezet…"
           }
         }
       }
@@ -3722,6 +3792,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "De hoofdstream bij grote tegels op wifi, anders de lichtere substream."
+          }
+        }
+      }
+    },
+    "The picture appears once Frigate has the stream.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het beeld verschijnt zodra Frigate de stream heeft."
           }
         }
       }
