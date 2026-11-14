@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Gives an uploaded build (iOS and Mac) to the external TestFlight group and submits it for beta review.
 
-Usage: scripts/distribute.py <build number> [what to test]
+Usage: scripts/distribute.py [--mac-only] <build number> [what to test]
+
+With --mac-only only the Mac build is handled (for instance when Apple's daily limit on beta
+review submissions held it back while the iOS build went through).
 
 Waits until App Store Connect has processed the build, sets the "What to Test" text
 (English and Dutch get the same text), adds the build to the external group "Testers"
@@ -165,10 +168,13 @@ def add_to_group(build_id, group, platform):
 
 
 def main():
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+    mac_only = "--mac-only" in args
+    args = [a for a in args if a != "--mac-only"]
+    if not args:
         sys.exit(__doc__)
-    version = sys.argv[1]
-    text = sys.argv[2] if len(sys.argv) > 2 else what_to_test()
+    version = args[0]
+    text = args[1] if len(args) > 1 else what_to_test()
     text = text[:4000]
 
     app = must(api("GET", f"/v1/apps?filter[bundleId]={BUNDLE_ID}"), "Find app")["data"][0]["id"]
@@ -179,9 +185,12 @@ def main():
 
     # The iOS and the Mac build share the build number. One platform at a time, iOS first, so
     # a Mac build waiting behind another one in review does not hold up the iOS testers.
-    for platform in PLATFORMS:
+    for platform in (("MAC_OS",) if mac_only else PLATFORMS):
         add_to_group(submit(app, version, text, platform), group, platform)
 
+    if mac_only:
+        print(f'Mac build {version} is in group "{GROUP}".')
+        return
     subprocess.run(["git", "tag", "-f", TAG, "HEAD"], capture_output=True)
     print(f'Build {version} (iOS and Mac) is in group "{GROUP}".')
 
