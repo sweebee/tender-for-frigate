@@ -240,7 +240,8 @@ struct PlaybackView: View {
         .sheet(isPresented: $showDatePicker) {
             RecordingCalendarSheet(day: $day, sources: client.map { [(client: $0, cameras: Optional([camera]))] } ?? [])
         }
-        .task(id: "\(camera)|\(day.timeIntervalSince1970)") { await load() }
+        // Again once the server is connected: opened from a link at launch, it is not yet.
+        .task(id: "\(camera)|\(day.timeIntervalSince1970)|\(client == nil)") { await load() }
         .onChange(of: player.wantsToPlay) { _, playing in
             guard !playing else { return }
             // Paused: bring the controls back so it is clear the video is not stuck. Wait a
