@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><title>Camerascherm: Vandaag</title>
+<style>
+:root{--bg:#0A0B0D;--card:#15171B;--border:#23272E;--control:#1A1D22;--cborder:#2A2E35;--text:#F2F4F7;--sec:#9AA3AF;--accent:#5B9BFF;--rec:#FF453A;--car:#FFD60A;--person:#FF9F43;--bike:#3DD6B5;--motion:#E5B33E}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaec;font:14px -apple-system,system-ui,sans-serif;color:var(--text);padding:28px}
+h2{color:#222;font-size:20px;margin:0 0 6px}
+p.note{color:#555;font-size:13px;margin:0 0 16px;max-width:1100px;line-height:1.5}
+.row{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+.dev{background:var(--bg);border-radius:40px;border:10px solid #111;overflow:hidden;position:relative;width:330px;height:714px}
+.label{color:#333;font-weight:600;margin:10px 0 0 6px;font-size:13px;max-width:330px;line-height:1.4}
+.label span{display:block;font-weight:400;color:#666}
+.status{height:44px}
+.hdr{display:flex;align-items:center;padding:4px 14px 8px}
+.hdr .b{color:var(--accent);font-size:26px;width:30px}.hdr .t{flex:1;text-align:center;font-weight:600;font-size:16px}.hdr .t div{font-size:11px;color:var(--sec);font-weight:400}
+.hdr .m{width:30px;text-align:right;font-weight:700}
+.video{height:180px;background:linear-gradient(140deg,#5a6168,#2b3036 55%,#4b4f55);position:relative}
+.clock{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.6);border-radius:6px;padding:0 7px;height:21px;font-size:11px;font-weight:600;display:flex;gap:4px;align-items:center}
+.clock i{width:6px;height:6px;border-radius:50%;background:var(--rec)}
+.ctrls{display:flex;justify-content:space-around;padding:10px 12px 4px}
+.cb{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:#C9CFD6}.cb b{width:44px;height:44px;border-radius:22px;background:var(--control);border:1px solid var(--cborder)}
+.sh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 8px}
+.sh h3{font-size:20px}.pill{background:var(--accent);color:#0A0B0D;border-radius:16px;padding:6px 12px;font-size:12px;font-weight:700}
+.sec{color:var(--sec);font-size:10px;font-weight:700;letter-spacing:.5px;padding:0 16px 6px}
+.ic{display:inline-flex;width:16px;height:16px;border-radius:4px;align-items:center;justify-content:center;font-size:9px;color:#111;font-weight:700}
+.car{background:var(--car)}.per{background:var(--person)}.bik{background:var(--bike)}
+.th{border-radius:8px;position:relative;background:linear-gradient(135deg,#59636e,#30363d)}
+.th .ics{position:absolute;left:5px;bottom:5px;display:flex;gap:3px}
+.th .d{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.6);border-radius:4px;padding:1px 4px;font-size:9px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+.grid .th{aspect-ratio:16/9}.grid .tm{font-size:11px;color:var(--sec);margin-top:4px}
+.list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.it{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:7px}
+.it .th{width:96px;height:54px;flex:none}.it .x{font-size:13px;font-weight:600}.it .x span{display:block;font-size:11px;color:var(--sec);font-weight:400;margin-top:2px}
+.tl{margin:0 16px 12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 10px 6px}
+.bar{height:34px;position:relative;border-radius:6px;background:#101215}
+.bar i{position:absolute;bottom:0;width:2px;background:rgba(229,179,62,.45)}
+.bar b{position:absolute;top:4px;width:6px;height:12px;border-radius:3px}
+.hrs{display:flex;justify-content:space-between;font-size:9px;color:var(--sec);margin-top:4px}
+.now{position:absolute;right:0;top:0;bottom:0;width:2px;background:var(--accent)}
+.strip{display:flex;gap:10px;padding:0 16px;overflow:hidden}.strip .th{width:140px;height:79px;flex:none}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 16px 12px}
+.st{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px}.st div{font-size:9px;color:var(--sec);font-weight:700;letter-spacing:.4px}.st b{font-size:16px}
+</style></head><body>
+<h2>Camerascherm: de ruimte onder "Vandaag"</h2>
+<p class="note">Nu: één rij van drie gebeurtenissen en daaronder niets. Drie voorstellen; ze kunnen ook gecombineerd worden. Op iPad en Mac verandert niets (daar staat de rij al onder de grote video).</p>
+<div class="row">
+
+ <div><div class="dev"><div class="status"></div>
+  <div class="hdr"><div class="b">‹</div><div class="t">Carport<div>Thuis · 2560 × 1440 · MSE</div></div><div class="m">⋯</div></div>
+  <div class="video"><div class="clock"><i></i>22:07:39</div></div>
+  <div class="ctrls"><div class="cb"><b></b>Geluid</div><div class="cb"><b></b>Foto</div><div class="cb"><b></b>Opnemen</div><div class="cb"><b></b>Volledig</div></div>
+  <div class="sh"><h3>Vandaag</h3><div class="pill">◷ Terugkijken</div></div>
+  <div class="grid">
+   <div><div class="th"><div class="ics"><span class="ic car">🚗</span></div><div class="d">0:10</div></div><div class="tm">21:50</div></div>
+   <div><div class="th"><div class="ics"><span class="ic car">🚗</span></div><div class="d">0:11</div></div><div class="tm">21:17</div></div>
+   <div><div class="th"><div class="ics"><span class="ic car">🚗</span><span class="ic per">🚶</span></div><div class="d">0:53</div></div><div class="tm">19:25</div></div>
+   <div><div class="th"><div class="ics"><span class="ic car">🚗</span></div><div class="d">0:00</div></div><div class="tm">16:55</div></div>
+   <div><div class="th"><div class="ics"><span class="ic bik">🚲</span></div><div class="d">0:00</div></div><div class="tm">16:52</div></div>
+   <div><div class="th"><div class="ics"><span class="ic bik">🚲</span></div><div class="d">0:00</div></div><div class="tm">16:46</div></div>
+  </div></div>
+  <div class="label">A. Raster van alle gebeurtenissen van vandaag<span>Twee kolommen, het scherm scrolt door tot de eerste van de dag. Simpelst, en je ziet in één keer veel meer.</span></div></div>
+
+ <div><div class="dev"><div class="status"></div>
+  <div class="hdr"><div class="b">‹</div><div class="t">Carport<div>Thuis · 2560 × 1440 · MSE</div></div><div class="m">⋯</div></div>
+  <div class="video"><div class="clock"><i></i>22:07:39</div></div>
+  <div class="ctrls"><div class="cb"><b></b>Geluid</div><div class="cb"><b></b>Foto</div><div class="cb"><b></b>Opnemen</div><div class="cb"><b></b>Volledig</div></div>
+  <div class="sh"><h3>Vandaag</h3><div class="pill">◷ Terugkijken</div></div>
+  <div class="tl"><div class="bar" id="bar"><div class="now"></div></div><div class="hrs"><span>00</span><span>06</span><span>12</span><span>18</span><span>nu</span></div></div>
+  <div class="strip">
+   <div class="th"><div class="ics"><span class="ic car">🚗</span></div><div class="d">21:50</div></div>
+   <div class="th"><div class="ics"><span class="ic car">🚗</span></div><div class="d">21:17</div></div>
+   <div class="th"><div class="ics"><span class="ic car">🚗</span><span class="ic per">🚶</span></div><div class="d">19:25</div></div>
+  </div></div>
+  <div class="label">B. Tijdlijn van de dag boven de rij<span>Beweging (gele staafjes) en gebeurtenissen (gekleurde blokjes) van 00:00 tot nu. Tik op een plek om daar terug te kijken. Laat zien wanneer het druk was, ook zonder detecties.</span></div></div>
+
+ <div><div class="dev"><div class="status"></div>
+  <div class="hdr"><div class="b">‹</div><div class="t">Carport<div>Thuis · 2560 × 1440 · MSE</div></div><div class="m">⋯</div></div>
+  <div class="video"><div class="clock"><i></i>22:07:39</div></div>
+  <div class="ctrls"><div class="cb"><b></b>Geluid</div><div class="cb"><b></b>Foto</div><div class="cb"><b></b>Opnemen</div><div class="cb"><b></b>Volledig</div></div>
+  <div class="sh"><h3>Vandaag</h3><div class="pill">◷ Terugkijken</div></div>
+  <div class="stats"><div class="st"><div>MELDINGEN</div><b>1</b></div><div class="st"><div>DETECTIES</div><b>81</b></div><div class="st"><div>BEWEGING</div><b>3 u 12</b></div></div>
+  <div class="list">
+   <div class="it"><div class="th"><div class="ics"><span class="ic car">🚗</span></div></div><div class="x">21:50:21<span>Detectie · 10 s</span></div></div>
+   <div class="it"><div class="th"><div class="ics"><span class="ic car">🚗</span></div></div><div class="x">21:17:07<span>Detectie · 11 s</span></div></div>
+   <div class="it"><div class="th"><div class="ics"><span class="ic car">🚗</span><span class="ic per">🚶</span></div></div><div class="x">19:25:53<span>Melding · Poort · 53 s</span></div></div>
+   <div class="it"><div class="th"><div class="ics"><span class="ic car">🚗</span></div></div><div class="x">16:55:50<span>Detectie · 0 s</span></div></div>
+  </div></div>
+  <div class="label">C. Samenvatting en lijst<span>Tellers voor vandaag (meldingen, detecties, tijd met beweging) en daaronder de gebeurtenissen als lijst met tijd, soort, zone en duur, zoals in Terugkijken.</span></div></div>
+</div>
+<script>
+const bar=document.getElementById('bar');
+for(let i=0;i<96;i++){const h=Math.max(2,Math.round((Math.sin(i/7)+1)*8+(i>70?10:0)*Math.random()));const e=document.createElement('i');e.style.left=(i/96*100)+'%';e.style.height=h+'px';bar.appendChild(e)}
+[[0.70,'#3DD6B5'],[0.72,'#3DD6B5'],[0.705,'#FFD60A'],[0.81,'#FF9F43'],[0.88,'#FFD60A'],[0.91,'#FFD60A']].forEach(([x,c])=>{const b=document.createElement('b');b.style.left=(x*100)+'%';b.style.background=c;bar.appendChild(b)});
+</script>
+</body></html>

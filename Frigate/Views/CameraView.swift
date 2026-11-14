@@ -916,6 +916,44 @@ struct CameraView: View {
                 }
                 }
                 .stable()
+            } else if !isWide {
+                // Phone: all of today's events in two columns, filling the screen under the
+                // video instead of one row with empty space below.
+                Stable(key: reviews.map(\.id)) {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 12) {
+                    ForEach(reviews) { r in
+                        NavigationLink(value: EventRoute(serverID: route.serverID, review: r)) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Color.clear
+                                    .aspectRatio(16 / 9, contentMode: .fit)
+                                    .overlay {
+                                        RemoteImage(url: conn.client?.thumbnailURL(for: r), session: conn.client?.session ?? .shared)
+                                    }
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.cardBorder, lineWidth: 1))
+                                    .overlay(alignment: .topLeading) {
+                                        HStack(spacing: 3) { ForEach(r.labels.prefix(3), id: \.self) { LabelIcon(label: $0, size: 18) } }.padding(6)
+                                    }
+                                    .overlay(alignment: .bottomTrailing) {
+                                        if let end = r.endTime {
+                                            Text(FrigateFormat.duration(max(0, end - r.startTime)))
+                                                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 5).padding(.vertical, 2)
+                                                .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 5))
+                                                .padding(6)
+                                        }
+                                    }
+                                Text(FrigateFormat.time(r.start)).font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu { ReviewItemMenu(item: r, serverID: route.serverID, actions: reviewActions) }
+                    }
+                }
+                }
+                .stable()
             } else {
                 // Kept apart from the live player, which redraws this screen often: a long-press
                 // menu that is rebuilt while open closes again (or flickers).
