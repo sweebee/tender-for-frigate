@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Pinch to zoom (1x–6x), drag to pan while zoomed, double-tap to zoom in or reset.
+/// Pinch to zoom (1x–6x) on the spot between the fingers, drag to pan while zoomed, double-tap
+/// to zoom in on the tapped spot or reset.
 /// The content stays clipped to its frame, so overlays outside it are not affected.
 struct Zoomable: ViewModifier {
     var maxScale: CGFloat = 6
@@ -21,11 +22,15 @@ struct Zoomable: ViewModifier {
                 .contentShape(Rectangle())
                 .gesture(magnify(in: geo.size))
                 .simultaneousGesture(scale > 1 ? pan(in: geo.size) : nil)
-                .onTapGesture(count: 2) {
+                .onTapGesture(count: 2) { location in
                     withAnimation(.easeOut(duration: 0.2)) {
                         if scale > 1 { reset() } else {
+                            let anchor = CGPoint(x: location.x - geo.size.width / 2, y: location.y - geo.size.height / 2)
+                            let target = zoomed(around: anchor, to: 2.5)
                             scale = 2.5
                             lastScale = 2.5
+                            offset = clamp(target, size: geo.size)
+                            lastOffset = offset
                         }
                     }
                 }
@@ -36,7 +41,9 @@ struct Zoomable: ViewModifier {
         MagnifyGesture()
             .onChanged { v in
                 scale = min(max(lastScale * v.magnification, 1), maxScale)
-                offset = clamp(offset, size: size)
+                // The spot between the fingers stays under them.
+                let anchor = CGPoint(x: (v.startAnchor.x - 0.5) * size.width, y: (v.startAnchor.y - 0.5) * size.height)
+                offset = clamp(zoomed(around: anchor, to: scale), size: size)
             }
             .onEnded { _ in
                 lastScale = scale
@@ -53,6 +60,14 @@ struct Zoomable: ViewModifier {
                                       height: lastOffset.height + v.translation.height), size: size)
             }
             .onEnded { _ in lastOffset = offset }
+    }
+
+    /// The offset that keeps the content under `anchor` (from the frame's centre) in place when
+    /// the scale goes from `lastScale` to `newScale`.
+    private func zoomed(around anchor: CGPoint, to newScale: CGFloat) -> CGSize {
+        let factor = newScale / lastScale
+        return CGSize(width: anchor.x - (anchor.x - lastOffset.width) * factor,
+                      height: anchor.y - (anchor.y - lastOffset.height) * factor)
     }
 
     /// Keeps the zoomed content covering the frame.
