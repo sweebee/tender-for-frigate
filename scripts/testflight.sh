@@ -33,7 +33,7 @@ xcodebuild -project Frigate.xcodeproj -scheme Frigate -configuration Release \
   -allowProvisioningUpdates "${AUTH[@]}" CURRENT_PROJECT_VERSION=$BUILD GIT_COMMIT=$COMMIT archive | grep -E "error|ARCHIVE"
 xcodebuild -exportArchive -archivePath build/FrigateMac.xcarchive \
   -exportOptionsPlist scripts/ExportOptionsMac.plist -exportPath build/export-mac "${AUTH[@]}" | grep -E "error|EXPORT"
-xcrun altool --upload-app -f build/export-mac/Frigate.pkg -t macos --apple-id 6833388470 \
+xcrun altool --upload-app -f build/export-mac/Tender.pkg -t macos --apple-id 6833388470 \
   --apiKey $KEY_ID --apiIssuer $ISSUER 2>&1 | grep -E "ERROR|UPLOAD|error"
 echo "Uploaded Mac build $BUILD"
 if [[ "${1:-}" == "--external" ]]; then
