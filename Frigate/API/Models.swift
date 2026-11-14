@@ -81,7 +81,15 @@ struct CameraConfig: Decodable {
             case annotationOffset = "annotation_offset"
         }
     }
-    struct Toggle: Decodable { var enabled: Bool? }
+    struct Toggle: Decodable {
+        var enabled: Bool?
+        /// On in the config file; Frigate only switches a feature on at runtime when it is.
+        var enabledInConfig: Bool?
+        enum CodingKeys: String, CodingKey {
+            case enabled
+            case enabledInConfig = "enabled_in_config"
+        }
+    }
     struct Live: Decodable { var streams: [String: String]? }
     struct UI: Decodable { var order: Int?; var dashboard: Bool? }
     struct Onvif: Decodable { var host: String? }

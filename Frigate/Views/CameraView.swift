@@ -308,9 +308,8 @@ struct CameraView: View {
                     Text("MJPEG").tag(LivePlayerState.Mode.mjpeg)
                 }
                 Button { player.reloadToken += 1 } label: { Label("Reload stream", systemImage: "arrow.clockwise") }
-                if let conn, let camera, camera.canSwitchOff {
-                    Divider()
-                    CameraSwitchButton(conn: conn, camera: camera)
+                if let conn, let camera {
+                    CameraSwitches(conn: conn, camera: camera)
                 }
             } label: {
                 HeaderIconLabel(systemName: "ellipsis")
@@ -970,7 +969,7 @@ struct CameraView: View {
                     if fresh { recordingNow = true }
                     else if misses >= 2 || recordingNow == nil {
                         // Recording switched off in Frigate: no badge rather than a warning.
-                        recordingNow = camera?.record?.enabled == true ? false : nil
+                        recordingNow = camera.map { conn?.isRecordEnabled($0) == true } == true ? false : nil
                     }
                 }
             }

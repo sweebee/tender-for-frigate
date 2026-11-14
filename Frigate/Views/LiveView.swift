@@ -123,7 +123,7 @@ struct LiveView: View {
         } label: {
             Label("Playback", systemImage: "clock.arrow.circlepath")
         }
-        CameraSwitchButton(conn: conn, camera: cam)
+        CameraSwitches(conn: conn, camera: cam)
     }
 
     @ViewBuilder
@@ -365,22 +365,31 @@ struct MotionDot: View {
 }
 
 
-/// "Switch camera off" or "on", in a camera's menus. Only where Frigate can switch it (0.16+,
-/// and on in the config).
-struct CameraSwitchButton: View {
+/// Frigate's switches for a camera, in its menus: detection and recording (while the camera
+/// runs), and switching the camera off or on (Frigate 0.16+, when on in the config).
+struct CameraSwitches: View {
     let conn: ServerConnection
     let camera: CameraConfig
-    /// Runs after asking Frigate, with the new state.
-    var onSwitch: (Bool) -> Void = { _ in }
 
     var body: some View {
-        if camera.canSwitchOff {
-            let on = conn.isCameraEnabled(camera)
-            Button {
-                conn.setCameraEnabled(camera, !on)
-                onSwitch(!on)
-            } label: {
-                Label(on ? "Switch camera off" : "Switch camera on", systemImage: on ? "video.slash" : "video")
+        let on = conn.isCameraEnabled(camera)
+        Section("Frigate") {
+            if on {
+                Toggle(isOn: Binding(get: { conn.isDetectEnabled(camera) }, set: { conn.setDetectEnabled(camera, $0) })) {
+                    Label("Detection", systemImage: "person.crop.rectangle")
+                }
+                if conn.canSwitchRecording(camera) {
+                    Toggle(isOn: Binding(get: { conn.isRecordEnabled(camera) }, set: { conn.setRecordEnabled(camera, $0) })) {
+                        Label("Recordings", systemImage: "record.circle")
+                    }
+                }
+            }
+            if camera.canSwitchOff {
+                Button {
+                    conn.setCameraEnabled(camera, !on)
+                } label: {
+                    Label(on ? "Switch camera off" : "Switch camera on", systemImage: "power")
+                }
             }
         }
     }
