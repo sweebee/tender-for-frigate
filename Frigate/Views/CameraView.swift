@@ -243,13 +243,13 @@ struct CameraView: View {
             withAnimation(.easeOut(duration: 0.25)) { overlayVisible = false }
                         }
                     } else {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                playerView(client: client, camera: camera)
-                                controls(client: client, camera: camera)
-                                today(conn: conn)
-                            }
-                            .padding(.bottom, 24)
+                        // Video, controls and the Today header stay put; only the events
+                        // scroll beneath them.
+                        VStack(spacing: 0) {
+                            playerView(client: client, camera: camera)
+                            controls(client: client, camera: camera)
+                            today(conn: conn)
+                                .frame(maxHeight: .infinity, alignment: .top)
                         }
                     }
                 }
@@ -920,6 +920,7 @@ struct CameraView: View {
                 // Phone: all of today's events in two columns, filling the screen under the
                 // video instead of one row with empty space below.
                 Stable(key: reviews.map(\.id)) {
+                ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 12) {
                     ForEach(reviews) { r in
                         NavigationLink(value: EventRoute(serverID: route.serverID, review: r)) {
@@ -952,6 +953,11 @@ struct CameraView: View {
                         .contextMenu { ReviewItemMenu(item: r, serverID: route.serverID, actions: reviewActions) }
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
+                }
+                // Runs to the screen edges, so the scroll bar sits at the side.
+                .padding(.horizontal, -16)
                 }
                 .stable()
             } else {
