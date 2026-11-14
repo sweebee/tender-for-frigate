@@ -440,6 +440,8 @@ struct ExportsView: View {
             defer { caseWork -= 1 }
             do {
                 try await client.deleteExportCase(c.exportCase.id, deletingExports: withExports)
+            } catch FrigateError.http(404, _) {
+                // Already gone (deleted elsewhere, or twice): that is what was asked.
             } catch {
                 model.deletedCases.remove(c.id)
                 if withExports { model.deletedExports.subtract(inside.map(\.id)) } else { for e in inside { model.movedExports[e.id] = nil } }
