@@ -487,7 +487,8 @@ struct CameraView: View {
     /// The running clock, with a red dot while the camera is recording.
     private func clock(size: CGFloat) -> some View {
         HStack(spacing: 5) {
-            if recordingNow == true {
+            // Not after recording was switched off, while the last segments are still fresh.
+            if recordingNow == true, !(camera.map { conn?.isRecordSwitchedOff($0) == true } ?? false) {
                 StatusDot(color: Theme.recording, size: size * 0.55).accessibilityLabel("Recording")
             }
             ClockLabel()
