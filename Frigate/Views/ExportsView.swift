@@ -424,10 +424,13 @@ struct ExportsView: View {
     private func deleteCase(withExports: Bool) {
         guard let c = deletingCase, let client = client(c.serverID) else { return }
         let inside = exports(in: c)
+        // Made here earlier: it is no longer new either, or it would come back.
+        let added = model.addedCases.first { $0.id == c.id }
         // Gone at once, here and in the other exports screens; its exports go with it or show
         // outside a case. Inside the case that is gone: back to all exports.
         withAnimation(.easeOut(duration: 0.2)) {
             model.deletedCases.insert(c.id)
+            model.addedCases.removeAll { $0.id == c.id }
             if withExports {
                 model.deletedExports.formUnion(inside.map(\.id))
             } else {
@@ -444,6 +447,7 @@ struct ExportsView: View {
                 // Already gone (deleted elsewhere, or twice): that is what was asked.
             } catch {
                 model.deletedCases.remove(c.id)
+                if let added { model.addedCases.append(added) }
                 if withExports { model.deletedExports.subtract(inside.map(\.id)) } else { for e in inside { model.movedExports[e.id] = nil } }
                 errorMessage = error.localizedDescription
             }
