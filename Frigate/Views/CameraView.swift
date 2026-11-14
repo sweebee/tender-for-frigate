@@ -637,8 +637,11 @@ struct CameraView: View {
                           enabled: player.hasAudio || player.activeMode != "mjpeg") {
                 toggleSound()
             }
-            controlButton(player.talking ? "mic.fill" : "mic", "Talk", active: player.talking, enabled: canTalk) {
-                Task { await toggleTalk() }
+            // Only what the camera can do, as over the video on wide screens: no speaker, no Talk.
+            if canTalk {
+                controlButton(player.talking ? "mic.fill" : "mic", "Talk", active: player.talking) {
+                    Task { await toggleTalk() }
+                }
             }
             controlButton("camera", "Snapshot", busy: snapshotBusy) {
                 Task { await snapshot(client: client, camera: camera) }
@@ -647,8 +650,8 @@ struct CameraView: View {
                           active: manualEventID != nil, activeColor: Theme.recording, busy: recordBusy) {
                 Task { await toggleManualRecording() }
             }
-            controlButton("arrow.up.and.down.and.arrow.left.and.right", "PTZ", enabled: camera.hasOnvif) {
-                showPTZ = true
+            if camera.hasOnvif {
+                controlButton("arrow.up.and.down.and.arrow.left.and.right", "PTZ") { showPTZ = true }
             }
             // Full screen on the phone is the landscape view, as in playback: turn the screen.
             controlButton("arrow.up.left.and.arrow.down.right", "Fullscreen") { setPhoneFullscreen(true) }
