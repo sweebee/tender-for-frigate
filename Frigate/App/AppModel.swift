@@ -343,6 +343,11 @@ final class AppModel {
     /// Exports moved to another case in this session (`ExportEntry.id` → case id, "" for none),
     /// until a load from the server shows them there; every exports screen uses them.
     var movedExports: [String: String] = [:]
+    /// Export cases made, deleted or renamed here (keyed by ExportCaseEntry.id), until a load
+    /// from the server shows the change; every exports screen shows them at once.
+    var addedCases: [ExportCaseEntry] = []
+    var deletedCases: Set<String> = []
+    var renamedCases: [String: String] = [:]
     /// The phone's More tab (exports, chat, settings).
     var morePath = NavigationPath()
     /// Set by deep links to switch the Review segment (alert, detection, motion).

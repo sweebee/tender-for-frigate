@@ -152,7 +152,22 @@ struct ExportsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var entries: [ExportEntry] = []
-    @State private var cases: [ExportCaseEntry] = []
+    /// The cases as last loaded; `cases` adds what was just changed here.
+    @State private var loadedCases: [ExportCaseEntry] = []
+    /// Case changes still on their way to the server.
+    @State private var caseWork = 0
+    private var cases: [ExportCaseEntry] {
+        let loaded = Set(loadedCases.map(\.id))
+        return (model.addedCases.filter { !loaded.contains($0.id) } + loadedCases)
+            .filter { !model.deletedCases.contains($0.id) }
+            .map { c in
+                guard let name = model.renamedCases[c.id] else { return c }
+                var renamed = c.exportCase
+                renamed.name = name
+                return ExportCaseEntry(serverID: c.serverID, exportCase: renamed)
+            }
+            .sorted { $0.exportCase.createdAt > $1.exportCase.createdAt }
+    }
     @State private var loading = true
     @State private var renaming: ExportEntry?
     @State private var newName = ""
@@ -311,6 +326,7 @@ struct ExportsView: View {
             ScreenTitle(text: currentCase.map { $0.exportCase.name.isEmpty ? L("Case") : $0.exportCase.name } ?? L("Exports"),
                         showsBack: caseRoute != nil || !isSection)
             Spacer()
+            if caseWork > 0 { ProgressView().controlSize(.small).padding(.trailing, 4) }
             if let c = currentCase {
                 Menu { caseMenu(c) } label: { HeaderIconLabel(systemName: "ellipsis") }
                     .accessibilityLabel("More options")
@@ -377,11 +393,16 @@ struct ExportsView: View {
         let name = caseName.trimmingCharacters(in: .whitespaces)
         let export = creatingCaseFor
         guard !name.isEmpty else { return }
+        caseWork += 1
         Task {
+            defer { caseWork -= 1 }
             do {
                 let created = try await client.createExportCase(name: name)
-                if let export { try await client.moveExports([export.export.id], toCase: created.id) }
-                await load()
+                // There at once; the full reload of all exports takes a while.
+                withAnimation(.easeOut(duration: 0.2)) {
+                    model.addedCases.append(ExportCaseEntry(serverID: serverID, exportCase: created))
+                }
+                if let export { move(export, to: created.id) } else { await load() }
             } catch { errorMessage = error.localizedDescription }
         }
     }
@@ -390,22 +411,41 @@ struct ExportsView: View {
         guard let c = renamingCase, let client = client(c.serverID) else { return }
         let name = caseName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
+        withAnimation(.easeOut(duration: 0.2)) { model.renamedCases[c.id] = name }
+        caseWork += 1
         Task {
-            do { try await client.renameExportCase(c.exportCase.id, to: name); await load() }
-            catch { errorMessage = error.localizedDescription }
+            defer { caseWork -= 1 }
+            do { try await client.renameExportCase(c.exportCase.id, to: name) }
+            catch { model.renamedCases[c.id] = nil; errorMessage = error.localizedDescription }
+            await load()
         }
     }
 
     private func deleteCase(withExports: Bool) {
         guard let c = deletingCase, let client = client(c.serverID) else { return }
-        let gone = withExports ? exports(in: c).map(\.id) : []
+        let inside = exports(in: c)
+        // Gone at once, here and in the other exports screens; its exports go with it or show
+        // outside a case. Inside the case that is gone: back to all exports.
+        withAnimation(.easeOut(duration: 0.2)) {
+            model.deletedCases.insert(c.id)
+            if withExports {
+                model.deletedExports.formUnion(inside.map(\.id))
+            } else {
+                for e in inside { model.movedExports[e.id] = "" }
+            }
+        }
+        if caseRoute != nil { closePresented(dismiss) }
+        caseWork += 1
         Task {
+            defer { caseWork -= 1 }
             do {
                 try await client.deleteExportCase(c.exportCase.id, deletingExports: withExports)
-                model.deletedExports.formUnion(gone)
-                // Inside the case that is gone: back to all exports.
-                if caseRoute != nil { closePresented(dismiss) } else { await load() }
-            } catch { errorMessage = error.localizedDescription }
+            } catch {
+                model.deletedCases.remove(c.id)
+                if withExports { model.deletedExports.subtract(inside.map(\.id)) } else { for e in inside { model.movedExports[e.id] = nil } }
+                errorMessage = error.localizedDescription
+            }
+            await load()
         }
     }
 
@@ -464,13 +504,18 @@ struct ExportsView: View {
         loadCount += 1
         let mine = loadCount
         async let loadedEntries = ExportsLoader.load(connections)
-        async let loadedCases = ExportCasesLoader.load(connections)
-        let (e, c) = await (loadedEntries, loadedCases)
+        async let freshCases = ExportCasesLoader.load(connections)
+        let (e, c) = await (loadedEntries, freshCases)
         guard mine == loadCount else { return }
         // Moves the server now shows are done.
         for x in e where model.movedExports[x.id] == (x.export.caseID ?? "") { model.movedExports[x.id] = nil }
+        // Case changes the server now shows are done.
+        let ids = Set(c.map(\.id))
+        model.addedCases.removeAll { ids.contains($0.id) }
+        model.deletedCases.formIntersection(ids)
+        for x in c where model.renamedCases[x.id] == x.exportCase.name { model.renamedCases[x.id] = nil }
         entries = e
-        cases = c
+        loadedCases = c
         loading = false
     }
 }
