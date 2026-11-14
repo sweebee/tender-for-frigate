@@ -544,16 +544,25 @@ struct EventDetailView: View {
         if !list.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(text: L("Objects")).padding(.horizontal, 16)
-                // Runs to the screen edge, like the rows in Explore; the margin sits inside.
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(list) { e in
-                            objectCard(e)
-                        }
+                if horizontalSizeClass == .regular {
+                    // iPad and Mac: the column has room for the cards side by side and below
+                    // each other, none cut off at the edge.
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 10)], spacing: 10) {
+                        ForEach(list) { e in objectCard(e, fill: true) }
                     }
                     .padding(.horizontal, 16)
-                    // Room for the cards' borders: a scroll view clips at its edges.
-                    .padding(.vertical, 2)
+                } else {
+                    // Runs to the screen edge, like the rows in Explore; the margin sits inside.
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(list) { e in
+                                objectCard(e)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        // Room for the cards' borders: a scroll view clips at its edges.
+                        .padding(.vertical, 2)
+                    }
                 }
             }
             .padding(.top, 16)
@@ -561,11 +570,14 @@ struct EventDetailView: View {
     }
 
     /// A tap on the picture shows it large; the time on it plays the video from that object.
-    private func objectCard(_ e: FrigateEvent) -> some View {
+    /// `fill`: as wide as its grid column (iPad and Mac) instead of a fixed width for the row.
+    private func objectCard(_ e: FrigateEvent, fill: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             RemoteImage(url: e.hasSnapshot == true ? client?.snapshotURL(for: e) : client?.thumbnailURL(for: e),
                         session: client?.session ?? .shared)
-                .frame(width: 180, height: 101)
+                .frame(width: fill ? nil : 180, height: fill ? nil : 101)
+                .frame(maxWidth: fill ? .infinity : nil)
+                .aspectRatio(16 / 9, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .contentShape(Rectangle())
                 .onTapGesture { snapshotEvent = e }
@@ -598,7 +610,7 @@ struct EventDetailView: View {
             }
         }
         .padding(8)
-        .frame(width: 196)
+        .frame(width: fill ? nil : 196)
         .card(border: e.id == route.focusEvent?.id ? Theme.accent : Theme.cardBorder, radius: 12)
     }
 
