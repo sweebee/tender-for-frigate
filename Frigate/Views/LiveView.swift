@@ -260,8 +260,9 @@ struct CameraTile: View {
                     .padding(8)
                 }
             }
-            .overlay(alignment: .bottomLeading) {
-                if !objects.isEmpty {
+            // Top left, like the label icons on events and recent alerts.
+            .overlay(alignment: .topLeading) {
+                if online && !objects.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(objects.prefix(3), id: \.self) { LabelIcon(label: $0) }
                     }
