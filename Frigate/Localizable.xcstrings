@@ -1515,6 +1515,16 @@
         }
       }
     },
+    "Detect and record off": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niets aan"
+          }
+        }
+      }
+    },
     "Detect off": {
       "localizations": {
         "nl": {
@@ -2916,6 +2926,16 @@
         }
       }
     },
+    "Recording off": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opname uit"
+          }
+        }
+      }
+    },
     "Recording started": {
       "localizations": {
         "nl": {
@@ -3676,12 +3696,32 @@
         }
       }
     },
+    "Switch detection on": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectie aanzetten"
+          }
+        }
+      }
+    },
     "Switch on": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Aanzetten"
+          }
+        }
+      }
+    },
+    "Switch recording on": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opname aanzetten"
           }
         }
       }

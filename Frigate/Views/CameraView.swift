@@ -349,6 +349,7 @@ struct CameraView: View {
             HStack(spacing: 6) {
                 clock(size: 12)
                 recBadge
+                if let conn { SwitchedOffChips(conn: conn, camera: camera) }
                 manualRecordingBadge
                 // Objects being tracked, like the label beside the time in playback.
                 ForEach(conn?.activeObjects[camera.name] ?? [], id: \.self) { LabelIcon(label: $0, size: VideoChip.height) }
@@ -534,6 +535,7 @@ struct CameraView: View {
                         }
                         Spacer()
                         recBadge
+                        SwitchedOffChips(conn: conn, camera: camera)
                         streamChip.simultaneousGesture(TapGesture().onEnded { menuOpen = true; keepOverlay() })
                         clock(size: 13)
                         moreMenu.simultaneousGesture(TapGesture().onEnded { menuOpen = true; keepOverlay() })

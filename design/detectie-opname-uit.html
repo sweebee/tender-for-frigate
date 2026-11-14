@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><title>Detectie en opname uit</title>
+<style>
+:root{--bg:#0A0B0D;--card:#15171B;--border:#23272E;--control:#1A1D22;--cborder:#2A2E35;--text:#F2F4F7;--sec:#9AA3AF;--accent:#5B9BFF;--off:#8E8E93;--rec:#FF453A;--warn:#FF9F43}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaec;font:14px -apple-system,system-ui,sans-serif;color:var(--text);padding:28px}
+h2{color:#222;font-size:20px;margin:0 0 6px}
+p.note{color:#555;font-size:13px;margin:0 0 16px;max-width:980px;line-height:1.5}
+.row{display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap}
+.dev{background:var(--bg);border-radius:40px;border:10px solid #111;overflow:hidden;position:relative;width:340px;height:720px}
+.label{color:#333;font-weight:600;margin:10px 0 0 6px;font-size:13px;max-width:340px;line-height:1.4}
+.label span{display:block;font-weight:400;color:#666}
+.status{height:46px}
+.big{font-size:30px;font-weight:700;padding:4px 16px 12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+.pic{aspect-ratio:16/10;border-radius:12px;border:1px solid var(--border);position:relative;overflow:hidden}
+.v1{background:linear-gradient(140deg,#56606b,#2b3138 60%,#4d4237)}
+.v2{background:linear-gradient(160deg,#3d4a3b,#262c27 55%,#59604a)}
+.v3{background:linear-gradient(120deg,#5b5f68,#30343b 60%,#6b6050)}
+.v4{background:linear-gradient(150deg,#47505c,#22262c 60%,#3e4a55)}
+.meta{display:flex;justify-content:space-between;align-items:baseline;padding:6px 2px 0;font-size:13px;font-weight:600}
+.meta span{font-size:11px;font-weight:400;color:var(--sec)}
+.meta span.w{color:var(--warn)}
+.icons{position:absolute;right:7px;bottom:7px;display:flex;gap:4px}
+.ic{height:20px;min-width:20px;padding:0 5px;border-radius:6px;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;color:var(--warn)}
+.ic svg{width:13px;height:13px}
+.hdr{display:flex;align-items:center;padding:6px 14px 10px;gap:10px}
+.hdr .back{color:var(--accent);font-size:26px;width:30px}
+.hdr .title{flex:1;text-align:center;font-weight:600;font-size:16px}
+.hdr .title div{font-size:11px;color:var(--sec);font-weight:400;margin-top:2px}
+.hbtn{width:32px;height:32px;border-radius:16px;background:var(--control);border:1px solid var(--cborder);display:flex;align-items:center;justify-content:center;font-weight:700}
+.video{height:191px;position:relative;background:linear-gradient(140deg,#4f5964,#262b31 60%,#4a4034)}
+.chips{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;max-width:300px}
+.clock{background:rgba(0,0,0,.6);border-radius:6px;padding:0 8px;height:24px;font-size:12px;font-weight:600;display:flex;gap:5px;align-items:center}
+.clock i{width:7px;height:7px;border-radius:50%;background:var(--rec);display:block}
+.chip{height:24px;border-radius:6px;padding:0 8px;font-size:11px;font-weight:700;display:flex;gap:5px;align-items:center;background:var(--warn);color:#1A1206}
+.chip svg{width:12px;height:12px}
+.ctrls{display:flex;justify-content:space-around;padding:14px 16px}
+.cb{width:52px;height:52px;border-radius:26px;background:var(--control);border:1px solid var(--cborder)}
+.dd{position:absolute;left:14px;top:150px;width:250px;background:rgba(40,42,48,.97);border-radius:14px;overflow:hidden;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.dd div{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dd div:last-child{border:none}
+.dd .grp{color:var(--sec);font-size:12px;padding:8px 14px 6px}
+</style></head><body>
+<svg style="display:none">
+<symbol id="detoff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="12" cy="11" r="2.5"/><path d="M8 17c1-2 7-2 8 0"/><path d="M3 3l18 18"/></symbol>
+<symbol id="recoff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/><path d="M3 3l18 18"/></symbol>
+</svg>
+
+<h2>Detectie of opname uit: duidelijk zichtbaar</h2>
+<p class="note">Nu zie je het nauwelijks: "Detectie uit" klein in de tegel, en bij opname uit verdwijnt alleen het rode stipje. Voorstel: oranje markeringen (waarschuwing, geen fout: Offline blijft grijs, Uit blijft het camera-icoon), op de tegel én in het camerascherm. Een tik op de markering in het camerascherm zet het weer aan.</p>
+
+<div class="row">
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="big">Live</div>
+   <div class="grid">
+    <div><div class="pic v1"></div><div class="meta">Voordeur<span>2 min</span></div></div>
+    <div><div class="pic v2"><div class="icons"><div class="ic"><svg><use href="#detoff"/></svg></div></div></div><div class="meta">Tuin<span class="w">Detectie uit</span></div></div>
+    <div><div class="pic v3"><div class="icons"><div class="ic"><svg><use href="#recoff"/></svg></div></div></div><div class="meta">Oprit<span class="w">Opname uit</span></div></div>
+    <div><div class="pic v4"><div class="icons"><div class="ic"><svg><use href="#detoff"/></svg></div><div class="ic"><svg><use href="#recoff"/></svg></div></div></div><div class="meta">Woonkamer<span class="w">Niets aan</span></div></div>
+   </div>
+  </div>
+  <div class="label">1. Overzicht<span>Rechtsonder op het beeld een oranje icoon per uitgezette functie, en onder de tegel in oranje wat er uit staat (in plaats van "2 min geleden"); staan beide uit, dan "Niets aan" (de iconen zeggen wat).</span></div>
+ </div>
+
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="hdr"><div class="back">‹</div><div class="title">Woonkamer<div>Thuis · 1920 × 1080 · MSE</div></div><div class="hbtn">⋯</div></div>
+   <div class="video">
+    <div class="chips">
+     <div class="clock">21:14:08</div>
+     <div class="chip"><svg><use href="#detoff"/></svg>Detectie uit</div>
+     <div class="chip"><svg><use href="#recoff"/></svg>Opname uit</div>
+    </div>
+   </div>
+   <div class="ctrls"><div class="cb"></div><div class="cb"></div><div class="cb"></div><div class="cb"></div></div>
+  </div>
+  <div class="label">2. Camerascherm<span>Naast de klok oranje labels "Detectie uit" en/of "Opname uit" (zonder rood stipje, want er wordt niet opgenomen). Ook in liggend beeld en op iPad/Mac.</span></div>
+ </div>
+
+ <div>
+  <div class="dev">
+   <div class="status"></div>
+   <div class="hdr"><div class="back">‹</div><div class="title">Woonkamer<div>Thuis · 1920 × 1080 · MSE</div></div><div class="hbtn">⋯</div></div>
+   <div class="video">
+    <div class="chips">
+     <div class="clock">21:14:08</div>
+     <div class="chip"><svg><use href="#detoff"/></svg>Detectie uit</div>
+     <div class="chip"><svg><use href="#recoff"/></svg>Opname uit</div>
+    </div>
+   </div>
+   <div class="ctrls"><div class="cb"></div><div class="cb"></div><div class="cb"></div><div class="cb"></div></div>
+   <div class="dd" style="top:118px">
+    <div class="grp">Detectie staat uit</div>
+    <div>Detectie aanzetten <span>●</span></div>
+   </div>
+  </div>
+  <div class="label">3. Tik op een label<span>Een klein menu om het direct weer aan te zetten, zonder het ⋯-menu te zoeken.</span></div>
+ </div>
+</div>
+</body></html>

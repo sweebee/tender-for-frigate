@@ -98,6 +98,9 @@ final class ServerConnection: Identifiable {
         cameraRecord[cam.name] ?? cam.record?.enabled ?? false
     }
 
+    /// Recording is on in the config but switched off now: worth a warning.
+    func isRecordSwitchedOff(_ cam: CameraConfig) -> Bool { canSwitchRecording(cam) && !isRecordEnabled(cam) }
+
     /// Frigate switches recording on only when it is on in the config.
     func canSwitchRecording(_ cam: CameraConfig) -> Bool { cam.record?.enabledInConfig ?? cam.record?.enabled ?? false }
 

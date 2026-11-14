@@ -214,6 +214,9 @@ struct CameraTile: View {
         let activity = online ? conn.activity[camera.name] : nil
         let tracking = !(activity?.tracking.isEmpty ?? true)
         let active = activity?.motion == true || tracking
+        // Detection or recording switched off: orange, a warning rather than a fault.
+        let detectOff = online && !conn.isDetectEnabled(camera)
+        let recordOff = online && conn.isRecordSwitchedOff(camera)
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topLeading) {
                 Color.clear
@@ -268,6 +271,15 @@ struct CameraTile: View {
             .overlay(alignment: .topTrailing) {
                 if activity?.motion == true { MotionDot().padding(8) }
             }
+            .overlay(alignment: .bottomTrailing) {
+                if detectOff || recordOff {
+                    HStack(spacing: 4) {
+                        if detectOff { SwitchedOffIcon(kind: .detect) }
+                        if recordOff { SwitchedOffIcon(kind: .record) }
+                    }
+                    .padding(7)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12)
                 .stroke(tracking ? Theme.recording : Theme.cardBorder, lineWidth: tracking ? 1.5 : 1))
@@ -280,9 +292,15 @@ struct CameraTile: View {
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 // Redrawn every minute, so "4 h ago" does not freeze.
-                TimelineView(.everyMinute) { _ in Text(on ? meta(online: online) : L("Off")) }
+                TimelineView(.everyMinute) { _ in
+                    if detectOff || recordOff {
+                        Text(detectOff && recordOff ? L("Detect and record off") : detectOff ? L("Detect off") : L("Recording off"))
+                            .foregroundStyle(Theme.warning)
+                    } else {
+                        Text(on ? meta(online: online) : L("Off")).foregroundStyle(Theme.textSecondary)
+                    }
+                }
                     .font(.system(size: 12))
-                    .foregroundStyle(Theme.textSecondary)
                     .lineLimit(1)
             }
             .padding(.horizontal, 2)
@@ -301,7 +319,6 @@ struct CameraTile: View {
 
     private func meta(online: Bool) -> String {
         if !online { return L("Offline") }
-        if !conn.isDetectEnabled(camera) { return L("Detect off") }
         if !(conn.activeObjects[camera.name] ?? []).isEmpty { return L("Now") }
         if let last = conn.lastActivity[camera.name] { return FrigateFormat.relative(last) }
         return ""
@@ -364,6 +381,63 @@ struct MotionDot: View {
     }
 }
 
+
+/// Detection or recording switched off in Frigate: its symbol struck through, in orange.
+struct SwitchedOffIcon: View {
+    enum Kind { case detect, record }
+    let kind: Kind
+    /// On the video by the clock the chip carries the colour; on a tile the icon does.
+    var size: CGFloat = 13
+
+    var body: some View {
+        Image(systemName: kind == .detect ? "person.crop.rectangle" : "record.circle")
+            .font(.system(size: size, weight: .semibold))
+            .overlay {
+                Capsule().frame(width: size * 0.14).rotationEffect(.degrees(-45)).padding(-size * 0.12)
+            }
+            .foregroundStyle(Theme.warning)
+            .frame(minWidth: 20, minHeight: 20)
+            .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 6))
+            .accessibilityLabel(kind == .detect ? Text("Detect off") : Text("Recording off"))
+    }
+}
+
+/// "Detection off" and "Recording off" by the clock on the camera's video; a tap offers to
+/// switch it on again.
+struct SwitchedOffChips: View {
+    let conn: ServerConnection
+    let camera: CameraConfig
+
+    var body: some View {
+        if conn.isCameraEnabled(camera) {
+            if !conn.isDetectEnabled(camera) {
+                chip("Detect off", kind: .detect, on: "Switch detection on") { conn.setDetectEnabled(camera, true) }
+            }
+            if conn.isRecordSwitchedOff(camera) {
+                chip("Recording off", kind: .record, on: "Switch recording on") { conn.setRecordEnabled(camera, true) }
+            }
+        }
+    }
+
+    private func chip(_ title: LocalizedStringKey, kind: SwitchedOffIcon.Kind, on: LocalizedStringKey,
+                      action: @escaping () -> Void) -> some View {
+        Menu {
+            Button(action: action) { Label(on, systemImage: "power") }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: kind == .detect ? "person.crop.rectangle" : "record.circle")
+                    .font(.system(size: 10, weight: .bold))
+                    .overlay { Capsule().frame(width: 1.6).rotationEffect(.degrees(-45)).padding(-1.5) }
+                Text(title)
+            }
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(Theme.onLabel)
+            .padding(.horizontal, 8).frame(height: VideoChip.height)
+            .background(Theme.warning, in: RoundedRectangle(cornerRadius: 6))
+        }
+        .menuStyle(.button).buttonStyle(.plain)
+    }
+}
 
 /// Frigate's switches for a camera, in its menus: detection and recording (while the camera
 /// runs), and switching the camera off or on (Frigate 0.16+, when on in the config).
