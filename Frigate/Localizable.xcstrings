@@ -1865,6 +1865,26 @@
         }
       }
     },
+    "Default": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standaard"
+          }
+        }
+      }
+    },
+    "Default (as configured)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standaard (zoals ingesteld)"
+          }
+        }
+      }
+    },
     "Delete": {
       "localizations": {
         "nl": {
@@ -2471,6 +2491,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Frigate-profiel"
+          }
+        }
+      }
+    },
+    "Frigate still lists the profile; try again in a moment.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate toont het profiel nog; probeer het zo nog eens."
           }
         }
       }
@@ -3189,7 +3219,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nieuwste eerst"
+            "value": "Nieuwste bovenaan"
           }
         }
       }
@@ -3410,6 +3440,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Geen"
+          }
+        }
+      }
+    },
+    "None active": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen actief"
           }
         }
       }
@@ -3889,6 +3929,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Per camera wat dit profiel verandert. \"Zoals ingesteld\" houdt de eigen instelling van de camera."
+          }
+        }
+      }
+    },
+    "Per camera what this profile changes. \"Default\" keeps the camera's own setting.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per camera wat dit profiel verandert. \"Standaard\" houdt de eigen instelling van de camera."
           }
         }
       }
@@ -4972,6 +5022,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instellingen…"
+          }
+        }
+      }
+    },
+    "Several": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meerdere"
           }
         }
       }
@@ -6175,6 +6235,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "server"
+          }
+        }
+      }
+    },
+    "These cameras set this themselves and keep their own value: %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze camera's stellen dit zelf in en houden hun eigen waarde: %@"
+          }
+        }
+      }
+    },
+    "This camera has no zones or masks yet. Tap + to draw one.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze camera heeft nog geen zones of maskers. Tik op + om er een te tekenen."
+          }
+        }
+      }
+    },
+    "Only these objects count in this zone.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen deze objecten tellen mee in deze zone."
+          }
+        }
+      }
+    },
+    "There is already one with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is er al een met deze naam."
+          }
+        }
+      }
+    },
+    "Save only": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen bewaren"
+          }
+        }
+      }
+    },
+    "Not set": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet ingesteld"
           }
         }
       }

@@ -15,7 +15,6 @@ struct ServerSettingsView: View {
     @State private var restarting = false
     @State private var errorMessage: String?
     @State private var webInterface: ServersView.WebTarget?
-    @State private var activeProfile: String?
     @State private var reordering = false
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
@@ -44,7 +43,7 @@ struct ServerSettingsView: View {
                         SectionLabel(text: L("Profile")).padding(.top, 10)
                         NavigationLink { ProfilesView(serverID: serverID) } label: {
                             SettingsRow(icon: "person.2.crop.square.stack", tint: Theme.accent, title: L("Profiles"),
-                                        value: activeProfile ?? L("None"))
+                                        value: conn.activeProfileTitle ?? (conn.profiles.isEmpty ? L("None") : L("None active")))
                         }
                         .buttonStyle(.plain)
                         .card(radius: 12)
@@ -272,11 +271,8 @@ struct ServerSettingsView: View {
         do {
             async let cfg = client.rawConfig()
             async let r = client.role()
-            async let p = try? client.profiles()
             config = try await cfg
             role = await r
-            let profiles = await p
-            activeProfile = profiles?.active.flatMap { name in profiles?.profiles.first { $0.name == name }?.title ?? name }
             loadError = nil
         } catch {
             loadError = error.localizedDescription
@@ -322,14 +318,14 @@ struct CameraSettingsView: View {
                     let on = conn.isCameraEnabled(cam)
                     VStack(spacing: 0) {
                         if cam.canSwitchOff {
-                            toggleRow(L("Camera"), isOn: on) { conn.setCameraEnabled(cam, $0) }
+                            toggleRow(L("Camera"), isOn: on, pending: conn.isSwitchPending(cam, "enabled")) { conn.setCameraEnabled(cam, $0) }
                         }
                         if on {
                             Divider().overlay(Theme.cardBorder)
-                            toggleRow(L("Object detection"), isOn: conn.isDetectEnabled(cam)) { conn.setDetectEnabled(cam, $0) }
+                            toggleRow(L("Object detection"), isOn: conn.isDetectEnabled(cam), pending: conn.isSwitchPending(cam, "detect")) { conn.setDetectEnabled(cam, $0) }
                             if conn.canSwitchRecording(cam) {
                                 Divider().overlay(Theme.cardBorder)
-                                toggleRow(L("Record"), isOn: conn.isRecordEnabled(cam)) { conn.setRecordEnabled(cam, $0) }
+                                toggleRow(L("Record"), isOn: conn.isRecordEnabled(cam), pending: conn.isSwitchPending(cam, "recordings")) { conn.setRecordEnabled(cam, $0) }
                             }
                         }
                     }
@@ -389,11 +385,15 @@ struct CameraSettingsView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    private func toggleRow(_ title: String, isOn: Bool, set: @escaping (Bool) -> Void) -> some View {
+    private func toggleRow(_ title: String, isOn: Bool, pending: Bool = false, set: @escaping (Bool) -> Void) -> some View {
         Toggle(isOn: Binding(get: { isOn }, set: set)) {
-            Text(title).font(.system(size: 15))
+            HStack(spacing: 8) {
+                Text(title).font(.system(size: 15))
+                if pending { ProgressView().controlSize(.small) }
+            }
         }
         .tint(Theme.online)
+        .disabled(pending)
         .padding(.horizontal, 14).padding(.vertical, 8)
     }
 }

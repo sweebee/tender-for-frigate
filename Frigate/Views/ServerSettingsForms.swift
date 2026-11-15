@@ -38,12 +38,15 @@ struct ConfigField: Identifiable {
     var restart = false
     /// What Frigate uses when the config does not set it.
     var defaultNumber: Double? = nil
+    var defaultBool: Bool? = nil
     var id: String { path }
 }
 
 struct ConfigGroup: Identifiable {
     var title: String?
     var fields: [ConfigField]
+    /// Shown only while this holds for the form's current values (e.g. a label's filters while it is tracked).
+    var visible: (([String: ConfigValue]) -> Bool)? = nil
     var id: String { (title ?? "") + fields.map(\.path).joined() }
 }
 
@@ -82,7 +85,8 @@ struct ConfigFormView: View {
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var isAdmin: Bool { role == nil || role == "admin" }
-    private var fields: [ConfigField] { builtGroups.flatMap(\.fields) }
+    private var shownGroups: [ConfigGroup] { builtGroups.filter { $0.visible?(values) ?? true } }
+    private var fields: [ConfigField] { shownGroups.flatMap(\.fields) }
     private var changed: [ConfigField] { fields.filter { values[$0.path] != original[$0.path] } }
     private var needsRestart: Bool { changed.contains(where: \.restart) }
 
@@ -92,10 +96,15 @@ struct ConfigFormView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     ScreenTitle(text: fullTitle, showsBack: true).padding(.top, 8)
                     if let intro { Text(intro).font(.system(size: 13)).foregroundStyle(Theme.textSecondary) }
+                    if !overridingCameras.isEmpty {
+                        Label(L("These cameras set this themselves and keep their own value: \(overridingCameras.joined(separator: ", "))"),
+                              systemImage: "info.circle")
+                            .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+                    }
                     if config == nil {
                         ProgressView().frame(maxWidth: .infinity, minHeight: 120)
                     } else {
-                        ForEach(builtGroups) { group in
+                        ForEach(shownGroups) { group in
                             if let t = group.title { SectionLabel(text: t).padding(.top, 10) }
                             VStack(spacing: 0) {
                                 ForEach(Array(group.fields.enumerated()), id: \.element.id) { i, field in
@@ -111,7 +120,7 @@ struct ConfigFormView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, changed.isEmpty ? 24 : 150)
+                .padding(.bottom, changed.isEmpty ? 24 : (needsRestart ? 200 : 150))
             }
             if !changed.isEmpty {
                 SaveBar(count: changed.count, restart: needsRestart, saving: saving,
@@ -165,7 +174,7 @@ struct ConfigFormView: View {
                     ForEach(Array(Set(options + selected)).sorted { display($0) < display($1) }, id: \.self) { option in
                         let on = selected.contains(option)
                         Button {
-                            values[field.path] = .list(on ? selected.filter { $0 != option } : selected + [option])
+                            values[field.path] = .list((on ? selected.filter { $0 != option } : selected + [option]).sorted())
                         } label: {
                             Text(display(option))
                                 .font(.system(size: 13, weight: .semibold))
@@ -193,6 +202,29 @@ struct ConfigFormView: View {
         return config?[section] as? [String: Any]
     }
 
+    /// For a global form: cameras whose value differs from the saved global one, so a global change does not reach them.
+    /// (Frigate's /api/config is resolved: every camera carries every section, so compare values, not keys.)
+    private var overridingCameras: [String] {
+        guard camera == nil, let cams = config?["cameras"] as? [String: Any] else { return [] }
+        return cams.compactMap { name, raw -> String? in
+            guard let node = (raw as? [String: Any])?[section] as? [String: Any],
+                  fields.contains(where: { field in
+                      let v = node.value(at: field.path)
+                      guard v != nil, !(v is NSNull) else { return false }
+                      return Self.value(v, for: field) != original[field.path]
+                  }) else { return nil }
+            return conn?.config?.cameras[name]?.displayName ?? FrigateFormat.prettyName(name)
+        }.sorted()
+    }
+
+    private static func value(_ raw: Any?, for field: ConfigField) -> ConfigValue {
+        switch field.kind {
+        case .toggle: return .bool((raw as? Bool) ?? field.defaultBool ?? false)
+        case .number: return .number((raw as? NSNumber)?.doubleValue ?? field.defaultNumber ?? 0)
+        case .labels: return .list(((raw as? [String]) ?? []).sorted())
+        }
+    }
+
     private func load() async {
         guard let client = conn?.client else { return }
         async let cfg = try? client.rawConfig()
@@ -203,14 +235,7 @@ struct ConfigFormView: View {
         builtGroups = groups(c)
         var v: [String: ConfigValue] = [:]
         let node = sectionNode ?? [:]
-        for field in builtGroups.flatMap(\.fields) {
-            let raw = node.value(at: field.path)
-            switch field.kind {
-            case .toggle: v[field.path] = .bool((raw as? Bool) ?? false)
-            case .number: v[field.path] = .number((raw as? NSNumber)?.doubleValue ?? field.defaultNumber ?? 0)
-            case .labels: v[field.path] = .list((raw as? [String]) ?? [])
-            }
-        }
+        for field in builtGroups.flatMap(\.fields) { v[field.path] = Self.value(node.value(at: field.path), for: field) }
         original = v
         values = v
     }
@@ -244,16 +269,26 @@ struct SaveBar: View {
     let undo: () -> Void
     /// With `true`: save and restart Frigate.
     let save: (Bool) -> Void
+    /// Which save was tapped, so its button shows the spinner.
+    @State private var tappedRestart = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(count == 1 ? L("1 change") : L("\(count) changes")).font(.system(size: 14, weight: .semibold))
             Text(restart ? L("Frigate has to restart before this applies.") : L("Applies at once, no restart needed."))
                 .font(.system(size: 12)).foregroundStyle(restart ? Theme.warning : Theme.textSecondary)
-            HStack(spacing: 8) {
-                barButton(L("Undo"), primary: false, action: undo)
-                if restart { barButton(L("Save"), primary: false) { save(false) } }
-                barButton(restart ? L("Save and restart") : L("Save"), primary: true) { save(restart) }
+            if restart {
+                // Three choices do not fit side by side on a phone: the one that restarts gets its own row.
+                HStack(spacing: 8) {
+                    barButton(L("Undo"), primary: false, action: undo)
+                    barButton(L("Save only"), primary: false, busy: saving && !tappedRestart) { tappedRestart = false; save(false) }
+                }
+                barButton(L("Save and restart"), primary: true, busy: saving && tappedRestart) { tappedRestart = true; save(true) }
+            } else {
+                HStack(spacing: 8) {
+                    barButton(L("Undo"), primary: false, action: undo)
+                    barButton(L("Save"), primary: true, busy: saving) { save(false) }
+                }
             }
         }
         .padding(14)
@@ -263,10 +298,10 @@ struct SaveBar: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
-    private func barButton(_ title: String, primary: Bool, action: @escaping () -> Void) -> some View {
+    private func barButton(_ title: String, primary: Bool, busy: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Group {
-                if primary && saving { ProgressView().tint(Theme.onColor) } else { Text(title).lineLimit(1).minimumScaleFactor(0.8) }
+                if busy { ProgressView().tint(primary ? Theme.onColor : Theme.text) } else { Text(title).lineLimit(1).minimumScaleFactor(0.8) }
             }
             .font(.system(size: 14, weight: primary ? .bold : .semibold))
             .foregroundStyle(primary ? Theme.onColor : Theme.text)
@@ -395,12 +430,12 @@ enum ServerSections {
                        intro: L("The still pictures Frigate keeps of every tracked object, for Explore and notifications.")) { _ in
             [ConfigGroup(fields: [ConfigField(path: "enabled", title: L("Snapshots"), kind: .toggle)]),
              ConfigGroup(title: L("Keep"), fields: [
-                ConfigField(path: "retain.default", title: L("Days"), kind: .number(unit: "d", step: 1, min: 0, max: 365))]),
+                ConfigField(path: "retain.default", title: L("Days"), kind: .number(unit: "d", step: 1, min: 0, max: 365), defaultNumber: 10)]),
              ConfigGroup(title: L("Picture"), fields: [
                 ConfigField(path: "bounding_box", title: L("Box around the object"), kind: .toggle),
                 ConfigField(path: "crop", title: L("Crop to the object"), kind: .toggle),
                 ConfigField(path: "timestamp", title: L("Time on the picture"), kind: .toggle),
-                ConfigField(path: "quality", title: L("Quality"), kind: .number(unit: "%", step: 5, min: 10, max: 100))])]
+                ConfigField(path: "quality", title: L("Quality"), kind: .number(unit: "%", step: 5, min: 10, max: 100), defaultNumber: 70)])]
         }
     }
 
@@ -409,7 +444,7 @@ enum ServerSections {
             [ConfigGroup(fields: [ConfigField(path: "enabled", title: L("Object detection"), kind: .toggle)]),
              ConfigGroup(title: L("Speed"), fields: [
                 ConfigField(path: "fps", title: L("Frames per second"), kind: .number(unit: "fps", step: 1, min: 1, max: 30),
-                            footer: L("5 is usually enough; more takes more of the detector."), restart: camera != nil)])]
+                            footer: L("5 is usually enough; more takes more of the detector."), restart: camera != nil, defaultNumber: 5)])]
         }
     }
 
@@ -419,8 +454,11 @@ enum ServerSections {
             let node: [String: Any]? = camera.map { ((config["cameras"] as? [String: Any])?[$0] as? [String: Any])?["objects"] as? [String: Any] }
                 ?? config["objects"] as? [String: Any]
             let tracked = (node?["track"] as? [String]) ?? []
-            var groups = [ConfigGroup(fields: [ConfigField(path: "track", title: L("Track"), kind: .labels(options: objectLabels(config), display: label))])]
-            for l in tracked.sorted(by: { label($0) < label($1) }) {
+            let options = objectLabels(config)
+            var groups = [ConfigGroup(fields: [ConfigField(path: "track", title: L("Track"), kind: .labels(options: options, display: label),
+                                                           footer: L("Minimum score: detections below it are ignored. Score to count: the object's median score must reach it before it is tracked. Smallest size: in pixels of the detect resolution."))])]
+            // A section per label that can be tracked, shown while it is picked above.
+            for l in Set(options + tracked).sorted(by: { label($0) < label($1) }) {
                 groups.append(ConfigGroup(title: label(l), fields: [
                     ConfigField(path: "filters.\(l).min_score", title: L("Minimum score"),
                                 kind: .number(unit: "score", step: 0.05, min: 0, max: 1), defaultNumber: 0.5),
@@ -428,10 +466,10 @@ enum ServerSections {
                                 kind: .number(unit: "score", step: 0.05, min: 0, max: 1), defaultNumber: 0.7),
                     ConfigField(path: "filters.\(l).min_area", title: L("Smallest size"),
                                 kind: .number(unit: "px", step: 100, min: 0, max: 1_000_000), defaultNumber: 0),
-                ]))
-            }
-            if !tracked.isEmpty {
-                groups[0].fields[0].footer = L("Minimum score: detections below it are ignored. Score to count: the object's median score must reach it before it is tracked. Smallest size: in pixels of the detect resolution.")
+                ], visible: { values in
+                    if case .list(let picked) = values["track"] { return picked.contains(l) }
+                    return false
+                }))
             }
             return groups
         }
@@ -440,12 +478,12 @@ enum ServerSections {
     static func motion(serverID: UUID, camera: String?) -> ConfigFormView {
         ConfigFormView(serverID: serverID, section: "motion", camera: camera, title: L("Motion detection"),
                        intro: L("Motion decides where Frigate looks for objects and which recordings count as motion.")) { _ in
-            [ConfigGroup(fields: [ConfigField(path: "enabled", title: L("Motion detection"), kind: .toggle)]),
+            [ConfigGroup(fields: [ConfigField(path: "enabled", title: L("Motion detection"), kind: .toggle, defaultBool: true)]),
              ConfigGroup(title: L("Sensitivity"), fields: [
                 ConfigField(path: "threshold", title: L("Threshold"), kind: .number(unit: "", step: 5, min: 1, max: 255),
-                            footer: L("Higher means a change in the picture has to be larger to count as motion.")),
-                ConfigField(path: "contour_area", title: L("Smallest area"), kind: .number(unit: "", step: 5, min: 1, max: 200)),
-                ConfigField(path: "improve_contrast", title: L("Improve contrast"), kind: .toggle)])]
+                            footer: L("Higher means a change in the picture has to be larger to count as motion."), defaultNumber: 30),
+                ConfigField(path: "contour_area", title: L("Smallest area"), kind: .number(unit: "", step: 5, min: 1, max: 200), defaultNumber: 10),
+                ConfigField(path: "improve_contrast", title: L("Improve contrast"), kind: .toggle, defaultBool: true)])]
         }
     }
 
@@ -474,7 +512,7 @@ enum ServerSections {
             [ConfigGroup(fields: [ConfigField(path: "enabled", title: L("Audio detection"), kind: .toggle)]),
              ConfigGroup(fields: [
                 ConfigField(path: "listen", title: L("Listen for"), kind: .labels(options: audioLabels(config), display: label)),
-                ConfigField(path: "min_volume", title: L("Minimum volume"), kind: .number(unit: "", step: 100, min: 100, max: 5000))])]
+                ConfigField(path: "min_volume", title: L("Minimum volume"), kind: .number(unit: "", step: 100, min: 100, max: 5000), defaultNumber: 500)])]
         }
     }
 

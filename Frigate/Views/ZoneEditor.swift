@@ -47,7 +47,8 @@ struct ZoneEditorView: View {
     let serverID: UUID
     let camera: String
     @State var draft: ZoneDraft
-    /// Zones of this camera that review settings refer to, to clean up when one is deleted.
+    /// Names already used for this kind on this camera: a new one may not take them.
+    var taken: Set<String> = []
     let onDone: () -> Void
 
     @Environment(AppModel.self) private var model
@@ -135,7 +136,8 @@ struct ZoneEditorView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        Text("None selected: every tracked object counts.").font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+                        Text(draft.objects.isEmpty ? L("None selected: every tracked object counts.") : L("Only these objects count in this zone."))
+                            .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -179,7 +181,13 @@ struct ZoneEditorView: View {
         .scrollDisabled(dragging != nil)
         .screenBackground()
         .interactiveDismissDisabled(true)
-        .task { await loadLabels() }
+        .task {
+            if draft.isNew && draft.title.isEmpty {
+                // A ready name ("Zone 2"), which can be changed.
+                draft.title = (1...99).lazy.map { "\(kindTitle) \($0)" }.first { !taken.contains(ZoneDraft.key(for: $0)) } ?? kindTitle
+            }
+            await loadLabels()
+        }
         .alert(L("Delete \(draft.title)?"), isPresented: $confirmDelete) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { Task { await delete() } }
@@ -306,6 +314,7 @@ struct ZoneEditorView: View {
         let title = draft.title.trimmingCharacters(in: .whitespaces)
         let name = draft.isNew ? ZoneDraft.key(for: title) : draft.name
         guard !name.isEmpty else { errorMessage = L("Give it a name with letters or numbers."); return }
+        guard !draft.isNew || !taken.contains(name) else { errorMessage = L("There is already one with this name."); return }
         saving = true
         defer { saving = false }
         var value: [String: Any] = ["coordinates": draft.coordinates, "enabled": draft.enabled]

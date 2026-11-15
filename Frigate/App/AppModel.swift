@@ -42,6 +42,8 @@ final class ServerConnection: Identifiable {
     /// Detection and recording switched on or off at runtime, the same way.
     var cameraDetect: [String: Bool] = [:]
     var cameraRecord: [String: Bool] = [:]
+    /// Switches sent to Frigate and not yet confirmed by its websocket ("<camera>/detect", …).
+    var pendingSwitches: Set<String> = []
     /// Frigate 0.18's profiles on this server, and the active one; empty before 0.18.
     var profiles: [FrigateProfile] = []
     var activeProfile: String?
@@ -146,8 +148,18 @@ final class ServerConnection: Identifiable {
 
     /// Sends `<camera>/<topic>/set` ON or OFF over Frigate's websocket.
     private func send(_ cam: CameraConfig, _ topic: String, _ on: Bool) -> Bool {
-        command("\(cam.name)/\(topic)/set", on ? "ON" : "OFF")
+        guard command("\(cam.name)/\(topic)/set", on ? "ON" : "OFF") else { return false }
+        let key = "\(cam.name)/\(topic)"
+        pendingSwitches.insert(key)
+        // Frigate answers within a second; stop waiting after a while so the switch is usable again.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(6))
+            self?.pendingSwitches.remove(key)
+        }
+        return true
     }
+
+    func isSwitchPending(_ cam: CameraConfig, _ topic: String) -> Bool { pendingSwitches.contains("\(cam.name)/\(topic)") }
 
     /// Sends a command over Frigate's websocket, as its web interface does ("profile/set",
     /// "<camera>/zone/<name>/set", …). False when there is no connection.
@@ -371,6 +383,7 @@ final class ServerConnection: Identifiable {
             let until = Double(payload) ?? 0
             notificationsPausedUntil[cam] = until > 0 ? Date(timeIntervalSince1970: until) : nil
         } else if let state = msg["payload"] as? String, let (cam, feature) = Self.switchState(topic) {
+            pendingSwitches.remove("\(cam)/\(feature)")
             switch feature {
             case "enabled": cameraEnabled[cam] = state == "ON"
             case "detect": cameraDetect[cam] = state == "ON"

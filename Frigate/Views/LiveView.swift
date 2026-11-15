@@ -545,10 +545,12 @@ struct ProfileSwitcher: View {
 
     private var active: Bool { servers.contains { $0.activeProfile != nil } }
 
-    /// The active profile, "Mixed" when servers differ, else "No profile".
+    /// The active profile; "Several" only when servers run different ones; "No profile" when none
+    /// runs (a server without an active profile does not make it "mixed").
     private var label: String {
-        let titles = Set(servers.map { $0.activeProfileTitle ?? L("No profile") })
-        return titles.count == 1 ? titles.first! : L("Mixed")
+        let titles = Set(servers.compactMap(\.activeProfileTitle))
+        if titles.isEmpty { return L("No profile") }
+        return titles.count == 1 ? titles.first! : L("Several")
     }
 
     @ViewBuilder

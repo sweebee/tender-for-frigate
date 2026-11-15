@@ -165,8 +165,18 @@ struct ProfilesView: View {
         defer { working = false }
         do {
             try await client.setConfig(["profiles": [id: ["friendly_name": title]]], requiresRestart: false, updateTopic: nil)
-            await load()
+            await settle { $0.contains { $0.name == id } }
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    /// Frigate reloads its profiles a moment after the config changed: ask until its list shows
+    /// the change (or about ten seconds passed), then show that list.
+    private func settle(_ done: ([(name: String, title: String)]) -> Bool) async {
+        for _ in 0..<20 {
+            if let p = try? await conn?.client?.profiles(), done(p.profiles) { break }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+        await load()
     }
 
     private func rename(_ id: String?) async {
@@ -176,7 +186,7 @@ struct ProfilesView: View {
         defer { working = false }
         do {
             try await client.setConfig(["profiles": [id: ["friendly_name": title]]], requiresRestart: false, updateTopic: nil)
-            await load()
+            await settle { $0.contains { $0.name == id && $0.title == title } }
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -185,7 +195,15 @@ struct ProfilesView: View {
         working = true
         defer { working = false }
         do {
-            if active == id { conn.command("profile/set", "none"); try? await Task.sleep(for: .seconds(1)) }
+            // An active profile is switched off first, as Frigate's own page does, and only
+            // deleted once Frigate reports no profile.
+            if active == id || conn.activeProfile == id {
+                try await client.setProfile(nil)
+                for _ in 0..<20 {
+                    if let p = try? await client.profiles(), p.active == nil { break }
+                    try? await Task.sleep(for: .milliseconds(500))
+                }
+            }
             var data: [String: Any] = ["profiles": [id: ""]]
             if let cfg = try? await client.rawConfig(), let cams = cfg["cameras"] as? [String: Any] {
                 var camData: [String: Any] = [:]
@@ -195,7 +213,8 @@ struct ProfilesView: View {
                 if !camData.isEmpty { data["cameras"] = camData }
             }
             try await client.setConfig(data, requiresRestart: false, updateTopic: nil)
-            await load()
+            await settle { !$0.contains { $0.name == id } }
+            if profiles.contains(where: { $0.name == id }) { errorMessage = L("Frigate still lists the profile; try again in a moment.") }
         } catch { errorMessage = error.localizedDescription }
     }
 }
@@ -231,7 +250,7 @@ struct ProfileEditView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 ScreenTitle(text: title, showsBack: true).padding(.top, 8)
-                Text("Per camera what this profile changes. \"As configured\" keeps the camera's own setting.")
+                Text("Per camera what this profile changes. \"Default\" keeps the camera's own setting.")
                     .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
                 if !loaded {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 120)
@@ -260,14 +279,14 @@ struct ProfileEditView: View {
 
     private func row(_ camera: String, _ sw: (path: String, title: String, icon: String)) -> some View {
         let value = overrides[camera]?.value(at: sw.path) as? Bool
-        let label = value == nil ? L("As configured") : (value! ? L("On") : L("Off"))
+        let label = value == nil ? L("Default") : (value! ? L("On") : L("Off"))
         return HStack(spacing: 12) {
             Image(systemName: sw.icon).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.accent).frame(width: 22)
-            Text(sw.title).font(.system(size: 15))
-            Spacer()
+            Text(sw.title).font(.system(size: 15)).lineLimit(1).layoutPriority(1)
+            Spacer(minLength: 6)
             if saving == camera + sw.path { ProgressView().controlSize(.small) }
             Menu {
-                Button { set(camera, sw.path, nil) } label: { choice(L("As configured"), value == nil) }
+                Button { set(camera, sw.path, nil) } label: { choice(L("Default (as configured)"), value == nil) }
                 Button { set(camera, sw.path, true) } label: { choice(L("On"), value == true) }
                 Button { set(camera, sw.path, false) } label: { choice(L("Off"), value == false) }
             } label: {
@@ -491,6 +510,8 @@ struct ZonesMasksView: View {
     @State private var loaded = false
     @State private var webInterface: ServersView.WebTarget?
     @State private var editing: ZoneDraft?
+    /// Shapes switched on or off and not yet confirmed by Frigate.
+    @State private var switching: Set<String> = []
     @State private var role: String?
     /// Named masks (Frigate 0.18): older configs keep masks as bare coordinates.
     @State private var namedMasks = true
@@ -559,7 +580,8 @@ struct ZonesMasksView: View {
                 if !loaded {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 80)
                 } else if shapes.isEmpty {
-                    Text("This camera has no zones or masks.").font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
+                    Text(isAdmin ? L("This camera has no zones or masks yet. Tap + to draw one.") : L("This camera has no zones or masks."))
+                        .font(.system(size: 14)).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, minHeight: 60)
                 } else {
                     group(L("Zones"), .zone)
@@ -581,7 +603,8 @@ struct ZonesMasksView: View {
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
         .sheet(isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             if let draft = editing {
-                ZoneEditorView(serverID: serverID, camera: camera, draft: draft) { Task { await load() } }
+                ZoneEditorView(serverID: serverID, camera: camera, draft: draft,
+                               taken: Set(shapes.filter { $0.kind.rawValue == draft.kind.rawValue }.map(\.name))) { Task { await load() } }
             }
         }
     }
@@ -612,7 +635,9 @@ struct ZonesMasksView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(!isAdmin)
+                        if switching.contains(s.id) { ProgressView().controlSize(.small) }
                         Toggle("", isOn: Binding(get: { s.enabled }, set: { set(s, $0) })).labelsHidden().tint(Theme.online)
+                            .disabled(switching.contains(s.id))
                     }
                     .padding(.horizontal, 14).padding(.vertical, 8)
                 }
@@ -622,9 +647,31 @@ struct ZonesMasksView: View {
     }
 
     private func set(_ shape: Shape, _ on: Bool) {
-        guard let conn, let i = shapes.firstIndex(where: { $0.id == shape.id }) else { return }
+        guard let conn, let i = shapes.firstIndex(where: { $0.id == shape.id }),
+              conn.command("\(camera)/\(shape.kind.rawValue)/\(shape.name)/set", on ? "ON" : "OFF") else { return }
         shapes[i].enabled = on
-        conn.command("\(camera)/\(shape.kind.rawValue)/\(shape.name)/set", on ? "ON" : "OFF")
+        switching.insert(shape.id)
+        // Wait until Frigate's config shows it, then show what Frigate has.
+        Task {
+            for _ in 0..<10 {
+                try? await Task.sleep(for: .milliseconds(500))
+                if await serverState(of: shape) == on { break }
+            }
+            await load()
+            switching.remove(shape.id)
+        }
+    }
+
+    private func serverState(of shape: Shape) async -> Bool? {
+        guard let cfg = try? await conn?.client?.rawConfig(),
+              let cam = (cfg["cameras"] as? [String: Any])?[camera] as? [String: Any] else { return nil }
+        let node: Any?
+        switch shape.kind {
+        case .zone: node = cam["zones"]
+        case .motionMask: node = (cam["motion"] as? [String: Any])?["mask"]
+        case .objectMask: node = (cam["objects"] as? [String: Any])?["mask"]
+        }
+        return ((node as? [String: Any])?[shape.name] as? [String: Any])?["enabled"] as? Bool
     }
 
     private func load() async {
@@ -680,7 +727,9 @@ struct MqttView: View {
                 if let mqtt {
                     VStack(spacing: 0) {
                         info(L("Enabled"), (mqtt["enabled"] as? Bool ?? false) ? L("Yes") : L("No"))
-                        info(L("Server"), [mqtt["host"] as? String, (mqtt["port"] as? NSNumber).map { "\($0)" }].compactMap { $0 }.joined(separator: ":"))
+                        info(L("Server"), (mqtt["host"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                                .map { host in [host, (mqtt["port"] as? NSNumber).map { "\($0)" }].compactMap { $0 }.joined(separator: ":") }
+                                ?? L("Not set"))
                         info(L("Topic prefix"), mqtt["topic_prefix"] as? String ?? "")
                         info(L("Client ID"), mqtt["client_id"] as? String ?? "")
                         info(L("Statistics every"), (mqtt["stats_interval"] as? NSNumber).map { "\($0) s" } ?? "")
@@ -826,7 +875,10 @@ struct SystemStatusView: View {
                 }
 
                 HStack {
-                    SectionLabel(text: L("Logs"))
+                    VStack(alignment: .leading, spacing: 2) {
+                        SectionLabel(text: L("Logs"))
+                        Text("Newest first").font(.system(size: 11)).foregroundStyle(Theme.textTertiary)
+                    }
                     Spacer()
                     Picker("", selection: $logService) {
                         Text("Frigate").tag("frigate")
@@ -864,7 +916,7 @@ struct SystemStatusView: View {
         .refreshable { await conn?.refresh(); await loadLogs() }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
-        .task(id: logService) { await loadLogs() }
+        .task(id: logService) { logs = []; await loadLogs() }
         .task {
             // Stats every five seconds while open, as Frigate's system page does.
             while !Task.isCancelled {
@@ -911,7 +963,8 @@ struct SystemStatusView: View {
         defer { loadingLogs = false }
         do {
             let page = try await client.get(LogPage.self, "api/logs/\(logService)")
-            logs = Array((page.lines ?? []).suffix(200))
+            // Newest first: the page opens on what just happened.
+            logs = Array((page.lines ?? []).suffix(200).reversed())
             logError = nil
         } catch FrigateError.unauthorized {
             logError = L("Only an admin can read the logs.")
