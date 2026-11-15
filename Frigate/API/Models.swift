@@ -587,3 +587,11 @@ struct FrigateExport: Decodable, Identifiable, Hashable {
         return p
     }
 }
+
+
+/// One of Frigate 0.18's profiles ("Home", "Away").
+struct FrigateProfile: Hashable, Identifiable {
+    var name: String
+    var title: String
+    var id: String { name }
+}

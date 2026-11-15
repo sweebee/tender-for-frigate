@@ -334,6 +334,12 @@ final class FrigateClient: @unchecked Sendable {
         return (list, obj["active_profile"] as? String)
     }
 
+    /// Activates a profile on the server, or none with nil (Frigate 0.18, admin only), as
+    /// Frigate's own menu does: PUT /api/camera/*/set/profile.
+    func setProfile(_ name: String?) async throws {
+        try await send("PUT", "api/camera/*/set/profile", json: ["value": name ?? "none"])
+    }
+
     struct User: Decodable, Identifiable, Hashable {
         var username: String
         var role: String?

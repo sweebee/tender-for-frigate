@@ -55,6 +55,7 @@ struct LiveView: View {
         HStack {
             LargeTitle(text: L("Live"))
             Spacer()
+            ProfileSwitcher()
             if sizeClass == .regular {
                 // Wide screens: how many cameras side by side, as plain numbers so it says
                 // exactly what you get.
@@ -493,6 +494,68 @@ struct NotificationPauseMenu: View {
             } label: {
                 Label("Pause notifications", systemImage: "bell.slash")
             }
+        }
+    }
+}
+
+
+/// The active Frigate profile as a chip in the Live header; a tap lists the profiles to switch
+/// to, per server when several have them. Hidden when no server in view has profiles.
+struct ProfileSwitcher: View {
+    @Environment(AppModel.self) private var model
+    @State private var errorMessage: String?
+
+    private var servers: [ServerConnection] { model.scopedConnections.filter { $0.isOnline && !$0.profiles.isEmpty } }
+
+    var body: some View {
+        if !servers.isEmpty {
+            Menu {
+                ForEach(servers) { conn in
+                    Section(servers.count > 1 ? conn.server.name : L("Profile")) {
+                        Button { pick(conn, nil) } label: { choice(L("No profile"), conn.activeProfile == nil) }
+                        ForEach(conn.profiles) { p in
+                            Button { pick(conn, p.name) } label: { choice(p.title, conn.activeProfile == p.name) }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "person.2.crop.square.stack").font(.system(size: 12, weight: .semibold))
+                    Text(label).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
+                }
+                .foregroundStyle(active ? Theme.accent : Theme.text)
+                .padding(.horizontal, 11).frame(height: 32)
+                .background(Theme.card, in: Capsule())
+                .overlay(Capsule().stroke(active ? Theme.accent : Theme.controlBorder, lineWidth: 1))
+            }
+            .accessibilityLabel(L("Profile: \(label)"))
+            .alert("Something went wrong", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: { Text(errorMessage ?? "") }
+        }
+    }
+
+    private var active: Bool { servers.contains { $0.activeProfile != nil } }
+
+    /// The active profile, "Mixed" when servers differ, else "No profile".
+    private var label: String {
+        let titles = Set(servers.map { $0.activeProfileTitle ?? L("No profile") })
+        return titles.count == 1 ? titles.first! : L("Mixed")
+    }
+
+    @ViewBuilder
+    private func choice(_ title: String, _ selected: Bool) -> some View {
+        if selected { Label(title, systemImage: "checkmark") } else { Text(title) }
+    }
+
+    private func pick(_ conn: ServerConnection, _ name: String?) {
+        Task {
+            do {
+                try await conn.setProfile(name)
+                try? await Task.sleep(for: .seconds(2))
+                await conn.refresh(reloadConfig: true)
+            } catch { errorMessage = error.localizedDescription }
         }
     }
 }

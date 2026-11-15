@@ -2465,6 +2465,16 @@
         }
       }
     },
+    "Frigate profile": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate-profiel"
+          }
+        }
+      }
+    },
     "Frigate's AI assistant looks at your events, cameras and recordings to answer.": {
       "localizations": {
         "nl": {
@@ -2950,6 +2960,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimaal volume"
+          }
+        }
+      }
+    },
+    "Mixed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemengd"
           }
         }
       }
@@ -4113,6 +4133,16 @@
         }
       }
     },
+    "Profile: %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profiel: %@"
+          }
+        }
+      }
+    },
     "Profiles": {
       "localizations": {
         "nl": {
@@ -4886,6 +4916,26 @@
         }
       }
     },
+    "Set Frigate profile": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate-profiel instellen"
+          }
+        }
+      }
+    },
+    "Set Frigate profile to ${profile}": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet Frigate-profiel op ${profile}"
+          }
+        }
+      }
+    },
     "Settings": {
       "localizations": {
         "nl": {
@@ -5266,6 +5316,16 @@
         }
       }
     },
+    "Switches a Frigate server to one of its profiles, for instance in an automation when you arrive home or leave.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet een Frigate-server op een van zijn profielen, bijvoorbeeld in een automatisering als je thuiskomt of vertrekt."
+          }
+        }
+      }
+    },
     "Switches a camera to live video while it sees motion or a moving object, and back to snapshots when it is quiet.": {
       "localizations": {
         "nl": {
@@ -5542,6 +5602,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deze server heeft nog geen profielen."
+          }
+        }
+      }
+    },
+    "This server is no longer in the app.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze server staat niet meer in de app."
           }
         }
       }

@@ -42,6 +42,9 @@ final class ServerConnection: Identifiable {
     /// Detection and recording switched on or off at runtime, the same way.
     var cameraDetect: [String: Bool] = [:]
     var cameraRecord: [String: Bool] = [:]
+    /// Frigate 0.18's profiles on this server, and the active one; empty before 0.18.
+    var profiles: [FrigateProfile] = []
+    var activeProfile: String?
     /// Frigate's notifications for a camera are paused until this moment.
     var notificationsPausedUntil: [String: Date] = [:]
     private var activitySocket: URLSessionWebSocketTask?
@@ -116,6 +119,22 @@ final class ServerConnection: Identifiable {
     func pauseNotifications(_ cam: CameraConfig, minutes: Int) {
         guard command("\(cam.name)/notifications/suspend", String(minutes)) else { return }
         notificationsPausedUntil[cam.name] = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil
+    }
+
+    private var profilesUnchecked = true
+    private var servesProfiles: Bool { version.map { $0.compare("0.18", options: .numeric) != .orderedAscending } ?? false }
+
+    /// The active profile's name, for display.
+    var activeProfileTitle: String? {
+        activeProfile.map { name in profiles.first { $0.name == name }?.title ?? FrigateFormat.prettyName(name) }
+    }
+
+    /// Activates a profile (or none), shown at once; Frigate's websocket confirms it.
+    func setProfile(_ name: String?) async throws {
+        guard let client else { return }
+        let before = activeProfile
+        activeProfile = name
+        do { try await client.setProfile(name) } catch { activeProfile = before; throw error }
     }
 
     /// Frigate switches recording on only when it is on in the config.
@@ -346,6 +365,8 @@ final class ServerConnection: Identifiable {
                 next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving)
             }
             activity = next
+        } else if topic == "profile/state", let payload = msg["payload"] as? String {
+            activeProfile = payload == "none" || payload.isEmpty ? nil : payload
         } else if topic.hasSuffix("/notifications/suspended"), let payload = msg["payload"] as? String {
             let cam = String(topic.dropLast("/notifications/suspended".count))
             let until = Double(payload) ?? 0
@@ -372,7 +393,12 @@ final class ServerConnection: Identifiable {
 
     func refresh(reloadConfig: Bool = false) async {
         guard let client else { return }
-        if reloadConfig || Date().timeIntervalSince(configLoaded) > 300 {
+        if reloadConfig || Date().timeIntervalSince(configLoaded) > 300 || (profiles.isEmpty && profilesUnchecked) {
+            if servesProfiles, let p = try? await client.profiles() {
+                profiles = p.profiles.map { FrigateProfile(name: $0.name, title: $0.title) }
+                activeProfile = p.active
+                profilesUnchecked = false
+            }
             if let fresh = try? await client.config() {
                 config = fresh
                 configLoaded = Date()
