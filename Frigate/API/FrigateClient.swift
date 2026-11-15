@@ -322,6 +322,42 @@ final class FrigateClient: @unchecked Sendable {
         }
     }
 
+    /// Frigate 0.18's profiles ("Thuis", "Weg") and the active one.
+    func profiles() async throws -> (profiles: [(name: String, title: String)], active: String?) {
+        let data = try await data("api/profiles")
+        guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return ([], nil) }
+        let list = (obj["profiles"] as? [[String: Any]] ?? []).compactMap { p -> (name: String, title: String)? in
+            guard let name = p["name"] as? String else { return nil }
+            let friendly = (p["friendly_name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+            return (name, friendly ?? FrigateFormat.prettyName(name))
+        }
+        return (list, obj["active_profile"] as? String)
+    }
+
+    struct User: Decodable, Identifiable, Hashable {
+        var username: String
+        var role: String?
+        var id: String { username }
+    }
+
+    func users() async throws -> [User] { try await get([User].self, "api/users") }
+
+    func createUser(_ username: String, password: String, role: String) async throws {
+        try await post("api/users", json: ["username": username, "password": password, "role": role])
+    }
+
+    func deleteUser(_ username: String) async throws {
+        try await send("DELETE", "api/users/\(username)", json: nil)
+    }
+
+    func setPassword(_ username: String, password: String) async throws {
+        try await send("PUT", "api/users/\(username)/password", json: ["password": password])
+    }
+
+    func setRole(_ username: String, role: String) async throws {
+        try await send("PUT", "api/users/\(username)/role", json: ["role": role])
+    }
+
     /// Restarts Frigate (admin only); it is unreachable for half a minute or so.
     func restart() async throws {
         try await post("api/restart", json: [:])

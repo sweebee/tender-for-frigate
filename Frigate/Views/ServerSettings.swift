@@ -15,8 +15,16 @@ struct ServerSettingsView: View {
     @State private var restarting = false
     @State private var errorMessage: String?
     @State private var webInterface: ServersView.WebTarget?
+    @State private var activeProfile: String?
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
+
+    /// "Semantic search, LPR" for the enrichments that are on.
+    private var enrichmentSummary: String {
+        let on: [(String, String)] = [("semantic_search", L("Search")), ("face_recognition", L("Faces")), ("lpr", L("Plates"))]
+        let names = on.filter { ((config?[$0.0] as? [String: Any])?["enabled"] as? Bool) == true }.map(\.1)
+        return names.isEmpty ? L("Off") : names.joined(separator: ", ")
+    }
     /// Without authentication Frigate treats everyone as admin.
     private var isAdmin: Bool { role == nil || role == "admin" }
 
@@ -31,6 +39,15 @@ struct ServerSettingsView: View {
                             .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
                             .padding(.vertical, 4)
                     }
+                    if conn.version.map({ $0.compare("0.18", options: .numeric) != .orderedAscending }) == true {
+                        SectionLabel(text: L("Profile")).padding(.top, 10)
+                        NavigationLink { ProfilesView(serverID: serverID) } label: {
+                            SettingsRow(icon: "person.2.crop.square.stack", tint: Theme.accent, title: L("Profiles"),
+                                        value: activeProfile ?? L("None"))
+                        }
+                        .buttonStyle(.plain)
+                        .card(radius: 12)
+                    }
                     cameraSection(conn)
                     SectionLabel(text: L("Global configuration")).padding(.top, 10)
                     VStack(spacing: 0) {
@@ -41,10 +58,30 @@ struct ServerSettingsView: View {
                                         value: retentionSummary(config?["record"] as? [String: Any]))
                         }
                         .buttonStyle(.plain)
+                        SectionLinks(serverID: serverID, camera: nil, config: config)
                     }
+                    .card(radius: 12)
+                    SectionLabel(text: L("Enrichments")).padding(.top, 10)
+                    NavigationLink { EnrichmentsView(serverID: serverID) } label: {
+                        SettingsRow(icon: "sparkles", tint: Theme.accent, title: L("Enrichments"), value: enrichmentSummary)
+                    }
+                    .buttonStyle(.plain)
                     .card(radius: 12)
                     SectionLabel(text: L("System")).padding(.top, 10)
                     VStack(spacing: 0) {
+                        if isAdmin {
+                            NavigationLink { UsersView(serverID: serverID) } label: {
+                                SettingsRow(icon: "person.crop.circle", tint: Theme.accent, title: L("Users"))
+                            }
+                            .buttonStyle(.plain)
+                            Divider().overlay(Theme.cardBorder)
+                        }
+                        NavigationLink { MqttView(serverID: serverID) } label: {
+                            SettingsRow(icon: "antenna.radiowaves.left.and.right", tint: Theme.accent, title: "MQTT",
+                                        value: ((config?["mqtt"] as? [String: Any])?["enabled"] as? Bool ?? false) ? L("On") : L("Off"))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().overlay(Theme.cardBorder)
                         if let web = conn.client?.baseURL {
                             Button { webInterface = ServersView.WebTarget(url: web, title: conn.server.name) } label: {
                                 SettingsRow(icon: "safari", tint: Theme.accent, title: L("Open the web interface"),
@@ -217,8 +254,11 @@ struct ServerSettingsView: View {
         do {
             async let cfg = client.rawConfig()
             async let r = client.role()
+            async let p = try? client.profiles()
             config = try await cfg
             role = await r
+            let profiles = await p
+            activeProfile = profiles?.active.flatMap { name in profiles?.profiles.first { $0.name == name }?.title ?? name }
             loadError = nil
         } catch {
             loadError = error.localizedDescription
@@ -286,8 +326,16 @@ struct CameraSettingsView: View {
                             SettingsRow(icon: "record.circle", tint: Theme.recording, title: L("Record"), value: "")
                         }
                         .buttonStyle(.plain)
+                        SectionLinks(serverID: serverID, camera: camera, config: nil)
+                        Divider().overlay(Theme.cardBorder)
+                        NavigationLink { ZonesMasksView(serverID: serverID, camera: camera) } label: {
+                            SettingsRow(icon: "square.dashed", tint: Theme.accent, title: L("Zones and masks"))
+                        }
+                        .buttonStyle(.plain)
                     }
                     .card(radius: 12)
+                    Text("Settings here apply to this camera only and override the global configuration.")
+                        .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                 }
             }
             .padding(.horizontal, 16)
@@ -556,5 +604,39 @@ extension Dictionary where Key == String, Value == Any {
         var child = self[first] as? [String: Any] ?? [:]
         child.setNested(parts.dropFirst().joined(separator: "."), value)
         self[first] = child
+    }
+}
+
+
+/// The rows that open the config forms (snapshots, detection, …), under Recording.
+struct SectionLinks: View {
+    let serverID: UUID
+    let camera: String?
+    let config: [String: Any]?
+
+    var body: some View {
+        row("photo", L("Snapshots"), on("snapshots")) { ServerSections.snapshots(serverID: serverID, camera: camera) }
+        row("person.crop.rectangle", L("Object detection"), on("detect")) { ServerSections.detect(serverID: serverID, camera: camera) }
+        row("tag", L("Objects"), nil) { ServerSections.objects(serverID: serverID, camera: camera) }
+        row("waveform.path", L("Motion detection"), on("motion")) { ServerSections.motion(serverID: serverID, camera: camera) }
+        row("eye", L("Review"), nil) { ServerSections.review(serverID: serverID, camera: camera) }
+        row("ear", L("Audio detection"), on("audio")) { ServerSections.audio(serverID: serverID, camera: camera) }
+        row("bell", L("Notifications"), on("notifications")) { ServerSections.notifications(serverID: serverID, camera: camera) }
+    }
+
+    /// "On" or "Off" for a section's switch, when the config is at hand.
+    private func on(_ section: String) -> String? {
+        guard let enabled = (config?[section] as? [String: Any])?["enabled"] as? Bool else { return nil }
+        return enabled ? L("On") : L("Off")
+    }
+
+    @ViewBuilder
+    private func row<Destination: View>(_ icon: String, _ title: String, _ value: String?,
+                                        @ViewBuilder destination: @escaping () -> Destination) -> some View {
+        Divider().overlay(Theme.cardBorder)
+        NavigationLink { destination() } label: {
+            SettingsRow(icon: icon, tint: Theme.accent, title: title, value: value ?? "")
+        }
+        .buttonStyle(.plain)
     }
 }

@@ -111,10 +111,18 @@ final class ServerConnection: Identifiable {
 
     /// Sends `<camera>/<topic>/set` ON or OFF over Frigate's websocket.
     private func send(_ cam: CameraConfig, _ topic: String, _ on: Bool) -> Bool {
+        command("\(cam.name)/\(topic)/set", on ? "ON" : "OFF")
+    }
+
+    /// Sends a command over Frigate's websocket, as its web interface does ("profile/set",
+    /// "<camera>/zone/<name>/set", …). False when there is no connection.
+    @discardableResult
+    func command(_ topic: String, _ payload: String) -> Bool {
         startActivityFeed()
-        guard let task = activitySocket else { return false }
-        let msg = #"{"topic":"\#(cam.name)/\#(topic)/set","payload":"\#(on ? "ON" : "OFF")","retain":false}"#
-        task.send(.string(msg)) { _ in }
+        guard let task = activitySocket,
+              let data = try? JSONSerialization.data(withJSONObject: ["topic": topic, "payload": payload, "retain": false]),
+              let text = String(data: data, encoding: .utf8) else { return false }
+        task.send(.string(text)) { _ in }
         return true
     }
 
