@@ -157,15 +157,43 @@ struct FrigateStats: Decodable {
             case detectionEnabled = "detection_enabled"
         }
     }
-    struct Service: Decodable { var version: String?; var uptime: Double? }
+    struct Service: Decodable {
+        var version: String?; var uptime: Double?
+        var latestVersion: String?
+        /// Mount point → sizes in MB.
+        var storage: [String: Storage]?
+        enum CodingKeys: String, CodingKey {
+            case version, uptime, storage
+            case latestVersion = "latest_version"
+        }
+    }
+    struct Storage: Decodable { var total: Double?; var used: Double? }
+    struct Detector: Decodable {
+        var inferenceSpeed: Double?
+        enum CodingKeys: String, CodingKey { case inferenceSpeed = "inference_speed" }
+    }
+    /// Detector name → its speed.
+    var detectors: [String: Detector] = [:]
+    /// The whole machine's CPU use in percent, when Frigate reports it.
+    var cpuPercent: Double?
+
+    /// The recordings disk.
+    var recordingStorage: Storage? { service?.storage?["/media/frigate/recordings"] }
 
     init(from decoder: Decoder) throws {
         // `cameras` sits next to detectors and other keys; decode leniently.
         let c = try decoder.container(keyedBy: CodingKeys.self)
         cameras = (try? c.decode([String: CameraStats].self, forKey: .cameras)) ?? [:]
         service = try? c.decode(Service.self, forKey: .service)
+        detectors = (try? c.decode([String: Detector].self, forKey: .detectors)) ?? [:]
+        if let cpu = try? c.decode([String: [String: String]].self, forKey: .cpuUsages) {
+            cpuPercent = cpu["frigate.full_system"]?["cpu"].flatMap(Double.init)
+        }
     }
-    enum CodingKeys: String, CodingKey { case cameras, service }
+    enum CodingKeys: String, CodingKey {
+        case cameras, service, detectors
+        case cpuUsages = "cpu_usages"
+    }
 }
 
 // MARK: - Review

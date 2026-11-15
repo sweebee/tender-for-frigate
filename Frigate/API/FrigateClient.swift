@@ -292,6 +292,41 @@ final class FrigateClient: @unchecked Sendable {
         return id
     }
 
+    // MARK: Server settings
+
+    /// The running config as plain JSON, for the settings screens (they read nested keys and
+    /// send back only what changed).
+    func rawConfig() async throws -> [String: Any] {
+        let data = try await data("api/config")
+        guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw FrigateError.notFrigate }
+        return obj
+    }
+
+    /// The signed-in user's role ("admin", "viewer" or a custom role); nil when Frigate runs
+    /// without authentication, which makes everyone an admin.
+    func role() async -> String? {
+        guard let data = try? await data("api/profile"),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return obj["role"] as? String
+    }
+
+    /// Changes Frigate's config file as its own settings pages do (PUT /api/config/set): `data`
+    /// holds only the changed keys, nested from the root. With an `updateTopic` the change
+    /// applies at once; otherwise, with `requiresRestart`, after a restart. Admin only.
+    func setConfig(_ data: [String: Any], requiresRestart: Bool, updateTopic: String?) async throws {
+        var body: [String: Any] = ["requires_restart": requiresRestart ? 1 : 0, "config_data": data]
+        if let updateTopic { body["update_topic"] = updateTopic }
+        let reply = try await send("PUT", "api/config/set", json: body)
+        if let obj = try? JSONSerialization.jsonObject(with: reply) as? [String: Any], obj["success"] as? Bool == false {
+            throw FrigateError.http(400, obj["message"] as? String)
+        }
+    }
+
+    /// Restarts Frigate (admin only); it is unreachable for half a minute or so.
+    func restart() async throws {
+        try await post("api/restart", json: [:])
+    }
+
     func endEvent(_ id: String) async throws {
         try await send("PUT", "api/events/\(id)/end", json: ["end_time": Int(Date().timeIntervalSince1970.rounded(.up))])
     }

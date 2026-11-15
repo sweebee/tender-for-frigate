@@ -197,6 +197,15 @@ struct ServersView: View {
                     .frame(width: 40, height: 44)
             }
             .accessibilityLabel("Edit \(conn.server.name)")
+            // Frigate's own settings for this server.
+            NavigationLink {
+                ServerSettingsView(serverID: conn.server.id)
+            } label: {
+                Image(systemName: "gearshape").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
+                    .frame(width: 40, height: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("Settings of \(conn.server.name)"))
         }
         .padding(14)
         .card(border: active ? Theme.accent : Theme.cardBorder)

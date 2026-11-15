@@ -24,6 +24,16 @@
         }
       }
     },
+    "%@ available": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ beschikbaar"
+          }
+        }
+      }
+    },
     "%@ became active": {
       "localizations": {
         "nl": {
@@ -40,6 +50,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ staat stil"
+          }
+        }
+      }
+    },
+    "%@ days": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ dagen"
           }
         }
       }
@@ -410,6 +430,16 @@
         }
       }
     },
+    "%lld changes": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld wijzigingen"
+          }
+        }
+      }
+    },
     "%lld clips": {
       "localizations": {
         "nl": {
@@ -719,12 +749,32 @@
     "06:00": {
       "shouldTranslate": false
     },
+    "1 change": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 wijziging"
+          }
+        }
+      }
+    },
     "1 clip": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "1 clip"
+          }
+        }
+      }
+    },
+    "1 day": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 dag"
           }
         }
       }
@@ -835,6 +885,16 @@
         }
       }
     },
+    "After": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erna"
+          }
+        }
+      }
+    },
     "Alert": {
       "localizations": {
         "nl": {
@@ -911,6 +971,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alle servers"
+          }
+        }
+      }
+    },
+    "All settings": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle instellingen"
           }
         }
       }
@@ -1015,6 +1085,36 @@
         }
       }
     },
+    "Applies at once, no restart needed.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geldt meteen, geen herstart nodig."
+          }
+        }
+      }
+    },
+    "Around a detection": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rond een detectie"
+          }
+        }
+      }
+    },
+    "Around an alert": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rond een melding"
+          }
+        }
+      }
+    },
     "Ask": {
       "localizations": {
         "nl": {
@@ -1111,6 +1211,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "10 seconden terug"
+          }
+        }
+      }
+    },
+    "Before": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ervoor"
+          }
+        }
+      }
+    },
+    "CPU": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
+          }
+        }
+      }
+    },
+    "Camera": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera"
           }
         }
       }
@@ -1295,6 +1425,16 @@
         }
       }
     },
+    "Configuration": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuratie"
+          }
+        }
+      }
+    },
     "Configure a GenAI provider with the chat role in Frigate to ask questions about your cameras.": {
       "localizations": {
         "nl": {
@@ -1311,6 +1451,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verbind met Frigate"
+          }
+        }
+      }
+    },
+    "Connected · local": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbonden · lokaal"
+          }
+        }
+      }
+    },
+    "Connected · remote": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbonden · op afstand"
           }
         }
       }
@@ -1545,12 +1705,32 @@
         }
       }
     },
+    "Detection off": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectie uit"
+          }
+        }
+      }
+    },
     "Detections": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Detecties"
+          }
+        }
+      }
+    },
+    "Detector": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detector"
           }
         }
       }
@@ -1651,6 +1831,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Elke tegel speelt live video. Kost meer data en batterij."
+          }
+        }
+      }
+    },
+    "Everything (continuous)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles (doorlopend)"
           }
         }
       }
@@ -1765,6 +1955,16 @@
         }
       }
     },
+    "For all cameras that have no recording settings of their own.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voor alle camera's zonder eigen opname-instellingen."
+          }
+        }
+      }
+    },
     "Forward 10 seconds": {
       "localizations": {
         "nl": {
@@ -1835,6 +2035,16 @@
         }
       }
     },
+    "Global configuration": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Globale configuratie"
+          }
+        }
+      }
+    },
     "Hide password": {
       "localizations": {
         "nl": {
@@ -1891,6 +2101,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zojuist"
+          }
+        }
+      }
+    },
+    "Keep": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaren"
           }
         }
       }
@@ -1974,6 +2194,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Liveweergave"
+          }
+        }
+      }
+    },
+    "Live view, recording and detection stop for about half a minute.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live beeld, opnemen en detectie stoppen ongeveer een halve minuut."
           }
         }
       }
@@ -2424,6 +2654,16 @@
         }
       }
     },
+    "Not saved": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet opgeslagen"
+          }
+        }
+      }
+    },
     "Nothing found": {
       "localizations": {
         "nl": {
@@ -2469,6 +2709,16 @@
     },
     "OK": {
       "shouldTranslate": false
+    },
+    "Object detection": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objectdetectie"
+          }
+        }
+      }
     },
     "Objects": {
       "localizations": {
@@ -2596,6 +2846,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open live"
+          }
+        }
+      }
+    },
+    "Open the web interface": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webinterface openen"
           }
         }
       }
@@ -2966,6 +3226,16 @@
         }
       }
     },
+    "Recording · %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnemen · %@"
+          }
+        }
+      }
+    },
     "Recordings": {
       "localizations": {
         "nl": {
@@ -3102,6 +3372,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Volgorde van servers"
+          }
+        }
+      }
+    },
+    "Restart": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herstart"
+          }
+        }
+      }
+    },
+    "Restart Frigate": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate herstarten"
+          }
+        }
+      }
+    },
+    "Restart Frigate?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate herstarten?"
+          }
+        }
+      }
+    },
+    "Restarting…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herstarten…"
           }
         }
       }
@@ -3426,6 +3736,16 @@
         }
       }
     },
+    "Server unavailable": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server niet beschikbaar"
+          }
+        }
+      }
+    },
     "Servers": {
       "localizations": {
         "nl": {
@@ -3452,6 +3772,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instellingen"
+          }
+        }
+      }
+    },
+    "Settings of %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instellingen van %@"
           }
         }
       }
@@ -3636,6 +3966,16 @@
         }
       }
     },
+    "Storage": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opslag"
+          }
+        }
+      }
+    },
     "Stream": {
       "localizations": {
         "nl": {
@@ -3736,6 +4076,16 @@
         }
       }
     },
+    "Switched at once, as in the camera's menu; Frigate keeps it after a restart.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Werkt direct, net als in het menu van de camera; Frigate onthoudt het na een herstart."
+          }
+        }
+      }
+    },
     "Switches a camera to live video while it sees motion or a moving object, and back to snapshots when it is quiet.": {
       "localizations": {
         "nl": {
@@ -3752,6 +4102,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Camera wordt aangezet…"
+          }
+        }
+      }
+    },
+    "System": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systeem"
           }
         }
       }
@@ -4046,6 +4406,16 @@
         }
       }
     },
+    "Undo": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongedaan maken"
+          }
+        }
+      }
+    },
     "Unknown": {
       "localizations": {
         "nl": {
@@ -4139,12 +4509,32 @@
         }
       }
     },
+    "With motion": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Met beweging"
+          }
+        }
+      }
+    },
     "Yesterday": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Gisteren"
+          }
+        }
+      }
+    },
+    "You are signed in as a viewer: settings can be seen but only an admin can change them.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent ingelogd als kijker: je ziet de instellingen, maar alleen een beheerder kan ze wijzigen."
           }
         }
       }
@@ -4285,6 +4675,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "geen opnames"
+          }
+        }
+      }
+    },
+    "online for %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ online"
           }
         }
       }
