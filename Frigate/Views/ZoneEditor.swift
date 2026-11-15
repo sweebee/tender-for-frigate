@@ -85,7 +85,7 @@ struct ZoneEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { closePresented(dismiss) }
                     Spacer()
                     Text(draft.isNew ? L("New \(kindTitle.lowercased())") : kindTitle).font(.system(size: 16, weight: .semibold))
                     Spacer()
@@ -335,7 +335,7 @@ struct ZoneEditorView: View {
             try await client.setConfig(["cameras": [camera: data]], requiresRestart: false, updateTopic: topic)
             await conn?.refresh(reloadConfig: true)
             onDone()
-            dismiss()
+            closePresented(dismiss)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -363,7 +363,7 @@ struct ZoneEditorView: View {
             }
             await conn?.refresh(reloadConfig: true)
             onDone()
-            dismiss()
+            closePresented(dismiss)
         } catch {
             errorMessage = error.localizedDescription
         }

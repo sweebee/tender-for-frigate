@@ -6308,6 +6308,46 @@
           }
         }
       }
+    },
+    "Order": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgorde"
+          }
+        }
+      }
+    },
+    "Place": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plaats"
+          }
+        }
+      }
+    },
+    "%lld of %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$llde van %2$lld"
+          }
+        }
+      }
+    },
+    "Drag the cameras into the order you want; Live in this app and Frigate's dashboard follow it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep de camera's in de volgorde die je wilt; Live in deze app en het dashboard van Frigate volgen die."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

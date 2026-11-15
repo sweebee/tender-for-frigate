@@ -71,6 +71,8 @@ struct ConfigFormView: View {
     let camera: String?
     let title: String
     var intro: String? = nil
+    /// Shown below the fields, for what is not a field of this section (a camera's place in the order).
+    var extra: AnyView? = nil
     /// Built once the config is loaded (options such as labels and zones come from it).
     let groups: ([String: Any]) -> [ConfigGroup]
 
@@ -117,6 +119,7 @@ struct ConfigFormView: View {
                                 Text(f).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                             }
                         }
+                        if let extra { extra }
                     }
                 }
                 .padding(.horizontal, 16).readableWidth()
@@ -518,12 +521,11 @@ enum ServerSections {
 
     /// How a camera shows in the app and Frigate's dashboard.
     static func cameraUI(serverID: UUID, camera: String) -> ConfigFormView {
-        ConfigFormView(serverID: serverID, section: "ui", camera: camera, title: L("Display")) { _ in
+        ConfigFormView(serverID: serverID, section: "ui", camera: camera, title: L("Display"),
+                       extra: AnyView(CameraPlaceCard(serverID: serverID, camera: camera))) { _ in
             [ConfigGroup(fields: [
                 ConfigField(path: "dashboard", title: L("On the dashboard"), kind: .toggle,
-                            footer: L("Off: the camera is left out of Live, in this app and in Frigate.")),
-                ConfigField(path: "order", title: L("Position"), kind: .number(unit: "", step: 1, min: 0, max: 100),
-                            footer: L("Lower comes first. Use Camera order on the server page to drag them instead."))])]
+                            footer: L("Off: the camera is left out of Live, in this app and in Frigate."))])]
         }
     }
 
@@ -576,5 +578,33 @@ struct EnrichmentsView: View {
             SettingsRow(icon: icon, tint: Theme.accent, title: title)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Where a camera stands in the server's order ("4th of 6"), opening the screen to drag them; Frigate
+/// keeps the order as a number per camera (ui.order), which says little on its own.
+struct CameraPlaceCard: View {
+    let serverID: UUID
+    let camera: String
+    @Environment(AppModel.self) private var model
+    @State private var reordering = false
+
+    var body: some View {
+        let cams = (model.connection(for: serverID)?.config?.cameras.values.map { $0 } ?? [])
+            .filter { $0.enabledInConfig != false }
+            .sorted { ($0.ui?.order ?? 0, $0.name) < ($1.ui?.order ?? 0, $1.name) }
+        let place = cams.firstIndex { $0.name == camera }.map { $0 + 1 }
+        VStack(alignment: .leading, spacing: 8) {
+            SectionLabel(text: L("Order")).padding(.top, 10)
+            Button { reordering = true } label: {
+                SettingsRow(icon: "arrow.up.arrow.down", tint: Theme.accent, title: L("Place"),
+                            value: place.map { L("\($0) of \(cams.count)") } ?? "")
+            }
+            .buttonStyle(.plain)
+            .card(radius: 12)
+            Text("Drag the cameras into the order you want; Live in this app and Frigate's dashboard follow it.")
+                .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
+        }
+        .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID).environment(model) }
     }
 }

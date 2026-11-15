@@ -508,7 +508,6 @@ struct ZonesMasksView: View {
     @Environment(AppModel.self) private var model
     @State private var shapes: [Shape] = []
     @State private var loaded = false
-    @State private var webInterface: ServersView.WebTarget?
     @State private var editing: ZoneDraft?
     /// Shapes switched on or off and not yet confirmed by Frigate.
     @State private var switching: Set<String> = []
@@ -590,19 +589,12 @@ struct ZonesMasksView: View {
                     group(L("Motion masks"), .motionMask)
                     group(L("Object masks"), .objectMask)
                 }
-                if let web = conn?.client?.baseURL {
-                    Button { webInterface = ServersView.WebTarget(url: web, title: conn?.server.name ?? "") } label: {
-                        Label("Draw zones and masks in the web interface", systemImage: "safari").font(.system(size: 14, weight: .semibold))
-                    }
-                    .padding(.top, 8)
-                }
             }
             .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
-        .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
         .sheet(isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             if let draft = editing {
                 ZoneEditorView(serverID: serverID, camera: camera, draft: draft,
