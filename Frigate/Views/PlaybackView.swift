@@ -400,10 +400,13 @@ struct PlaybackView: View {
 
     /// Save button on the video: the event that is playing, or a span around the playhead.
     private var saveMenu: some View {
-        Stable(key: [menuReview?.id ?? "", exporter.isWorking ? "busy" : ""]) { saveMenuContent }.stable()
+        // The event is looked up here and handed in: read inside, it would tie the menu to the
+        // player's clock, and the open menu would be rebuilt (and flicker) on every frame.
+        let review = menuReview
+        return Stable(key: [review?.id ?? "", exporter.isWorking ? "busy" : ""]) { saveMenuContent(review) }.stable()
     }
 
-    private var saveMenuContent: some View {
+    private func saveMenuContent(_ menuReview: ReviewItem?) -> some View {
         Menu {
             Button { exportSpan() } label: { Label("Export…", systemImage: "film.stack") }
             if let r = menuReview {
