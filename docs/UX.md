@@ -59,6 +59,9 @@ builds; when a new screen breaks one, it is a bug.
   the back button and the top bar's icon buttons (`HeaderIconLabel`) are round glass buttons, like
   the system's Done and Cancel. Text buttons in a top bar (Mark all reviewed, Select, Save) are
   glass capsules (`HeaderTextLabel`).
+- Bar buttons have white text. Only the button that completes a sheet or screen (Done, Save, Add)
+  is filled with the accent colour: `confirmingBarButton()` in a toolbar, `HeaderTextLabel(prominent:)`
+  in a custom bar. Cancel and Close use `plainBarButton()`.
 - Prefer an icon over a word where the icon is clear (sorting, objects in a picture). Object
   icons sit at the top left of a picture, everywhere.
 - Text in bars, buttons and chips never wraps: short labels, `lineLimit(1)`, `fixedSize()`.

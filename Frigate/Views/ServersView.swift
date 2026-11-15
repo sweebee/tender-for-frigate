@@ -320,7 +320,7 @@ struct ReorderServersSheet: View {
             .navigationTitle(L("Reorder servers"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { closePresented(dismiss) } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { closePresented(dismiss) }.confirmingBarButton() }
             }
         }
         .presentationDetents([.medium, .large])

@@ -165,10 +165,11 @@ struct SaveToFrigateSheet: View {
             .navigationTitle(adjustable ? L("Export recordings") : L("Save to Frigate"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.plainBarButton() }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(multi ? L("Export \(chosenCameras.count)") : L("Save")) { save() }
                         .disabled(!canSave)
+                        .confirmingBarButton()
                 }
             }
         }

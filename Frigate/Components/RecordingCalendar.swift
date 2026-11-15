@@ -92,9 +92,9 @@ struct RecordingCalendarSheet: View {
             .navigationTitle("Pick a day")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.plainBarButton() }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Today") { select(Date()) }
+                    Button("Today") { select(Date()) }.plainBarButton()
                 }
             }
             .background(Theme.background)

@@ -65,7 +65,7 @@ struct CameraWizardView: View {
         .screenBackground()
         .navigationTitle(L("Add camera"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.disabled(saving) } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.disabled(saving).plainBarButton() } }
         .interactiveDismissDisabled(saving)
         .alert(L("Not ready yet"), isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) {}

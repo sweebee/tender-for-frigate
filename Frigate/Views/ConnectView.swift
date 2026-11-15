@@ -83,7 +83,7 @@ struct ConnectView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if !isOnboarding {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.plainBarButton() }
             }
         }
         .alert("Remove \(existing?.name ?? L("server"))?", isPresented: $confirmDelete) {

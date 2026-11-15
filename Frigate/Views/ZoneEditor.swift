@@ -93,7 +93,7 @@ struct ZoneEditorView: View {
                     Text(draft.isNew ? L("New \(kindTitle.lowercased())") : kindTitle).font(.system(size: 16, weight: .semibold))
                     Spacer()
                     Button { Task { await save() } } label: {
-                        HeaderTextLabel(title: "Save", loading: saving && !deleting)
+                        HeaderTextLabel(title: "Save", loading: saving && !deleting, prominent: true)
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSave)

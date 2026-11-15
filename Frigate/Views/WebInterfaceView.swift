@@ -17,11 +17,12 @@ struct WebInterfaceView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") { closePresented(dismiss) }
+                        Button("Done") { closePresented(dismiss) }.confirmingBarButton()
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button { openURL(url) } label: { Image(systemName: "safari") }
                             .accessibilityLabel("Open in Safari")
+                            .plainBarButton()
                     }
                 }
         }

@@ -646,6 +646,6 @@ private struct ServerProblemsSheet: View {
         .presentationBackground(Theme.background)
         .navigationTitle(conn.server.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) }.plainBarButton() } }
     }
 }

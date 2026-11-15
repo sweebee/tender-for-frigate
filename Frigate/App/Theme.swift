@@ -476,23 +476,35 @@ struct BackButtonLabel: View {
     }
 }
 
+extension View {
+    /// The button that completes a sheet (Done, Save, Add): filled with the accent on iOS 26,
+    /// as the system's own apps do; the other bar buttons are white (`plainBarButton`).
+    @ViewBuilder func confirmingBarButton() -> some View {
+        if #available(iOS 26.0, macCatalyst 26.0, *) { buttonStyle(.glassProminent).tint(Theme.accent) } else { self }
+    }
+    /// Any other bar button (Cancel, Close): white text, like the top bars' own buttons.
+    func plainBarButton() -> some View { tint(Theme.text) }
+}
+
 /// A text button in a screen's top bar ("Mark all reviewed"): a glass capsule on iOS 26 and
 /// later, like the system's Done and Cancel; plain accent text before that.
 struct HeaderTextLabel: View {
     let title: LocalizedStringKey
     var loading = false
+    /// The button that completes the screen (Save): filled with the accent, white text.
+    var prominent = false
 
     var body: some View {
         let label = HStack(spacing: 6) {
-            if loading { ProgressView().controlSize(.small).tint(Theme.text) }
+            if loading { ProgressView().controlSize(.small).tint(prominent ? Theme.onColor : Theme.text) }
             Text(title).lineLimit(1)
         }
         if hasGlass, #available(iOS 26.0, macCatalyst 26.0, *) {
             label
                 .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.text)
+                .foregroundStyle(prominent ? Theme.onColor : Theme.text)
                 .padding(.horizontal, 16).frame(height: 44)
-                .glassEffect(.regular.interactive(), in: Capsule())
+                .glassEffect(prominent ? .regular.tint(Theme.accent).interactive() : .regular.interactive(), in: Capsule())
                 .contentShape(Capsule())
         } else {
             label

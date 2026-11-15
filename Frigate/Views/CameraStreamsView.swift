@@ -674,9 +674,9 @@ struct StreamEditSheet: View {
         .navigationTitle(isNew ? L("Add stream") : L("Edit stream"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) } }
+            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.plainBarButton() }
             ToolbarItem(placement: .confirmationAction) {
-                Button(isNew ? L("Add") : L("Done")) { finish() }.disabled(!canFinish)
+                Button(isNew ? L("Add") : L("Done")) { finish() }.disabled(!canFinish).confirmingBarButton()
             }
         }
         .onChange(of: texts) { test = nil }

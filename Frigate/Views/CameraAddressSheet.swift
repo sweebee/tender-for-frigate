@@ -234,7 +234,7 @@ struct CameraAddressSheet: View {
         .screenBackground()
         .navigationTitle(L("Camera address"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.disabled(busy) } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.disabled(busy).plainBarButton() } }
         .interactiveDismissDisabled(busy)
         .onChange(of: [host, user, password]) { failed = false; results = [:] }
     }

@@ -842,7 +842,7 @@ struct ClassificationAssignSheet: View {
         .screenBackground()
         .navigationTitle(target.category == nil ? L("Put in a class") : L("Image"))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) } } }
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) }.plainBarButton() } }
         .onAppear { picked = Set(target.files) }
         .textPrompt(L("New class"), isPresented: $addingClass, text: $newClass, placeholder: L("Name"), confirm: L("Add")) {
             Task { await addClass() }
@@ -1047,9 +1047,10 @@ struct ClassificationEditSheet: View {
         .navigationTitle(initial.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) } }
+            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.plainBarButton() }
             ToolbarItem(placement: .confirmationAction) {
                 Button { Task { await save() } } label: { if saving { ProgressView() } else { Text("Save") } }.disabled(saving)
+                    .confirmingBarButton()
             }
         }
         .task { await load() }

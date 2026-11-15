@@ -57,6 +57,7 @@ struct ClassificationWizard: View {
                     Button { Task { await cancel() } } label: {
                         if cancelling { ProgressView() } else { Text("Cancel") }
                     }
+                    .plainBarButton()
                     .disabled(finishing || cancelling)
                 }
             }

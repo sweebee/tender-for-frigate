@@ -811,10 +811,11 @@ struct CameraOrderView: View {
             .navigationTitle(L("Camera order"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { closePresented(dismiss) }.plainBarButton() }
                 ToolbarItem(placement: .confirmationAction) {
                     Button { Task { await save() } } label: { if saving { ProgressView() } else { Text("Save") } }
                         .disabled(saving)
+                        .confirmingBarButton()
                 }
             }
         }
