@@ -36,7 +36,8 @@ final class ClipExporter {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 // Only forward: a late report must not move the bar back.
-                if got >= self.received { self.received = got; self.expected = total }
+                // Forward only, and at most every 0.5 MB: each report redraws the pill.
+                if got >= self.received + 500_000 || (total > 0 && got >= total) { self.received = got; self.expected = total }
             }
         }
     }
@@ -124,9 +125,14 @@ struct ExportToast: View {
                 // Kept from being rebuilt by every progress report: a rebuilt spinner restarts and flickers.
                 if let icon { Image(systemName: icon) } else { Stable(key: 0) { ProgressView().tint(.white) }.stable() }
                 Text(text).font(.system(size: 14, weight: .semibold)).lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 if icon == nil, let exporter, exporter.received > 0 {
+                    // A fixed width, so the growing number does not push the text around.
                     Text(amount(exporter)).font(.system(size: 13, weight: .medium).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.75))
+                        .frame(width: 64, alignment: .trailing)
+                        .contentTransition(.identity)
+                        .transaction { $0.animation = nil }
                 }
             }
             // A bar while downloading (Frigate first builds the clip, so it starts after a moment).
