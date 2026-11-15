@@ -6408,6 +6408,1056 @@
           }
         }
       }
+    },
+    "0 seconds: only on motion.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "0 seconden: alleen bij beweging."
+          }
+        }
+      }
+    },
+    "1 image": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 beeld"
+          }
+        }
+      }
+    },
+    "%lld images": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld beelden"
+          }
+        }
+      }
+    },
+    "1 new image since the last training": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 nieuw beeld sinds de laatste training"
+          }
+        }
+      }
+    },
+    "%lld new images since the last training": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld nieuwe beelden sinds de laatste training"
+          }
+        }
+      }
+    },
+    "A state model looks at an area of a camera and tells its state, like open or closed.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een staatmodel kijkt naar een stuk van een camerabeeld en vertelt de staat ervan, zoals open of dicht."
+          }
+        }
+      }
+    },
+    "Add class": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasse toevoegen"
+          }
+        }
+      }
+    },
+    "Add state": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staat toevoegen"
+          }
+        }
+      }
+    },
+    "An object model puts a tracked object into a class, like which delivery service.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een objectmodel deelt een gevolgd object in een klasse in, zoals welke pakketdienst."
+          }
+        }
+      }
+    },
+    "At least two. Frigate tells which one it sees.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minstens twee. Frigate vertelt welke het ziet."
+          }
+        }
+      }
+    },
+    "Attribute": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kenmerk"
+          }
+        }
+      }
+    },
+    "Belongs to": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoort bij"
+          }
+        }
+      }
+    },
+    "Class %lld of %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasse %lld van %lld"
+          }
+        }
+      }
+    },
+    "Classes": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klassen"
+          }
+        }
+      }
+    },
+    "Classification": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classificatie"
+          }
+        }
+      }
+    },
+    "Classification needs Frigate 0.17 or later.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classificatie vraagt Frigate 0.17 of nieuwer."
+          }
+        }
+      }
+    },
+    "Closed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dicht"
+          }
+        }
+      }
+    },
+    "Delete 1 image?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 beeld verwijderen?"
+          }
+        }
+      }
+    },
+    "Delete %lld images": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder %lld beelden"
+          }
+        }
+      }
+    },
+    "Delete %lld images?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld beelden verwijderen?"
+          }
+        }
+      }
+    },
+    "Delete image": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder beeld"
+          }
+        }
+      }
+    },
+    "Delete model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder model"
+          }
+        }
+      }
+    },
+    "Delivery service": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pakketdienst"
+          }
+        }
+      }
+    },
+    "Each class needs its own name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke klasse heeft een eigen naam nodig."
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wijzig"
+          }
+        }
+      }
+    },
+    "Every": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke"
+          }
+        }
+      }
+    },
+    "Frigate could not tell yet.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate wist het nog niet."
+          }
+        }
+      }
+    },
+    "Frigate found no events of this object to take examples from.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate vond geen gebeurtenissen met dit object om voorbeelden uit te halen."
+          }
+        }
+      }
+    },
+    "Frigate found no recordings of these cameras to take examples from.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate vond geen opnames van deze camera's om voorbeelden uit te halen."
+          }
+        }
+      }
+    },
+    "Frigate is picking 24 different examples from past events. This can take a minute.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate kiest 24 verschillende voorbeelden uit eerdere gebeurtenissen. Dit kan even duren."
+          }
+        }
+      }
+    },
+    "Frigate is training it now; that takes a few minutes. Put more images in its classes as they come in.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate traint het nu; dat duurt een paar minuten. Deel nieuwe beelden in zodra ze binnenkomen."
+          }
+        }
+      }
+    },
+    "Frigate is training the model; this can take a few minutes.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate traint het model; dat kan een paar minuten duren."
+          }
+        }
+      }
+    },
+    "Frigate keeps the images it classifies here, to put them in the right class.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier bewaart Frigate de beelden die het herkent, om ze in de juiste klasse te zetten."
+          }
+        }
+      }
+    },
+    "Frigate keeps the objects it classifies here, to put them in the right class.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier bewaart Frigate de objecten die het herkent, om ze in de juiste klasse te zetten."
+          }
+        }
+      }
+    },
+    "Frigate thought: %@, %lld%%": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate dacht: %1$@, %2$lld%%"
+          }
+        }
+      }
+    },
+    "Gate": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poort"
+          }
+        }
+      }
+    },
+    "Give at least one class.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef minstens één klasse."
+          }
+        }
+      }
+    },
+    "Give at least two states.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef minstens twee staten."
+          }
+        }
+      }
+    },
+    "Give the model a name of letters and numbers.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef het model een naam van letters en cijfers."
+          }
+        }
+      }
+    },
+    "How many recent images Frigate keeps to put in classes.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoeveel recente beelden Frigate bewaart om in te delen."
+          }
+        }
+      }
+    },
+    "Image": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beeld"
+          }
+        }
+      }
+    },
+    "In class %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In klasse %@"
+          }
+        }
+      }
+    },
+    "Looks at an area of a camera and tells its state, like open or closed.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kijkt naar een stuk van een camerabeeld en vertelt de staat, zoals open of dicht."
+          }
+        }
+      }
+    },
+    "Make a model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak een model"
+          }
+        }
+      }
+    },
+    "Make model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak model"
+          }
+        }
+      }
+    },
+    "Make the model without examples": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak het model zonder voorbeelden"
+          }
+        }
+      }
+    },
+    "Model on": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model aan"
+          }
+        }
+      }
+    },
+    "Model trained": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model getraind"
+          }
+        }
+      }
+    },
+    "Move to": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verplaats naar"
+          }
+        }
+      }
+    },
+    "New class": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe klasse"
+          }
+        }
+      }
+    },
+    "New model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw model"
+          }
+        }
+      }
+    },
+    "Next": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgende"
+          }
+        }
+      }
+    },
+    "Next class": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgende klasse"
+          }
+        }
+      }
+    },
+    "No images in this class yet. Put recent images in it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen beelden in deze klasse. Deel recente beelden hierin in."
+          }
+        }
+      }
+    },
+    "No object models yet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen objectmodellen"
+          }
+        }
+      }
+    },
+    "No state models yet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen staatmodellen"
+          }
+        }
+      }
+    },
+    "None is added by Frigate itself; use another name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen voegt Frigate zelf toe; kies een andere naam."
+          }
+        }
+      }
+    },
+    "Not trained yet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog niet getraind"
+          }
+        }
+      }
+    },
+    "Object": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Object"
+          }
+        }
+      }
+    },
+    "Objects that fit none of them go to None, which Frigate adds itself.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objecten die nergens bij passen gaan naar Geen, dat Frigate zelf toevoegt."
+          }
+        }
+      }
+    },
+    "On motion in the area": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bij beweging in het gebied"
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        }
+      }
+    },
+    "Pick at least one camera.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies minstens één camera."
+          }
+        }
+      }
+    },
+    "Pick the cameras and drag the square over what the state is about, like the gate. Frigate only looks inside it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies de camera's en sleep het vierkant over waar het om gaat, zoals de poort. Frigate kijkt alleen daarbinnen."
+          }
+        }
+      }
+    },
+    "Pick the object to classify.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies het object om in te delen."
+          }
+        }
+      }
+    },
+    "Put images in at least two classes first.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel eerst beelden in minstens twee klassen in."
+          }
+        }
+      }
+    },
+    "Put images in its classes as Frigate classifies objects, then train it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel beelden in zodra Frigate objecten herkent, en train het daarna."
+          }
+        }
+      }
+    },
+    "Put in a class": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indelen"
+          }
+        }
+      }
+    },
+    "Puts each tracked object of one kind into a class, like the delivery service of a person.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deelt elk gevolgd object van één soort in een klasse in, zoals de pakketdienst van een persoon."
+          }
+        }
+      }
+    },
+    "Recent": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent"
+          }
+        }
+      }
+    },
+    "Recent images": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recente beelden"
+          }
+        }
+      }
+    },
+    "Rename class": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasse hernoemen"
+          }
+        }
+      }
+    },
+    "Select": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecteer"
+          }
+        }
+      }
+    },
+    "Select all": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecteer alles"
+          }
+        }
+      }
+    },
+    "State": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staat"
+          }
+        }
+      }
+    },
+    "States": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Staten"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stap %lld van %lld"
+          }
+        }
+      }
+    },
+    "Sub label": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sublabel"
+          }
+        }
+      }
+    },
+    "Sub label: the class becomes the object's name, like a face. Attribute: it is added as extra information.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sublabel: de klasse wordt de naam van het object, zoals bij een gezicht. Kenmerk: het komt erbij als extra informatie."
+          }
+        }
+      }
+    },
+    "Tap every image with: %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik elk beeld met: %@"
+          }
+        }
+      }
+    },
+    "Teach Frigate to tell what it sees: which delivery service, or whether the gate is open.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer Frigate herkennen wat het ziet: welke pakketdienst, of de poort open is."
+          }
+        }
+      }
+    },
+    "Teach Frigate what it sees": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leer Frigate wat het ziet"
+          }
+        }
+      }
+    },
+    "The class and all its images are removed. Train the model again afterwards.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De klasse en al zijn beelden worden verwijderd. Train het model daarna opnieuw."
+          }
+        }
+      }
+    },
+    "The classes changed since the last training.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De klassen zijn veranderd sinds de laatste training."
+          }
+        }
+      }
+    },
+    "The model, its classes and their images are removed from Frigate.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het model, zijn klassen en hun beelden worden uit Frigate verwijderd."
+          }
+        }
+      }
+    },
+    "The tries for this object; the ones ticked are put in the class.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De pogingen voor dit object; de aangevinkte gaan in de klasse."
+          }
+        }
+      }
+    },
+    "There is already a class with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een klasse met deze naam."
+          }
+        }
+      }
+    },
+    "There is already a model with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een model met deze naam."
+          }
+        }
+      }
+    },
+    "They are removed from the class. Train the model again afterwards.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ze worden uit de klasse verwijderd. Train het model daarna opnieuw."
+          }
+        }
+      }
+    },
+    "They are removed from the recent images.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ze worden uit de recente beelden verwijderd."
+          }
+        }
+      }
+    },
+    "Train model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Train model"
+          }
+        }
+      }
+    },
+    "Trained": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getraind"
+          }
+        }
+      }
+    },
+    "Trained %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Getraind %@"
+          }
+        }
+      }
+    },
+    "Training": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training"
+          }
+        }
+      }
+    },
+    "Training failed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training mislukt"
+          }
+        }
+      }
+    },
+    "Training failed. Each class needs images; there must be at least two classes.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training mislukt. Elke klasse heeft beelden nodig, en er moeten minstens twee klassen zijn."
+          }
+        }
+      }
+    },
+    "Training…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainen…"
+          }
+        }
+      }
+    },
+    "Up to date.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijgewerkt."
+          }
+        }
+      }
+    },
+    "Use letters, numbers, spaces, ' _ or -, up to 50.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik letters, cijfers, spaties, ' _ of -, hooguit 50."
+          }
+        }
+      }
+    },
+    "When": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wanneer"
+          }
+        }
+      }
+    },
+    "attribute": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kenmerk"
+          }
+        }
+      }
+    },
+    "sub label": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sublabel"
+          }
+        }
+      }
+    },
+    "the rest goes to None": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de rest gaat naar Geen"
+          }
+        }
+      }
+    },
+    "%@ is made": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is gemaakt"
+          }
+        }
+      }
+    },
+    "Not ready yet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan nog niet verder"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

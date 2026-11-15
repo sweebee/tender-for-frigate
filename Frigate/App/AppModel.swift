@@ -44,6 +44,16 @@ final class ServerConnection: Identifiable {
     var cameraRecord: [String: Bool] = [:]
     /// Switches sent to Frigate and not yet confirmed by its websocket ("<camera>/detect", …).
     var pendingSwitches: Set<String> = []
+    /// Classification models' state from Frigate's websocket: "training", "complete", "failed", …
+    var modelStates: [String: String] = [:]
+
+    /// Asks Frigate for every model's state; the answer comes as "model_state".
+    func requestModelStates() { command("modelState", "") }
+
+    /// Supports custom classification (Frigate 0.17 and later).
+    var supportsClassification: Bool {
+        isOnline && (version.map { $0.compare("0.17", options: .numeric) != .orderedAscending } ?? false)
+    }
     /// Frigate 0.18's profiles on this server, and the active one; empty before 0.18.
     var profiles: [FrigateProfile] = []
     var activeProfile: String?
@@ -376,6 +386,9 @@ final class ServerConnection: Identifiable {
                 next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving)
             }
             activity = next
+        } else if topic == "model_state", let payload = (msg["payload"] as? String)?.data(using: .utf8),
+                  let states = try? JSONSerialization.jsonObject(with: payload) as? [String: String] {
+            modelStates.merge(states) { $1 }
         } else if topic == "profile/state", let payload = msg["payload"] as? String {
             activeProfile = payload == "none" || payload.isEmpty ? nil : payload
         } else if topic.hasSuffix("/notifications/suspended"), let payload = msg["payload"] as? String {
@@ -457,7 +470,7 @@ final class ServerConnection: Identifiable {
 @Observable @MainActor
 final class AppModel {
     /// `exports` is a section of its own only on iPad and Mac; on the phone it is a row in Explore.
-    enum Tab: Hashable { case live, review, explore, exports, chat, settings, more }
+    enum Tab: Hashable { case live, review, explore, exports, classification, chat, settings, more }
     enum Scope: Hashable, Codable {
         case all
         case server(UUID)
@@ -475,6 +488,7 @@ final class AppModel {
     var reviewPath = NavigationPath()
     var explorePath = NavigationPath()
     var exportsPath = NavigationPath()
+    var classificationPath = NavigationPath()
     /// Exports deleted in this session (`ExportEntry.id`); lists leave them out, even when a
     /// load that was already under way still returns them.
     var deletedExports: Set<String> = []
@@ -587,6 +601,9 @@ final class AppModel {
     func connection(for id: UUID) -> ServerConnection? { connections[id] }
 
     /// Online servers with Frigate's GenAI chat.
+    /// Servers whose Classification page the app shows (Frigate 0.17+).
+    var classificationConnections: [ServerConnection] { scopedConnections.filter(\.supportsClassification) }
+
     var chatConnections: [ServerConnection] {
         scopedConnections.filter { $0.isOnline && $0.config?.supportsChat == true }
     }
