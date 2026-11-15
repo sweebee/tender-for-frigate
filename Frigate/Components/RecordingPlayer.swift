@@ -55,6 +55,13 @@ final class RecordingPlayer {
         replaceItem(url, startAt: startAt, autoplay: autoplay, seekToStart: !startInPlaylist)
     }
 
+    /// One automatic retry when the local proxy did not answer; reset once an item plays.
+    private var retriedProxy = false
+
+    private nonisolated static func underlyingCode(_ error: NSError) -> Int? {
+        (error.userInfo[NSUnderlyingErrorKey] as? NSError)?.code
+    }
+
     private func replaceItem(_ url: URL, startAt: Double, autoplay: Bool, seekToStart: Bool = true) {
         self.url = url
         error = nil
@@ -72,10 +79,20 @@ final class RecordingPlayer {
         itemStatusObserver = item.observe(\.status) { [weak self] item, _ in
             let failed = item.status == .failed
             let message = item.error?.localizedDescription
+            // The local proxy was gone (the app slept): it listens again, so open once more.
+            let proxyGone = failed && url.host == "127.0.0.1"
+                && (item.error as NSError?).map { [NSURLErrorCannotConnectToHost, NSURLErrorNetworkConnectionLost,
+                                                   NSURLErrorTimedOut].contains($0.code) || Self.underlyingCode($0) == NSURLErrorCannotConnectToHost } == true
             let ready = item.status == .readyToPlay
             Task { @MainActor in
                 guard let self else { return }
+                if proxyGone && !self.retriedProxy {
+                    self.retriedProxy = true
+                    self.replaceItem(HLSProxy.shared.refreshed(url), startAt: self.currentTime, autoplay: self.wantsToPlay)
+                    return
+                }
                 if failed { self.error = message ?? L("Playback failed") }
+                if ready { self.retriedProxy = false }
                 if ready {
                     let d = item.duration.seconds
                     if d.isFinite { self.duration = d }

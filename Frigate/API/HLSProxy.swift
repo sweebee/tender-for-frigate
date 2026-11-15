@@ -13,6 +13,8 @@ final class HLSProxy: @unchecked Sendable {
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "hls-proxy")
     private var port: UInt16 = 0
+    /// When the listener last answered a test connection.
+    private var lastAlive = Date.distantPast
     private let ready = DispatchSemaphore(value: 0)
     private let session: URLSession = {
         let c = URLSessionConfiguration.default
@@ -64,13 +66,57 @@ final class HLSProxy: @unchecked Sendable {
         return parts.url ?? url
     }
 
-    private func startIfNeeded() -> Bool {
-        queue.sync {
-            if listener != nil { return true }
-            // The old port when possible, so URLs the player already holds keep working.
-            if port != 0, let old = NWEndpoint.Port(rawValue: port), start(on: old) { return true }
-            return start(on: .any)
+    /// Checks the listener after the app was in the background: iOS can take its socket away
+    /// without telling it (it still says ready, but nothing connects), so the player got
+    /// "Could not connect to the server" until the app was restarted.
+    func wake() {
+        queue.async { [self] in
+            lastAlive = .distantPast
+            _ = ensureListening()
         }
+    }
+
+    private func startIfNeeded() -> Bool {
+        queue.sync { ensureListening() }
+    }
+
+    /// Runs on `queue`.
+    private func ensureListening() -> Bool {
+        do {
+            if let l = listener {
+                // Trusted for a few seconds after a check; otherwise try to connect to it.
+                if Date().timeIntervalSince(lastAlive) < 5 || answers(port) {
+                    lastAlive = Date()
+                    return true
+                }
+                listener = nil
+                l.cancel()
+            }
+            // The old port when possible, so URLs the player already holds keep working.
+            if port != 0, let old = NWEndpoint.Port(rawValue: port), start(on: old) { lastAlive = Date(); return true }
+            let ok = start(on: .any)
+            if ok { lastAlive = Date() }
+            return ok
+        }
+    }
+
+    /// Whether something accepts a connection on 127.0.0.1:port within half a second.
+    private func answers(_ port: UInt16) -> Bool {
+        guard let p = NWEndpoint.Port(rawValue: port) else { return false }
+        let conn = NWConnection(host: "127.0.0.1", port: p, using: .tcp)
+        let sem = DispatchSemaphore(value: 0)
+        var ok = false
+        conn.stateUpdateHandler = { state in
+            switch state {
+            case .ready: ok = true; sem.signal()
+            case .failed, .waiting, .cancelled: sem.signal()
+            default: break
+            }
+        }
+        conn.start(queue: DispatchQueue(label: "hls-proxy-probe"))
+        _ = sem.wait(timeout: .now() + 0.5)
+        conn.cancel()
+        return ok
     }
 
     /// Runs on `queue`.

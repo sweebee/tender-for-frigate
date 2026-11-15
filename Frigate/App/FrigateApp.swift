@@ -106,7 +106,10 @@ struct RootView: View {
         .onOpenURL { url in Task { await model.handle(url) } }
         .onChange(of: NetworkStatus.shared.changes) { _, _ in model.networkChanged() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await model.refreshAll(reloadConfig: true) } }
+            if phase == .active {
+                HLSProxy.shared.wake()
+                Task { await model.refreshAll(reloadConfig: true) }
+            }
             // The activity feed reopens on the next refresh.
             if phase == .background { model.orderedConnections.forEach { $0.stopActivityFeed() } }
         }
