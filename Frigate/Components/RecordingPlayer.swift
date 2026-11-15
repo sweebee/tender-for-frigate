@@ -446,7 +446,13 @@ struct OverlayButton: View {
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        // The Mac shows sharing as a see-through menu. In the app's forced dark mode its white text
+        // is unreadable over a bright video; the Mac's own appearance makes it a normal menu.
+        if ProcessInfo.processInfo.isMacCatalystApp {
+            vc.overrideUserInterfaceStyle = UIScreen.main.traitCollection.userInterfaceStyle
+        }
+        return vc
     }
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
