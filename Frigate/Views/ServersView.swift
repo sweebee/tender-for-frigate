@@ -9,7 +9,6 @@ struct ServersView: View {
         let title: String
         var id: String { url.absoluteString }
     }
-    @State private var editing: ServerConfig?
 
     /// Inside another navigation stack (the phone's More tab): no stack of its own, and a
     /// back button.
@@ -120,9 +119,6 @@ struct ServersView: View {
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $reordering) { ReorderServersSheet() }
-            .sheet(item: $editing) { server in
-                NavigationStack { ConnectView(existing: server) }
-            }
     }
 
     /// "Version 1.0 (202611121554) · fe23b90"; the commit links to it on GitHub.
@@ -182,17 +178,14 @@ struct ServersView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            Button { editing = conn.server } label: {
-                Image(systemName: "info.circle").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
-                    .frame(width: 40, height: 44)
-            }
-            .accessibilityLabel("Edit \(conn.server.name)")
-            // Frigate's own settings for this server.
+            // The server's settings: its connection (address, sign-in) and Frigate's own settings.
             NavigationLink {
                 ServerSettingsView(serverID: conn.server.id)
             } label: {
-                Image(systemName: "gearshape").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
-                    .frame(width: 40, height: 44)
+                Image(systemName: "gearshape").font(.system(size: 22, weight: .medium)).foregroundStyle(Theme.textSecondary)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.control, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.controlBorder, lineWidth: 1))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L("Settings of \(conn.server.name)"))

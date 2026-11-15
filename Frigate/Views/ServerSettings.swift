@@ -16,6 +16,8 @@ struct ServerSettingsView: View {
     @State private var errorMessage: String?
     @State private var webInterface: ServersView.WebTarget?
     @State private var reordering = false
+    @State private var editingConnection = false
+    @Environment(\.dismiss) private var dismiss
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
 
@@ -34,6 +36,13 @@ struct ServerSettingsView: View {
                 ScreenTitle(text: conn?.server.name ?? L("Server"), showsBack: true).padding(.top, 8)
                 if let conn {
                     statusCard(conn)
+                    // The connection is the app's own setting for this server, and must be reachable when it is offline.
+                    Button { editingConnection = true } label: {
+                        SettingsRow(icon: "link", tint: Theme.accent, title: L("Connection"),
+                                    value: ServerConfig.normalizedURL(conn.server.url).map { u in (u.host() ?? "") + (u.port.map { ":\($0)" } ?? "") } ?? conn.server.url)
+                    }
+                    .buttonStyle(.plain)
+                    .card(radius: 12)
                     if !isAdmin {
                         Text("You are signed in as a viewer: settings can be seen but only an admin can change them.")
                             .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
@@ -127,6 +136,11 @@ struct ServerSettingsView: View {
         .task { await load() }
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
         .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID).environment(model) }
+        .sheet(isPresented: $editingConnection) {
+            if let server = conn?.server { NavigationStack { ConnectView(existing: server) }.environment(model) }
+        }
+        // Removed in the connection sheet: nothing left to show here.
+        .onChange(of: conn == nil) { _, gone in if gone { dismiss() } }
         .alert("Restart Frigate?", isPresented: $confirmRestart) {
             Button("Cancel", role: .cancel) {}
             Button("Restart", role: .destructive) { Task { await restart() } }

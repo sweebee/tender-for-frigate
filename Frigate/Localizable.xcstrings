@@ -6348,6 +6348,16 @@
           }
         }
       }
+    },
+    "Connection": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinding"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
