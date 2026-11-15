@@ -72,30 +72,36 @@ struct ReviewTimeline: View {
 
     private func draw(_ ctx: inout GraphicsContext, size: CGSize, range: ClosedRange<Double>) {
         let h = size.height
-        let hours = (range.upperBound - range.lowerBound) / 3600
-        // Label every 1, 2, 3, 6 or 12 hours: whatever keeps labels 36 pt or more apart.
-        let perHour = h / CGFloat(hours)
-        let step = [1.0, 2, 3, 6, 12, 24].first { CGFloat($0) * perHour >= 36 } ?? 24
+        let minutes = (range.upperBound - range.lowerBound) / 60
+        // A label every 5, 10, 15 or 30 minutes, or 1 to 24 hours: the finest that keeps labels 36 pt apart.
+        let perMinute = h / CGFloat(minutes)
+        let step = [5.0, 10, 15, 30, 60, 120, 180, 360, 720, 1440].first { CGFloat($0) * perMinute >= 36 } ?? 1440
+        // Ticks every step below an hour, else every hour (unlabelled ones shorter).
+        let tickStep = min(step, 60)
         let labelX: CGFloat = 2
         let barX = size.width - 14
 
-        var t = range.upperBound
+        var t = (range.upperBound / (tickStep * 60)).rounded(.down) * tickStep * 60
         while t >= range.lowerBound {
             let yy = y(t, range, h)
             let date = Date(timeIntervalSince1970: t)
             let hour = Calendar.current.component(.hour, from: date)
-            let major = Double(hour).truncatingRemainder(dividingBy: step) == 0
+            let minute = Calendar.current.component(.minute, from: date)
+            let minuteOfDay = Double(hour * 60 + minute)
+            let labelled = minuteOfDay.truncatingRemainder(dividingBy: step) == 0
+            let onHour = minute == 0
             var tick = Path()
-            tick.move(to: CGPoint(x: barX - (major ? 12 : 6), y: yy))
+            tick.move(to: CGPoint(x: barX - (onHour ? 12 : labelled ? 9 : 6), y: yy))
             tick.addLine(to: CGPoint(x: barX - 3, y: yy))
-            ctx.stroke(tick, with: .color(Theme.textTertiary.opacity(major ? 0.8 : 0.4)), lineWidth: 1)
-            if major && yy > 6 && yy < h - 6 {
-                // At midnight the day, otherwise the hour.
-                let text = hour == 0 ? FrigateFormat.shortDay(date) : String(format: "%02d:00", hour)
-                ctx.draw(Text(text).font(.system(size: 10, weight: .medium).monospacedDigit()).foregroundStyle(Theme.textTertiary),
+            ctx.stroke(tick, with: .color(Theme.textTertiary.opacity(labelled ? 0.8 : 0.4)), lineWidth: 1)
+            if labelled && yy > 6 && yy < h - 6 {
+                // At midnight the day, otherwise the time; hours stand out from the minutes between them.
+                let text = hour == 0 && minute == 0 ? FrigateFormat.shortDay(date) : String(format: "%02d:%02d", hour, minute)
+                ctx.draw(Text(text).font(.system(size: 10, weight: onHour ? .semibold : .regular).monospacedDigit())
+                            .foregroundStyle(onHour ? Theme.textTertiary : Theme.textSecondary),
                          at: CGPoint(x: labelX, y: yy), anchor: .leading)
             }
-            t -= 3600
+            t -= tickStep * 60
         }
 
         for entry in entries {
