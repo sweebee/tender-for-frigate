@@ -133,7 +133,31 @@ final class ServerConnection: Identifiable {
         }
     }
 
-    var unreviewedAlerts: Int { summary?.last24Hours?.unreviewedAlerts ?? 0 }
+    var unreviewedAlerts: Int {
+        let server = summary?.last24Hours?.unreviewedAlerts ?? 0
+        guard let lowered, lowered.until > Date() else { return server }
+        return min(server, lowered.alerts)
+    }
+    var unreviewedDetections: Int {
+        let server = summary?.last24Hours?.unreviewedDetections ?? 0
+        guard let lowered, lowered.until > Date() else { return server }
+        return min(server, lowered.detections)
+    }
+
+    /// Counts lowered here as items were marked reviewed, for a little while: the badge drops at
+    /// once instead of after the next summary, and a summary loaded meanwhile that does not show
+    /// the change yet does not raise it again.
+    private var lowered: (alerts: Int, detections: Int, until: Date)?
+
+    /// Lowers the unreviewed counts by these items (those of the last 24 hours not yet reviewed).
+    func noteReviewed(_ items: [ReviewItem]) {
+        let cutoff = Date().addingTimeInterval(-86400)
+        let fresh = items.filter { !$0.hasBeenReviewed && $0.start >= cutoff }
+        guard !fresh.isEmpty else { return }
+        let alerts = fresh.filter { $0.severity == .alert }.count
+        lowered = (max(0, unreviewedAlerts - alerts), max(0, unreviewedDetections - (fresh.count - alerts)),
+                   Date().addingTimeInterval(15))
+    }
 
     // MARK: Connecting
 

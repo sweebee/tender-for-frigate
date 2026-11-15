@@ -789,6 +789,7 @@ struct EventDetailView: View {
         guard let client else { return }
         do {
             try await client.markViewed([item.id])
+            conn?.noteReviewed([item])
             item.hasBeenReviewed = true
             model.reviewedIDs.insert(item.id)
             await conn?.refresh()

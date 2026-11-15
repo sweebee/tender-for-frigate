@@ -58,6 +58,7 @@ struct RecentAlertsStrip: View {
         guard !item.hasBeenReviewed, let conn = model.connection(for: entry.serverID), let client = conn.client else { return }
         Task {
             guard (try? await client.markViewed([item.id])) != nil else { return }
+            conn.noteReviewed([item])
             try? await Task.sleep(for: .milliseconds(600))
             model.reviewedIDs.insert(item.id)
             await conn.refresh()

@@ -132,8 +132,8 @@ struct ReviewView: View {
     private var kindBar: some View {
         SegmentedBar(options: [Kind.alert, .detection, .motion], selection: $kind) { k in
             switch k {
-            case .alert: return countTitle(L("Alerts"), max(connections.reduce(0) { $0 + ($1.summary?.last24Hours?.unreviewedAlerts ?? 0) }, listedUnreviewed(.alert)))
-            case .detection: return countTitle(L("Detections"), max(connections.reduce(0) { $0 + ($1.summary?.last24Hours?.unreviewedDetections ?? 0) }, listedUnreviewed(.detection)))
+            case .alert: return countTitle(L("Alerts"), max(connections.reduce(0) { $0 + $1.unreviewedAlerts }, listedUnreviewed(.alert)))
+            case .detection: return countTitle(L("Detections"), max(connections.reduce(0) { $0 + $1.unreviewedDetections }, listedUnreviewed(.detection)))
             case .motion: return L("Motion")
             }
         }
@@ -414,6 +414,7 @@ struct ReviewView: View {
             guard let conn = model.connection(for: serverID), let client = conn.client else { continue }
             do {
                 try await client.markViewed(items.map(\.item.id))
+                conn.noteReviewed(items.map(\.item))
                 let ids = Set(items.map(\.id))
                 for i in entries.indices where ids.contains(entries[i].id) { entries[i].item.hasBeenReviewed = true }
                 model.reviewedIDs.formUnion(items.map(\.item.id))
@@ -450,6 +451,7 @@ struct ReviewView: View {
                     for chunk in stride(from: 0, to: ids.count, by: 100) {
                         try await client.markViewed(Array(ids[chunk..<min(chunk + 100, ids.count)]))
                     }
+                    conn.noteReviewed(items.filter { ids.contains($0.id) })
                     model.reviewedIDs.formUnion(ids)
                 }
             } catch {
