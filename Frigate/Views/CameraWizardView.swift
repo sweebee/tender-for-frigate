@@ -110,6 +110,7 @@ struct CameraWizardView: View {
                             .multilineTextAlignment(formFieldAlignment).keyboardType(.numberPad).frame(width: 80)
                             .focused($focus, equals: .port)
                             .focusEffectDisabled()
+                        if formFieldAlignment == .leading { Spacer() }
                     }
                     .padding(.horizontal, 14).padding(.vertical, 11)
                     .modifier(FocusRow(on: focus == .port))
