@@ -67,6 +67,10 @@ struct TenderShortcuts: AppShortcutsProvider {
                     phrases: ["Set \(.applicationName) profile", "Change the \(.applicationName) profile"],
                     shortTitle: "Set Frigate profile",
                     systemImageName: "person.2.crop.square.stack")
+        AppShortcut(intent: GetStateIntent(),
+                    phrases: ["Get \(.applicationName) state", "What does \(.applicationName) see"],
+                    shortTitle: "Get Frigate state",
+                    systemImageName: "square.dashed")
     }
 }
 
@@ -125,5 +129,87 @@ enum IntentServers {
         let name = parts.count > 1 ? parts[1] : "none"
         return ProfileEntity(id: id, title: name == "none" ? String(localized: "No profile") : FrigateFormat.prettyName(name),
                              serverName: server?.name ?? "")
+    }
+}
+
+// MARK: - State of a classification model
+
+/// A state model of one of the saved servers ("Auto aanwezig" on Home).
+struct StateModelEntity: AppEntity {
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Frigate state model"
+    static let defaultQuery = StateModelQuery()
+
+    /// "<server id>|<model name>".
+    var id: String
+    var title: String
+    var serverName: String
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(title: "\(title)", subtitle: "\(serverName)")
+    }
+
+    var serverID: UUID? { UUID(uuidString: String(id.split(separator: "|").first ?? "")) }
+    var modelName: String { id.split(separator: "|", maxSplits: 1).dropFirst().first.map(String.init) ?? "" }
+}
+
+struct StateModelQuery: EntityQuery {
+    func entities(for identifiers: [StateModelEntity.ID]) async throws -> [StateModelEntity] {
+        let all = await IntentServers.allStateModels()
+        return identifiers.map { id in
+            all.first { $0.id == id } ?? {
+                let parts = id.split(separator: "|", maxSplits: 1).map(String.init)
+                let server = IntentServers.saved().first { $0.id.uuidString == parts.first }
+                return StateModelEntity(id: id, title: parts.count > 1 ? parts[1] : id, serverName: server?.name ?? "")
+            }()
+        }
+    }
+
+    func suggestedEntities() async throws -> [StateModelEntity] { await IntentServers.allStateModels() }
+}
+
+/// What a state model saw last, for automations: "if Auto aanwezig is Weg".
+struct GetStateIntent: AppIntent {
+    static let title: LocalizedStringResource = "Get Frigate state"
+    static let description = IntentDescription("Gives the state a Frigate state model saw last, such as whether the car is there, to use in an automation.")
+
+    @Parameter(title: "Model")
+    var model: StateModelEntity
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Get the state of \(\.$model)")
+    }
+
+    func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
+        guard let serverID = model.serverID, let server = IntentServers.saved().first(where: { $0.id == serverID }) else {
+            throw IntentError.message(String(localized: "This server is no longer in the app."))
+        }
+        let client = try await IntentServers.connect(server)
+        // Frigate keeps an image each time the state changes or it is not sure; the newest is the state it saw last.
+        let latest = try await client.classificationAttempts(model.modelName)
+            .first { $0.label != "unknown" && $0.label != "none" }
+        guard let latest else {
+            throw IntentError.message(String(localized: "Frigate has not reported a state for this model yet."))
+        }
+        let when = FrigateFormat.relative(latest.time).lowercased()
+        return .result(value: latest.label, dialog: "\(model.title): \(latest.label) (\(when))")
+    }
+}
+
+extension IntentServers {
+    /// Every server's state models; servers that cannot be reached are left out.
+    static func allStateModels() async -> [StateModelEntity] {
+        await withTaskGroup(of: [StateModelEntity].self) { group in
+            for server in saved() {
+                group.addTask {
+                    guard let client = try? await connect(server), let cfg = try? await client.rawConfig() else { return [] }
+                    return ClassificationModel.all(in: cfg, serverID: server.id).filter(\.isState).map {
+                        StateModelEntity(id: "\(server.id.uuidString)|\($0.name)", title: $0.name, serverName: server.name)
+                    }
+                }
+            }
+            var all: [StateModelEntity] = []
+            for await part in group { all += part }
+            return all.sorted { ($0.serverName, $0.title) < ($1.serverName, $1.title) }
+        }
     }
 }

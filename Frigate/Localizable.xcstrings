@@ -7458,6 +7458,76 @@
           }
         }
       }
+    },
+    "Get Frigate state": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate-staat ophalen"
+          }
+        }
+      }
+    },
+    "Gives the state a Frigate state model saw last, such as whether the car is there, to use in an automation.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geeft de staat die een staatmodel van Frigate het laatst zag, zoals of de auto er staat, om in een automatisering te gebruiken."
+          }
+        }
+      }
+    },
+    "Model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        }
+      }
+    },
+    "Get the state of ${model}": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haal de staat op van ${model}"
+          }
+        }
+      }
+    },
+    "Frigate state model": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate-staatmodel"
+          }
+        }
+      }
+    },
+    "Frigate has not reported a state for this model yet.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate heeft voor dit model nog geen staat gemeld."
+          }
+        }
+      }
+    },
+    "%@: %@ (%@)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@ (%3$@)"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
