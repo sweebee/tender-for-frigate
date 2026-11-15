@@ -895,12 +895,32 @@
         }
       }
     },
+    "Active": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actief"
+          }
+        }
+      }
+    },
     "Active server": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Actieve server"
+          }
+        }
+      }
+    },
+    "Add": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toevoegen"
           }
         }
       }
@@ -1755,6 +1775,26 @@
         }
       }
     },
+    "Delete %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder %@"
+          }
+        }
+      }
+    },
+    "Delete %@?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ verwijderen?"
+          }
+        }
+      }
+    },
     "Delete case": {
       "localizations": {
         "nl": {
@@ -1921,6 +1961,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download"
+          }
+        }
+      }
+    },
+    "Drag a corner to move it. Tap + between two corners to add one; long-press a corner to remove it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep een hoekpunt om het te verplaatsen. Tik op + tussen twee punten om er een toe te voegen; houd een punt ingedrukt om het te verwijderen."
           }
         }
       }
@@ -2315,6 +2365,16 @@
         }
       }
     },
+    "Give it a name with letters or numbers.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef een naam met letters of cijfers."
+          }
+        }
+      }
+    },
     "Global configuration": {
       "localizations": {
         "nl": {
@@ -2381,6 +2441,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Contrast verbeteren"
+          }
+        }
+      }
+    },
+    "It is removed from Frigate's config.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het wordt uit de config van Frigate gehaald."
           }
         }
       }
@@ -2694,6 +2764,16 @@
         }
       }
     },
+    "Motion mask": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewegingsmasker"
+          }
+        }
+      }
+    },
     "Motion masks": {
       "localizations": {
         "nl": {
@@ -2730,6 +2810,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Naam"
+          }
+        }
+      }
+    },
+    "New %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw: %@"
           }
         }
       }
@@ -2774,12 +2864,42 @@
         }
       }
     },
+    "New motion mask": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw bewegingsmasker"
+          }
+        }
+      }
+    },
+    "New object mask": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw objectmasker"
+          }
+        }
+      }
+    },
     "New password": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Nieuw wachtwoord"
+          }
+        }
+      }
+    },
+    "New zone": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe zone"
           }
         }
       }
@@ -3024,6 +3144,16 @@
         }
       }
     },
+    "None selected: every tracked object counts.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niets gekozen: elk gevolgd object telt mee."
+          }
+        }
+      }
+    },
     "Not in a case": {
       "localizations": {
         "nl": {
@@ -3130,6 +3260,16 @@
         }
       }
     },
+    "Object mask": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objectmasker"
+          }
+        }
+      }
+    },
     "Object masks": {
       "localizations": {
         "nl": {
@@ -3146,6 +3286,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Objecten"
+          }
+        }
+      }
+    },
+    "Objects in this zone": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objecten in deze zone"
           }
         }
       }
@@ -4162,6 +4312,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Video bewaren in Foto's"
+          }
+        }
+      }
+    },
+    "Saved as %@ in the config.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wordt opgeslagen als %@ in de config."
           }
         }
       }
@@ -5335,6 +5495,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "ZONES"
+          }
+        }
+      }
+    },
+    "Zone": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zone"
           }
         }
       }

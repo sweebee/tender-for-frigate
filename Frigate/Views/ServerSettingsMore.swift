@@ -271,6 +271,11 @@ struct ZonesMasksView: View {
     @State private var shapes: [Shape] = []
     @State private var loaded = false
     @State private var webInterface: ServersView.WebTarget?
+    @State private var editing: ZoneDraft?
+    @State private var role: String?
+    /// Named masks (Frigate 0.18): older configs keep masks as bare coordinates.
+    @State private var namedMasks = true
+    private var isAdmin: Bool { role == nil || role == "admin" }
 
     struct Shape: Identifiable {
         enum Kind: String { case zone, motionMask = "motion_mask", objectMask = "object_mask" }
@@ -280,6 +285,7 @@ struct ZonesMasksView: View {
         /// Corners, 0…1 across the picture.
         let points: [CGPoint]
         var enabled: Bool
+        var objects: [String] = []
         var id: String { kind.rawValue + "/" + name }
         var color: Color {
             switch kind {
@@ -295,7 +301,21 @@ struct ZonesMasksView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                ScreenTitle(text: L("Zones and masks"), showsBack: true).padding(.top, 8)
+                HStack {
+                    ScreenTitle(text: L("Zones and masks"), showsBack: true)
+                    Spacer()
+                    if isAdmin && loaded {
+                        Menu {
+                            Button { editing = .new(.zone) } label: { Label("New zone", systemImage: "square.dashed") }
+                            if namedMasks {
+                                Button { editing = .new(.motionMask) } label: { Label("New motion mask", systemImage: "rectangle.dashed") }
+                                Button { editing = .new(.objectMask) } label: { Label("New object mask", systemImage: "rectangle.slash") }
+                            }
+                        } label: { HeaderIconLabel(systemName: "plus") }
+                        .accessibilityLabel("Add")
+                    }
+                }
+                .padding(.top, 8)
                 if let client = conn?.client {
                     Color.clear
                         .aspectRatio(conn?.config?.cameras[camera]?.aspectRatio ?? 16 / 9, contentMode: .fit)
@@ -338,6 +358,11 @@ struct ZonesMasksView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
+        .sheet(isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
+            if let draft = editing {
+                ZoneEditorView(serverID: serverID, camera: camera, draft: draft) { Task { await load() } }
+            }
+        }
     }
 
     @ViewBuilder
@@ -348,13 +373,25 @@ struct ZonesMasksView: View {
             VStack(spacing: 0) {
                 ForEach(Array(list.enumerated()), id: \.element.id) { i, s in
                     if i > 0 { Divider().overlay(Theme.cardBorder) }
-                    Toggle(isOn: Binding(get: { s.enabled }, set: { set(s, $0) })) {
-                        HStack(spacing: 10) {
-                            RoundedRectangle(cornerRadius: 3).fill(s.color.opacity(0.7)).frame(width: 14, height: 14)
-                            Text(s.title).font(.system(size: 15))
+                    HStack(spacing: 10) {
+                        Button {
+                            editing = ZoneDraft(kind: s.kind, name: s.name, title: s.title, points: s.points,
+                                                enabled: s.enabled, objects: s.objects)
+                        } label: {
+                            HStack(spacing: 10) {
+                                RoundedRectangle(cornerRadius: 3).fill(s.color.opacity(0.7)).frame(width: 14, height: 14)
+                                Text(s.title).font(.system(size: 15)).foregroundStyle(Theme.text)
+                                if isAdmin {
+                                    Image(systemName: "pencil").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textSecondary)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .disabled(!isAdmin)
+                        Toggle("", isOn: Binding(get: { s.enabled }, set: { set(s, $0) })).labelsHidden().tint(Theme.online)
                     }
-                    .tint(Theme.online)
                     .padding(.horizontal, 14).padding(.vertical, 8)
                 }
             }
@@ -369,6 +406,7 @@ struct ZonesMasksView: View {
     }
 
     private func load() async {
+        role = await conn?.client?.role()
         guard let client = conn?.client, let cfg = try? await client.rawConfig(),
               let cam = (cfg["cameras"] as? [String: Any])?[camera] as? [String: Any] else { loaded = true; return }
         let detect = cam["detect"] as? [String: Any]
@@ -379,9 +417,11 @@ struct ZonesMasksView: View {
                 guard let item = value as? [String: Any] else { continue }
                 let title = (item["friendly_name"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? FrigateFormat.prettyName(name)
                 out.append(Shape(kind: kind, name: name, title: title, points: Self.points(item["coordinates"], size: size),
-                                 enabled: item["enabled"] as? Bool ?? true))
+                                 enabled: item["enabled"] as? Bool ?? true, objects: item["objects"] as? [String] ?? []))
             }
         }
+        let motionMask = (cam["motion"] as? [String: Any])?["mask"]
+        namedMasks = motionMask == nil || motionMask is [String: Any]
         add(cam["zones"], .zone)
         add((cam["motion"] as? [String: Any])?["mask"], .motionMask)
         add((cam["objects"] as? [String: Any])?["mask"], .objectMask)
