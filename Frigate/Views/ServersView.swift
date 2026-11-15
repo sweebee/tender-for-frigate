@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ServersView: View {
     @Environment(AppModel.self) private var model
-    @State private var webInterface: WebTarget?
     @State private var reordering = false
 
     struct WebTarget: Identifiable {
@@ -121,7 +120,6 @@ struct ServersView: View {
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $reordering) { ReorderServersSheet() }
-            .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
             .sheet(item: $editing) { server in
                 NavigationStack { ConnectView(existing: server) }
             }
@@ -184,14 +182,6 @@ struct ServersView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            // Frigate's own web interface, at the address the app uses right now (local or remote).
-            if let web = conn.client?.baseURL ?? ServerConfig.normalizedURL(conn.server.url) {
-                Button { webInterface = WebTarget(url: web, title: conn.server.name) } label: {
-                    Image(systemName: "safari").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
-                        .frame(width: 40, height: 44)
-                }
-                .accessibilityLabel(L("Open the web interface of \(conn.server.name)"))
-            }
             Button { editing = conn.server } label: {
                 Image(systemName: "info.circle").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
                     .frame(width: 40, height: 44)
