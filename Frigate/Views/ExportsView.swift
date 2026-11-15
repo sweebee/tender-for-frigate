@@ -695,7 +695,7 @@ struct ExportPlayerView: View {
     private var actions: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
-                actionButton("Save to Photos", "square.and.arrow.down") { Task { await saveToPhotos() } }
+                actionButton(LocalizedStringKey(LocalSave.title), LocalSave.icon) { Task { await saveToPhotos() } }
                 actionButton("Rename", "pencil") { newName = name; renaming = entry }
             }
             Button { confirmDelete = true } label: {
@@ -740,19 +740,14 @@ struct ExportPlayerView: View {
     }
 
     private func saveToPhotos() async {
-        exporter.state = .working(L("Saving to Photos…"))
+        exporter.state = .working(LocalSave.toFiles ? L("Downloading…") : L("Saving to Photos…"))
         do {
-            let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
-            guard status == .authorized || status == .limited else {
+            guard await LocalSave.allowed() else {
                 exporter.state = .failed(L("Allow Tender to add photos in Settings to save clips."))
                 return
             }
             let file = try await ExportActions.download(entry, model: model, exporter: exporter)
-            try await PHPhotoLibrary.shared().performChanges {
-                PHAssetCreationRequest.creationRequestForAssetFromVideo(atFileURL: file)
-            }
-            try? FileManager.default.removeItem(at: file)
-            exporter.state = .done(L("Saved to Photos"))
+            if let done = try await LocalSave.keep(file) { exporter.state = .done(done) } else { exporter.state = .idle; return }
         } catch {
             exporter.state = .failed(error.localizedDescription)
         }

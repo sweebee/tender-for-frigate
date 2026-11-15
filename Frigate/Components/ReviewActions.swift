@@ -74,7 +74,7 @@ struct ReviewItemMenu: View {
 
     var body: some View {
         Button { actions.saveToPhotos(item, serverID: serverID) } label: {
-            Label("Save to Photos", systemImage: "square.and.arrow.down")
+            Label(LocalSave.title, systemImage: LocalSave.icon)
         }
         Button { actions.saveToFrigate(item, serverID: serverID) } label: {
             Label("Save to Frigate", systemImage: "externaldrive")

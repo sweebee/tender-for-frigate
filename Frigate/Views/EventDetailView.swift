@@ -713,7 +713,7 @@ struct EventDetailView: View {
             // rebuilt while open flickers.
             Stable(key: [downloading, exporter.isWorking]) {
             Menu {
-                Button { saveToPhotos() } label: { Label("Save to Photos", systemImage: "square.and.arrow.down") }
+                Button { saveToPhotos() } label: { Label(LocalSave.title, systemImage: LocalSave.icon) }
                 Button { saveToFrigate() } label: { Label("Save to Frigate", systemImage: "externaldrive") }
             } label: {
                 // The spinner shows on the button that started the work: sharing has its own.

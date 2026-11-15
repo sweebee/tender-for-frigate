@@ -6358,6 +6358,36 @@
           }
         }
       }
+    },
+    "Save as file…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaar als bestand…"
+          }
+        }
+      }
+    },
+    "Saved": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaard"
+          }
+        }
+      }
+    },
+    "Downloading…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaden…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

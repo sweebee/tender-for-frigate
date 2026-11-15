@@ -508,6 +508,13 @@ struct ObjectTile: View {
     var showLabel: Bool
     @Environment(AppModel.self) private var model
 
+    /// "15 nov, 13:14" in the user's language.
+    private static let when: DateFormatter = {
+        let f = DateFormatter()
+        f.setLocalizedDateFormatFromTemplate("dMMMHHmm")
+        return f
+    }()
+
     var body: some View {
         let conn = model.connection(for: entry.serverID)
         let event = entry.event
@@ -538,7 +545,12 @@ struct ObjectTile: View {
                     } else {
                         Spacer(minLength: 0)
                     }
-                    RelativeTimeText(date: Date(timeIntervalSince1970: event.startTime))
+                    // The time as well, as Frigate shows it: "5 min ago" alone is hard to find back.
+                    VStack(alignment: .trailing, spacing: 0) {
+                        RelativeTimeText(date: Date(timeIntervalSince1970: event.startTime))
+                        Text(Self.when.string(from: Date(timeIntervalSince1970: event.startTime)))
+                            .font(.system(size: 10, weight: .medium).monospacedDigit()).foregroundStyle(.white.opacity(0.8))
+                    }
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white)

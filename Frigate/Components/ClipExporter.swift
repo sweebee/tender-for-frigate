@@ -44,17 +44,12 @@ final class ClipExporter {
     func saveToPhotos(client: FrigateClient, camera: String, start: Double, end: Double) async {
         state = .working(L("Saving \(FrigateFormat.duration(end - start)) clip…"))
         do {
-            let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
-            guard status == .authorized || status == .limited else {
+            guard await LocalSave.allowed() else {
                 state = .failed(L("Allow Tender to add photos in Settings to save clips."))
                 return
             }
             let file = try await download(client: client, camera: camera, start: start, end: end)
-            try await PHPhotoLibrary.shared().performChanges {
-                PHAssetCreationRequest.creationRequestForAssetFromVideo(atFileURL: file)
-            }
-            try? FileManager.default.removeItem(at: file)
-            state = .done(L("Saved to Photos"))
+            if let done = try await LocalSave.keep(file) { state = .done(done) } else { state = .idle; return }
         } catch {
             state = .failed(error.localizedDescription)
         }
@@ -155,5 +150,57 @@ struct ExportToast: View {
         f.allowedUnits = [.useMB]
         if let fraction = e.fraction { return "\(Int((fraction * 100).rounded()))%" }
         return f.string(fromByteCount: e.received)
+    }
+}
+
+/// Where "save" puts a clip on this device: Photos on iPhone and iPad, a file on the Mac.
+enum LocalSave {
+    static let toFiles = ProcessInfo.processInfo.isMacCatalystApp
+    static var title: String { toFiles ? L("Save as file…") : L("Save to Photos") }
+    static var icon: String { toFiles ? "doc.badge.arrow.up" : "square.and.arrow.down" }
+
+    /// Asks where to keep `file` (the Mac's save panel) and copies it there; false when cancelled.
+    @MainActor
+    static func saveFile(_ file: URL) async -> Bool {
+        let root = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }.first
+        guard var top = root else { return false }
+        while let next = top.presentedViewController { top = next }
+        let picker = UIDocumentPickerViewController(forExporting: [file], asCopy: true)
+        let delegate = Delegate()
+        picker.delegate = delegate
+        return await withCheckedContinuation { cont in
+            delegate.done = { cont.resume(returning: $0) }
+            objc_setAssociatedObject(picker, &Delegate.key, delegate, .OBJC_ASSOCIATION_RETAIN)
+            top.present(picker, animated: true)
+        }
+    }
+
+    private final class Delegate: NSObject, UIDocumentPickerDelegate {
+        nonisolated(unsafe) static var key = 0
+        var done: ((Bool) -> Void)?
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { finish(true) }
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finish(false) }
+        private func finish(_ ok: Bool) { done?(ok); done = nil }
+    }
+
+    /// Keeps a downloaded clip: Photos, or on the Mac a file of the user's choosing. The status for the pill.
+    @MainActor
+    static func keep(_ file: URL) async throws -> String? {
+        defer { try? FileManager.default.removeItem(at: file) }
+        if toFiles {
+            return await saveFile(file) ? L("Saved") : nil
+        }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCreationRequest.creationRequestForAssetFromVideo(atFileURL: file)
+        }
+        return L("Saved to Photos")
+    }
+
+    /// Photos asks for permission first; files need none.
+    static func allowed() async -> Bool {
+        if toFiles { return true }
+        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        return status == .authorized || status == .limited
     }
 }
