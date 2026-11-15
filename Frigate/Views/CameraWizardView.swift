@@ -40,6 +40,9 @@ struct CameraWizardView: View {
     @State private var usePTZ = false
     @State private var saving = false
     @State private var errorMessage: String?
+    enum Field: Hashable { case name, host, user, password, port, url, extra }
+    /// The field being typed in: shown with an accent, since a right-aligned caret is easy to miss (on the Mac above all).
+    @FocusState private var focus: Field?
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var client: FrigateClient? { conn?.client }
@@ -78,17 +81,20 @@ struct CameraWizardView: View {
     private var connectStep: some View {
         VStack(alignment: .leading, spacing: 8) {
             card {
-                field(L("Name"), text: $name, prompt: L("Driveway"))
+                field(L("Name"), text: $name, prompt: L("Driveway"), id: .name)
                 divider
-                field(L("Address"), text: $host, prompt: "192.168.1.50", keyboard: .URL)
+                field(L("Address"), text: $host, prompt: "192.168.1.50", keyboard: .URL, id: .host)
                 divider
-                field(L("Username"), text: $user, prompt: "admin")
+                field(L("Username"), text: $user, prompt: "admin", id: .user)
                 divider
                 HStack {
-                    Text("Password").font(.system(size: 15))
+                    Text("Password").font(.system(size: 15)).foregroundStyle(focus == .password ? Theme.accent : Theme.text)
                     SecureField("", text: $password).multilineTextAlignment(.trailing).font(.system(size: 15))
+                        .focused($focus, equals: .password)
+                            .focusEffectDisabled()
                 }
                 .padding(.horizontal, 14).padding(.vertical, 11)
+                .modifier(FocusRow(on: focus == .password))
             }
             Picker("", selection: $useOnvif) {
                 Text("Find it (ONVIF)").tag(true)
@@ -100,10 +106,13 @@ struct CameraWizardView: View {
                     HStack {
                         Text("ONVIF port").font(.system(size: 15))
                         Spacer()
-                        TextField("80", value: $onvifPort, format: .number.grouping(.never))
+                        TextField(focus == .port ? "" : "80", value: $onvifPort, format: .number.grouping(.never))
                             .multilineTextAlignment(.trailing).keyboardType(.numberPad).frame(width: 80)
+                            .focused($focus, equals: .port)
+                            .focusEffectDisabled()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 11)
+                    .modifier(FocusRow(on: focus == .port))
                 }
                 note(L("Most cameras answer on port 80; some on 8000 or 8899. ONVIF has to be on in the camera."))
             } else {
@@ -119,7 +128,10 @@ struct CameraWizardView: View {
                         TextField("rtsp://user:password@192.168.1.50:554/stream", text: $customURL)
                             .font(.system(size: 13).monospaced()).autocorrectionDisabled().textInputAutocapitalization(.never)
                             .keyboardType(.URL)
+                            .focused($focus, equals: .url)
+                            .focusEffectDisabled()
                             .padding(.horizontal, 14).padding(.vertical, 11)
+                            .modifier(FocusRow(on: focus == .url))
                     }
                 }
             }
@@ -165,10 +177,13 @@ struct CameraWizardView: View {
                 HStack {
                     TextField(L("Another stream address"), text: $extraURL)
                         .font(.system(size: 13).monospaced()).autocorrectionDisabled().textInputAutocapitalization(.never).keyboardType(.URL)
+                        .focused($focus, equals: .extra)
+                            .focusEffectDisabled()
                     Button { addExtra() } label: { Image(systemName: "plus.circle.fill").font(.system(size: 20)) }
                         .buttonStyle(.plain).foregroundStyle(Theme.accent).disabled(extraURL.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 10)
+                .modifier(FocusRow(on: focus == .extra))
             }
             HStack(spacing: 10) {
                 secondary(L("Back")) { step = .connect }
@@ -518,13 +533,19 @@ struct CameraWizardView: View {
         Text(text).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
     }
 
-    private func field(_ title: String, text: Binding<String>, prompt: String, keyboard: UIKeyboardType = .default) -> some View {
+    private func field(_ title: String, text: Binding<String>, prompt: String, keyboard: UIKeyboardType = .default, id: Field) -> some View {
         HStack {
-            Text(title).font(.system(size: 15))
-            TextField(prompt, text: text).multilineTextAlignment(.trailing).font(.system(size: 15))
+            Text(title).font(.system(size: 15)).foregroundStyle(focus == id ? Theme.accent : Theme.text)
+            // The example hides while typing: a right-aligned caret on top of it is invisible.
+            TextField(focus == id ? "" : prompt, text: text).multilineTextAlignment(.trailing).font(.system(size: 15))
                 .autocorrectionDisabled().textInputAutocapitalization(.never).keyboardType(keyboard)
+                .focused($focus, equals: id)
+                            .focusEffectDisabled()
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
+        .contentShape(Rectangle())
+        .onTapGesture { focus = id }
+        .modifier(FocusRow(on: focus == id))
     }
 
     private func summaryRow(_ title: String, _ value: String) -> some View {
@@ -562,4 +583,18 @@ struct CameraWizardView: View {
 
 private extension String {
     var nonEmpty: String? { isEmpty ? nil : self }
+}
+
+/// A form row with the caret in it: an accent edge (and the caller's accent label), so it is clear where you type.
+struct FocusRow: ViewModifier {
+    let on: Bool
+    func body(content: Content) -> some View {
+        content
+            // No rounded focus effect of the Mac's own on top of this.
+            .focusEffectDisabled()
+            .overlay(alignment: .leading) {
+                if on { Rectangle().fill(Theme.accent).frame(width: 3).padding(.vertical, 6) }
+            }
+            .animation(.easeOut(duration: 0.12), value: on)
+    }
 }

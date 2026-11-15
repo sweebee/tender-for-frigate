@@ -30,6 +30,8 @@ struct ClassificationWizard: View {
     @State private var finishing = false
     @State private var trained = false
     @State private var errorMessage: String?
+    /// Which field has the caret: -1 the name, else a class.
+    @FocusState private var focus: Int?
 
     private var conn: ServerConnection? { app.connection(for: serverID) }
     private var client: FrigateClient? { conn?.client }
@@ -75,12 +77,16 @@ struct ClassificationWizard: View {
                 stepLabel(1)
                 VStack(spacing: 0) {
                     HStack {
-                        Text("Name").font(.system(size: 15))
-                        TextField(isState ? L("Gate") : L("Delivery service"), text: $name)
+                        Text("Name").font(.system(size: 15)).foregroundStyle(focus == -1 ? Theme.accent : Theme.text)
+                        TextField(focus == -1 ? "" : (isState ? L("Gate") : L("Delivery service")), text: $name)
                             .multilineTextAlignment(.trailing).font(.system(size: 15))
                             .autocorrectionDisabled()
+                            .focused($focus, equals: -1)
+                            .focusEffectDisabled()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 11)
+                    .contentShape(Rectangle()).onTapGesture { focus = -1 }
+                    .modifier(FocusRow(on: focus == -1))
                 }
                 .card(radius: 12)
                 Picker("", selection: $isState) {
@@ -123,6 +129,8 @@ struct ClassificationWizard: View {
                         HStack {
                             TextField(isState ? (i == 0 ? L("Open") : L("Closed")) : (i == 0 ? "DHL" : "PostNL"), text: $classes[i])
                                 .font(.system(size: 15)).autocorrectionDisabled()
+                                .focused($focus, equals: i)
+                            .focusEffectDisabled()
                             if classes.count > (isState ? 2 : 1) {
                                 Button { classes.remove(at: i) } label: {
                                     Image(systemName: "minus.circle.fill").foregroundStyle(Theme.destructive)
@@ -131,6 +139,7 @@ struct ClassificationWizard: View {
                             }
                         }
                         .padding(.horizontal, 14).padding(.vertical, 11)
+                        .modifier(FocusRow(on: focus == i))
                     }
                     Divider().overlay(Theme.cardBorder)
                     Button { classes.append("") } label: {

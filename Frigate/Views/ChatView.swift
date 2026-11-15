@@ -264,7 +264,7 @@ struct ChatView: View {
                 .onSubmit { send(input, session: session, conn: conn) }
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(Theme.card, in: RoundedRectangle(cornerRadius: 20))
-                .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.controlBorder, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(inputFocused ? Theme.accent : Theme.controlBorder, lineWidth: 1))
             Button {
                 if session.busy { session.stop() } else { send(input, session: session, conn: conn) }
             } label: {

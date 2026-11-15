@@ -61,6 +61,7 @@ struct ZoneEditorView: View {
     @State private var confirmDelete = false
     @State private var errorMessage: String?
     @State private var labels: [String] = []
+    @FocusState private var nameFocused: Bool
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var color: Color {
@@ -102,12 +103,16 @@ struct ZoneEditorView: View {
 
                 VStack(spacing: 0) {
                     HStack {
-                        Text("Name").font(.system(size: 15))
-                        TextField(kindTitle, text: $draft.title)
+                        Text("Name").font(.system(size: 15)).foregroundStyle(nameFocused ? Theme.accent : Theme.text)
+                        TextField(nameFocused ? "" : kindTitle, text: $draft.title)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: 15))
+                            .focused($nameFocused)
+                            .focusEffectDisabled()
                     }
                     .padding(.horizontal, 14).padding(.vertical, 11)
+                    .contentShape(Rectangle()).onTapGesture { nameFocused = true }
+                    .modifier(FocusRow(on: nameFocused))
                     Divider().overlay(Theme.cardBorder)
                     Toggle(isOn: $draft.enabled) { Text("Active").font(.system(size: 15)) }
                         .tint(Theme.online)
