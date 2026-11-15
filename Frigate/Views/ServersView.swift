@@ -112,7 +112,7 @@ struct ServersView: View {
                         .padding(.top, 20)
                     versionLine
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 16).readableWidth()
                 .padding(.bottom, 24)
             }
             .refreshable { await model.refreshAll(reloadConfig: true) }
@@ -284,7 +284,7 @@ struct LiveSettingsView: View {
                 }
                 .card()
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, 24)
         }
         .screenBackground()

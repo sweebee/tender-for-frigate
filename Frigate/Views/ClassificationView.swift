@@ -71,7 +71,7 @@ struct ClassificationView: View {
                     ForEach(connections) { conn in serverSection(conn) }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, 24)
         }
         .refreshable { await load() }
@@ -342,7 +342,7 @@ struct ClassificationModelView: View {
                     grid
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, selecting ? 90 : 24)
         }
         .refreshable { await load() }

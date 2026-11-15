@@ -782,7 +782,7 @@ struct MoreView: View {
                     }
                     row(.settings, "gearshape", L("Settings"), L("Servers and live view"))
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 16).readableWidth()
                 .padding(.top, 8)
                 .padding(.bottom, 24)
             }
