@@ -428,16 +428,21 @@ struct OverlayButton: View {
     let systemImage: String
     var size: CGFloat = 44
     var label: LocalizedStringKey
+    /// Waiting for the server: a spinner instead of the icon, and no second tap.
+    var busy = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: size * 0.4, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: size, height: size)
-                .background(.black.opacity(0.6), in: Circle())
+            Group {
+                if busy { ProgressView().tint(.white) } else { Image(systemName: systemImage) }
+            }
+            .font(.system(size: size * 0.4, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: size, height: size)
+            .background(.black.opacity(0.6), in: Circle())
         }
+        .disabled(busy)
         .accessibilityLabel(label)
     }
 }

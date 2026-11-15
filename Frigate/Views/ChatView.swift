@@ -148,6 +148,7 @@ struct ChatView: View {
                     Spacer()
                 }
             }
+            .readableWidth()
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
     }

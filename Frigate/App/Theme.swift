@@ -241,6 +241,7 @@ struct SegmentedBar<T: Hashable>: View {
                 } label: {
                     Text(title(option))
                         .font(.system(size: 14, weight: isOn ? .semibold : .medium))
+                        .lineLimit(1).minimumScaleFactor(0.75)
                         .foregroundStyle(isOn ? Theme.text : Theme.textTertiary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 34)

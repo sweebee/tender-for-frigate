@@ -563,7 +563,12 @@ struct CameraSettingsView: View {
                 .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
             if isAdmin {
                 if savedEnabled == true {
-                    Button { Task { await restart() } } label: { Text(restarting ? L("Restarting…") : L("Restart Frigate")) }
+                    Button { Task { await restart() } } label: {
+                        HStack(spacing: 6) {
+                            if restarting { ProgressView().tint(Theme.onColor).controlSize(.small) }
+                            Text(restarting ? L("Restarting…") : L("Restart Frigate"))
+                        }
+                    }
                         .buttonStyle(PromptButtonStyle(primary: true))
                         .disabled(restarting)
                 } else {

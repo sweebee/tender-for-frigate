@@ -67,6 +67,12 @@ struct ExportTile: View {
                             .frame(width: 24, height: 24).background(.black.opacity(0.6), in: Circle()).padding(6)
                     }
                 }
+                .overlay {
+                    // Renamed or deleted on the server right now.
+                    if model.busyExports.contains(entry.id) {
+                        ZStack { Color.black.opacity(0.5); ProgressView().tint(.white) }
+                    }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.cardBorder, lineWidth: 1))
             Text(export.name.isEmpty ? L("Export") : export.name)
@@ -90,11 +96,15 @@ struct ExportTile: View {
 enum ExportActions {
     static func rename(_ entry: ExportEntry, to name: String, model: AppModel) async throws {
         guard let client = model.connection(for: entry.serverID)?.client else { return }
+        model.busyExports.insert(entry.id)
+        defer { model.busyExports.remove(entry.id) }
         try await client.renameExport(entry.export.id, to: name)
     }
 
     static func delete(_ entry: ExportEntry, model: AppModel) async throws {
         guard let client = model.connection(for: entry.serverID)?.client else { return }
+        model.busyExports.insert(entry.id)
+        defer { model.busyExports.remove(entry.id) }
         try await client.deleteExport(entry.export.id)
         withAnimation(.easeOut(duration: 0.2)) { _ = model.deletedExports.insert(entry.id) }
     }
@@ -317,8 +327,10 @@ struct ExportsView: View {
             ScreenTitle(text: currentCase.map { $0.exportCase.name.isEmpty ? L("Case") : $0.exportCase.name } ?? L("Exports"),
                         showsBack: caseRoute != nil || !isSection)
             Spacer()
-            if caseWork > 0 { ProgressView().controlSize(.small).padding(.trailing, 4) }
-            if let c = currentCase {
+            if caseWork > 0 {
+                // A case is made, renamed or deleted on the server: the spinner takes the button's place.
+                ProgressView().frame(width: 40, height: 40)
+            } else if let c = currentCase {
                 Menu { caseMenu(c) } label: { HeaderIconLabel(systemName: "ellipsis") }
                     .accessibilityLabel("More options")
             } else if caseServers.count == 1, let id = caseServers.first?.server.id {
@@ -690,13 +702,17 @@ struct ExportPlayerView: View {
                 actionButton("Rename", "pencil") { newName = name; renaming = entry }
             }
             Button { confirmDelete = true } label: {
-                Text("Delete export")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.destructive)
-                    .frame(maxWidth: .infinity).frame(height: 48)
-                    .card(border: Theme.controlBorder, radius: 12)
+                HStack(spacing: 8) {
+                    if model.busyExports.contains(entry.id) { ProgressView().controlSize(.small) }
+                    Text("Delete export")
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.destructive)
+                .frame(maxWidth: .infinity).frame(height: 48)
+                .card(border: Theme.controlBorder, radius: 12)
             }
             .buttonStyle(.plain)
+            .disabled(model.busyExports.contains(entry.id))
         }
         .padding(.horizontal, 16)
         .padding(.top, 18)

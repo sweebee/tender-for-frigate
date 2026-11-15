@@ -11,6 +11,8 @@ struct ReviewView: View {
 
     @Environment(AppModel.self) private var model
     @State private var kind: Kind = .alert
+    /// "Mark all reviewed" is going through the pages on the server.
+    @State private var markingAll = false
     @State private var cameraFilter: Set<String> = []
     @State private var labelFilter: Set<String> = []
     @State private var zoneFilter: Set<String> = []
@@ -108,9 +110,14 @@ struct ReviewView: View {
                 LargeTitle(text: L("Review"))
                 Spacer()
                 if kind != .motion {
-                    Button("Mark all reviewed") { Task { await markAllReviewed() } }
-                        .font(.system(size: 15, weight: .medium))
-                        .disabled(!entries.contains { !$0.item.hasBeenReviewed })
+                    Button { Task { await markAllReviewed() } } label: {
+                        HStack(spacing: 6) {
+                            if markingAll { ProgressView().controlSize(.small) }
+                            Text("Mark all reviewed").lineLimit(1)
+                        }
+                    }
+                    .font(.system(size: 15, weight: .medium))
+                    .disabled(markingAll || !entries.contains { !$0.item.hasBeenReviewed })
                 }
             }
             if isWide {
@@ -431,7 +438,9 @@ struct ReviewView: View {
     /// Marks every unreviewed item that matches the current filters, not only the loaded page,
     /// and refreshes the counts (again a moment later: Frigate's summary can lag behind).
     private func markAllReviewed() async {
-        guard kind != .motion else { return }
+        guard kind != .motion, !markingAll else { return }
+        markingAll = true
+        defer { markingAll = false }
         let severity: Severity = kind == .alert ? .alert : .detection
         let cams = cameraFilter.isEmpty ? nil : Array(cameraFilter)
         let labels = labelFilter.isEmpty ? nil : Array(labelFilter)

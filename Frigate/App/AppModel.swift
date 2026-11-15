@@ -527,6 +527,8 @@ final class AppModel {
     /// Exports deleted in this session (`ExportEntry.id`); lists leave them out, even when a
     /// load that was already under way still returns them.
     var deletedExports: Set<String> = []
+    /// Exports being renamed or deleted on the server right now: their tiles show a spinner.
+    var busyExports: Set<String> = []
     /// Exports moved to another case in this session (`ExportEntry.id` → case id, "" for none),
     /// until a load from the server shows them there; every exports screen uses them.
     var movedExports: [String: String] = [:]

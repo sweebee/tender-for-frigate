@@ -19,8 +19,9 @@ struct ProfilesView: View {
     @State private var deleting: String?
     @State private var nameField = ""
     @State private var errorMessage: String?
-    /// Creating, renaming or deleting a profile is under way on the server.
-    @State private var working = false
+    /// The profile being created (""), renamed or deleted on the server.
+    @State private var workingOn: String?
+    private var working: Bool { workingOn != nil }
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var isAdmin: Bool { role == nil || role == "admin" }
@@ -31,10 +32,12 @@ struct ProfilesView: View {
                 HStack {
                     ScreenTitle(text: L("Profiles"), showsBack: true)
                     Spacer()
-                    if working { ProgressView().padding(.trailing, 4) }
                     if isAdmin {
-                        Button { nameField = ""; creating = true } label: { HeaderIconLabel(systemName: "plus") }
+                        Button { nameField = ""; creating = true } label: {
+                            if workingOn == "" { ProgressView().frame(width: 40, height: 40) } else { HeaderIconLabel(systemName: "plus") }
+                        }
                             .buttonStyle(.plain)
+                            .disabled(working)
                             .accessibilityLabel("New profile")
                     }
                 }
@@ -98,13 +101,17 @@ struct ProfilesView: View {
             .buttonStyle(.plain)
             .disabled(switching != nil)
             if let name, isAdmin {
-                Menu {
-                    Button { nameField = title; renaming = name } label: { Label("Rename", systemImage: "pencil") }
-                    Divider()
-                    Button(role: .destructive) { deleting = name } label: { DestructiveMenuLabel(title: "Delete") }
-                } label: {
-                    Image(systemName: "ellipsis").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.textSecondary)
-                        .frame(width: 32, height: 36).contentShape(Rectangle())
+                if workingOn == name {
+                    ProgressView().controlSize(.small).frame(width: 32, height: 36)
+                } else {
+                    Menu {
+                        Button { nameField = title; renaming = name } label: { Label("Rename", systemImage: "pencil") }
+                        Divider()
+                        Button(role: .destructive) { deleting = name } label: { DestructiveMenuLabel(title: "Delete") }
+                    } label: {
+                        Image(systemName: "ellipsis").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.textSecondary)
+                            .frame(width: 32, height: 36).contentShape(Rectangle())
+                    }
                 }
                 NavigationLink { ProfileEditView(serverID: serverID, profile: name, title: title, active: isActive) } label: {
                     Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textTertiary)
@@ -155,8 +162,8 @@ struct ProfilesView: View {
         let id = ZoneDraft.key(for: title)
         guard !id.isEmpty, let client = conn?.client else { return }
         guard !profiles.contains(where: { $0.name == id }) else { errorMessage = L("A profile with this name already exists."); return }
-        working = true
-        defer { working = false }
+        workingOn = ""
+        defer { workingOn = nil }
         do {
             try await client.setConfig(["profiles": [id: ["friendly_name": title]]], requiresRestart: false, updateTopic: nil)
             await settle { $0.contains { $0.name == id } }
@@ -176,8 +183,8 @@ struct ProfilesView: View {
     private func rename(_ id: String?) async {
         let title = nameField.trimmingCharacters(in: .whitespaces)
         guard let id, !title.isEmpty, let client = conn?.client else { return }
-        working = true
-        defer { working = false }
+        workingOn = id
+        defer { workingOn = nil }
         do {
             try await client.setConfig(["profiles": [id: ["friendly_name": title]]], requiresRestart: false, updateTopic: nil)
             await settle { $0.contains { $0.name == id && $0.title == title } }
@@ -186,8 +193,8 @@ struct ProfilesView: View {
 
     private func delete(_ id: String?) async {
         guard let id, let conn, let client = conn.client else { return }
-        working = true
-        defer { working = false }
+        workingOn = id
+        defer { workingOn = nil }
         do {
             // An active profile is switched off first, as Frigate's own page does, and only
             // deleted once Frigate reports no profile.
@@ -290,6 +297,7 @@ struct ProfileEditView: View {
                 }
                 .foregroundStyle(value == nil ? Theme.textSecondary : (value! ? Theme.online : Theme.warning))
             }
+            .disabled(saving != nil)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -347,8 +355,9 @@ struct UsersView: View {
     @State private var passwordFor: FrigateClient.User?
     @State private var password = ""
     @State private var deleting: FrigateClient.User?
-    /// A change to the users is under way on the server.
-    @State private var working = false
+    /// The user being changed on the server ("" for a new one).
+    @State private var workingOn: String?
+    private var working: Bool { workingOn != nil }
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
 
@@ -358,11 +367,11 @@ struct UsersView: View {
                 HStack {
                     ScreenTitle(text: L("Users"), showsBack: true)
                     Spacer()
-                    if working { ProgressView().padding(.trailing, 4) }
                     Button { newName = ""; newPassword = ""; newRole = "viewer"; adding = true } label: {
-                        HeaderIconLabel(systemName: "plus")
+                        if workingOn == "" { ProgressView().frame(width: 40, height: 40) } else { HeaderIconLabel(systemName: "plus") }
                     }
                     .buttonStyle(.plain)
+                    .disabled(working)
                     .accessibilityLabel("Add user")
                 }
                 .padding(.top, 8)
@@ -418,6 +427,9 @@ struct UsersView: View {
                 Text(roleName(user.role ?? "viewer")).font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
             }
             Spacer()
+            if workingOn == user.username {
+                ProgressView().controlSize(.small).frame(width: 36, height: 36)
+            } else {
             Menu {
                 if !builtIn {
                     Section("Role") {
@@ -438,6 +450,8 @@ struct UsersView: View {
                     .frame(width: 36, height: 36).contentShape(Rectangle())
             }
             .accessibilityLabel(L("Options for \(user.username)"))
+            .disabled(working)
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -464,11 +478,11 @@ struct UsersView: View {
         loaded = true
     }
 
-    private func run(_ work: @escaping (FrigateClient) async throws -> Void) {
+    private func run(_ user: String, _ work: @escaping (FrigateClient) async throws -> Void) {
         guard let client = conn?.client else { return }
-        working = true
+        workingOn = user
         Task {
-            defer { working = false }
+            defer { workingOn = nil }
             do { try await work(client); await load() } catch { errorMessage = error.localizedDescription }
         }
     }
@@ -477,17 +491,17 @@ struct UsersView: View {
         let name = newName.trimmingCharacters(in: .whitespaces), pass = newPassword
         guard !name.isEmpty else { return }
         guard pass.count >= 12 else { errorMessage = L("The password needs at least 12 characters."); return }
-        run { try await $0.createUser(name, password: pass, role: role) }
+        run("") { try await $0.createUser(name, password: pass, role: role) }
     }
 
     private func setPassword(_ user: FrigateClient.User) {
         let pass = password
         guard pass.count >= 12 else { errorMessage = L("The password needs at least 12 characters."); return }
-        run { try await $0.setPassword(user.username, password: pass) }
+        run(user.username) { try await $0.setPassword(user.username, password: pass) }
     }
 
-    private func setRole(_ user: FrigateClient.User, _ role: String) { run { try await $0.setRole(user.username, role: role) } }
-    private func remove(_ user: FrigateClient.User) { run { try await $0.deleteUser(user.username) } }
+    private func setRole(_ user: FrigateClient.User, _ role: String) { run(user.username) { try await $0.setRole(user.username, role: role) } }
+    private func remove(_ user: FrigateClient.User) { run(user.username) { try await $0.deleteUser(user.username) } }
 }
 
 // MARK: - Zones and masks

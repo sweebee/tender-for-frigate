@@ -58,6 +58,7 @@ struct ZoneEditorView: View {
     @State private var original: ZoneDraft?
     @State private var dragging: Int?
     @State private var saving = false
+    @State private var deleting = false
     @State private var confirmDelete = false
     @State private var errorMessage: String?
     @State private var labels: [String] = []
@@ -91,7 +92,7 @@ struct ZoneEditorView: View {
                     Text(draft.isNew ? L("New \(kindTitle.lowercased())") : kindTitle).font(.system(size: 16, weight: .semibold))
                     Spacer()
                     Button { Task { await save() } } label: {
-                        if saving { ProgressView() } else { Text("Save").fontWeight(.semibold) }
+                        if saving && !deleting { ProgressView() } else { Text("Save").fontWeight(.semibold) }
                     }
                     .disabled(!canSave)
                 }
@@ -173,12 +174,17 @@ struct ZoneEditorView: View {
 
                 if !draft.isNew {
                     Button(role: .destructive) { confirmDelete = true } label: {
-                        Text(L("Delete \(kindTitle.lowercased())")).font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.destructive)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .card(radius: 12)
+                        HStack(spacing: 8) {
+                            if deleting { ProgressView().controlSize(.small) }
+                            Text(L("Delete \(kindTitle.lowercased())"))
+                        }
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.destructive)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .card(radius: 12)
                     }
                     .buttonStyle(.plain)
+                    .disabled(saving)
                     .padding(.top, 8)
                 }
             }
@@ -349,7 +355,8 @@ struct ZoneEditorView: View {
     private func delete() async {
         guard let client = conn?.client else { return }
         saving = true
-        defer { saving = false }
+        deleting = true
+        defer { saving = false; deleting = false }
         let (data, topic) = location(draft.name, value: NSNull())
         do {
             try await client.setConfig(["cameras": [camera: data]], requiresRestart: false, updateTopic: topic)

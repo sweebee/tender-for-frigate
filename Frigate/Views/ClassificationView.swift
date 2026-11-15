@@ -288,6 +288,8 @@ struct ClassificationModelView: View {
     @State private var selecting = false
     @State private var selection: Set<String> = []
     @State private var working = false
+    /// The class being renamed or deleted on the server: its chip shows a spinner.
+    @State private var busyClass: String?
     @State private var moving = false
     @State private var trainingAsked = false
     @State private var notice: String?
@@ -417,12 +419,17 @@ struct ClassificationModelView: View {
                 if isAdmin && loaded {
                     Button { selecting.toggle(); selection = [] } label: {
                         Text(selecting ? L("Done") : L("Select")).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.accent)
+                            .lineLimit(1).fixedSize()
                     }
                     .buttonStyle(.plain)
-                    Menu {
-                        Button { editing = true } label: { Label("Edit", systemImage: "pencil") }
-                        Button(role: .destructive) { deletingModel = true } label: { DestructiveMenuLabel(title: "Delete model") }
-                    } label: { HeaderIconLabel(systemName: "ellipsis") }
+                    if working && !selecting {
+                        ProgressView().frame(width: 40, height: 40)
+                    } else {
+                        Menu {
+                            Button { editing = true } label: { Label("Edit", systemImage: "pencil") }
+                            Button(role: .destructive) { deletingModel = true } label: { DestructiveMenuLabel(title: "Delete model") }
+                        } label: { HeaderIconLabel(systemName: "ellipsis") }
+                    }
                 }
             }
             .padding(.top, 8)
@@ -512,6 +519,7 @@ struct ClassificationModelView: View {
         let on = library == value
         return Button { library = value; selection = [] } label: {
             HStack(spacing: 5) {
+                if let value, busyClass == value { ProgressView().controlSize(.mini).tint(on ? Theme.onColor : Theme.text) }
                 Text(title).lineLimit(1)
                 Text("\(count)").foregroundStyle(on ? Theme.onColor.opacity(0.7) : Theme.textSecondary)
             }
@@ -744,6 +752,8 @@ struct ClassificationModelView: View {
         guard let client, !name.isEmpty, name != old else { return }
         guard ClassificationNames.isValid(name) else { errorMessage = L("Use letters, numbers, spaces, ' _ or -, up to 50."); return }
         guard dataset.categories[name] == nil else { errorMessage = L("There is already a class with this name."); return }
+        busyClass = old
+        defer { busyClass = nil }
         do {
             try await client.renameCategory(m.name, old, to: name)
             if library == old { library = name }
@@ -753,6 +763,8 @@ struct ClassificationModelView: View {
 
     private func deleteClass(_ c: String) async {
         guard let client else { return }
+        busyClass = c
+        defer { busyClass = nil }
         do {
             try await client.deleteDatasetImages(m.name, category: c, files: dataset.categories[c] ?? [])
             if library == c { library = nil }

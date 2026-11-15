@@ -13,6 +13,9 @@ struct EventDetailView: View {
     @State private var share: ShareItem?
     @State private var saveRequest: SaveToFrigateRequest?
     @State private var downloading = false
+    /// Marking reviewed or deleting is under way on the server.
+    @State private var reviewing = false
+    @State private var deleting = false
     @State private var confirmDelete = false
     @State private var exporter = ClipExporter()
     @State private var errorMessage: String?
@@ -231,7 +234,8 @@ struct EventDetailView: View {
                 }
                 Button { Task { await markReviewed() }; keepOverlay() } label: {
                     HStack(spacing: 5) {
-                        Image(systemName: isReviewed ? "checkmark.circle.fill" : "checkmark.circle")
+                        if reviewing { ProgressView().controlSize(.small).tint(Theme.onColor) }
+                        else { Image(systemName: isReviewed ? "checkmark.circle.fill" : "checkmark.circle") }
                         Text("Reviewed")
                     }
                     .font(.system(size: 14, weight: .semibold))
@@ -240,7 +244,7 @@ struct EventDetailView: View {
                     .background(isReviewed ? Color.white.opacity(0.12) : Theme.accent, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .disabled(isReviewed)
+                .disabled(isReviewed || reviewing)
                 Button { Task { await download() }; keepOverlay() } label: {
                     Group {
                         if downloading { ProgressView().tint(.white) } else { Image(systemName: "square.and.arrow.up") }
@@ -249,9 +253,12 @@ struct EventDetailView: View {
                 }
                 .accessibilityLabel("Share clip")
                 Button { confirmDelete = true; keepOverlay() } label: {
-                    Image(systemName: "trash").font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(Theme.destructive).frame(width: 44, height: 44)
+                    Group {
+                        if deleting { ProgressView().tint(.white) } else { Image(systemName: "trash").foregroundStyle(Theme.destructive) }
+                    }
+                    .font(.system(size: 18, weight: .medium)).frame(width: 44, height: 44)
                 }
+                .disabled(deleting)
                 .accessibilityLabel("Delete")
             }
             .foregroundStyle(Theme.text)
@@ -699,7 +706,8 @@ struct EventDetailView: View {
         HStack(spacing: 8) {
             Button { Task { await markReviewed() } } label: {
                 HStack(spacing: 6) {
-                    if isReviewed { Image(systemName: "checkmark") }
+                    if reviewing { ProgressView().controlSize(.small).tint(Theme.onColor) }
+                    else if isReviewed { Image(systemName: "checkmark") }
                     Text("Reviewed")
                 }
                     .font(.system(size: 15, weight: .semibold))
@@ -707,7 +715,7 @@ struct EventDetailView: View {
                     .frame(maxWidth: .infinity).frame(height: 50)
                     .background(isReviewed ? Theme.card : Theme.accent, in: RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(isReviewed)
+            .disabled(isReviewed || reviewing)
             // Save: to Photos, or as an export kept in Frigate (sharing is the button at the top). Kept apart from
             // the playing video, which redraws this screen several times a second: a menu
             // rebuilt while open flickers.
@@ -729,12 +737,16 @@ struct EventDetailView: View {
             }
             .stable()
             Button { confirmDelete = true } label: {
-                Text("Delete")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.destructive)
-                    .frame(maxWidth: .infinity).frame(height: 50)
-                    .card(border: Theme.controlBorder, radius: 12)
+                HStack(spacing: 6) {
+                    if deleting { ProgressView().controlSize(.small) }
+                    Text("Delete")
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.destructive)
+                .frame(maxWidth: .infinity).frame(height: 50)
+                .card(border: Theme.controlBorder, radius: 12)
             }
+            .disabled(deleting)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
@@ -786,7 +798,9 @@ struct EventDetailView: View {
     }
 
     private func markReviewed() async {
-        guard let client else { return }
+        guard let client, !reviewing else { return }
+        reviewing = true
+        defer { reviewing = false }
         do {
             try await client.markViewed([item.id])
             conn?.noteReviewed([item])
@@ -827,7 +841,9 @@ struct EventDetailView: View {
     }
 
     private func delete() async {
-        guard let client else { return }
+        guard let client, !deleting else { return }
+        deleting = true
+        defer { deleting = false }
         do {
             try await client.deleteReviews([item.id])
             await conn?.refresh()

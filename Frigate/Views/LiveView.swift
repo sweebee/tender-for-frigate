@@ -432,7 +432,7 @@ struct SwitchedOffChips: View {
                 Image(systemName: kind == .detect ? "person.crop.rectangle" : "record.circle")
                     .font(.system(size: 10, weight: .bold))
                     .overlay { Capsule().frame(width: 1.6).rotationEffect(.degrees(-45)).padding(-1.5) }
-                Text(title)
+                Text(title).lineLimit(1).minimumScaleFactor(0.8)
             }
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Theme.onLabel)

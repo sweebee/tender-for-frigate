@@ -14,8 +14,9 @@ builds; when a new screen breaks one, it is a bug.
 ## Waiting on the server
 
 - Every change that waits for Frigate shows a spinner in the control that started it (the
-  button, row or switch) and disables that control until Frigate answers. A spinner somewhere
-  else on screen is not enough.
+  button, row, chip or tile) and disables that control until Frigate answers. A spinner somewhere
+  else on screen is not enough. Only when the control is gone (a long-press menu) does the
+  progress pill at the top show it.
 - What changed shows at once and stays: a deleted item disappears and does not come back on
   the next refresh; badges and counters change together with the list.
 - Problems show at the top of the screen they belong to (for example a banner in Live), only
@@ -54,7 +55,7 @@ builds; when a new screen breaks one, it is a bug.
 - The same kind of action looks the same everywhere: the same style, height and corner radius.
   Buttons side by side are equally wide and equally tall.
 - Pushed screens use `ScreenTitle(showsBack: true)`, so the back button looks and sits the same
-  on every screen.
+  on every screen. Video screens with their own bar use `BackButtonLabel`, the same arrow.
 - Prefer an icon over a word where the icon is clear (sorting, objects in a picture). Object
   icons sit at the top left of a picture, everywhere.
 - Text in bars, buttons and chips never wraps: short labels, `lineLimit(1)`, `fixedSize()`.

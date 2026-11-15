@@ -28,6 +28,7 @@ struct ClassificationWizard: View {
     /// Example file → class.
     @State private var chosen: [String: String] = [:]
     @State private var finishing = false
+    @State private var cancelling = false
     @State private var trained = false
     @State private var errorMessage: String?
     /// Which field has the caret: -1 the name, else a class.
@@ -53,7 +54,10 @@ struct ClassificationWizard: View {
         .toolbar {
             if step != .done {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { Task { await cancel() } }.disabled(finishing)
+                    Button { Task { await cancel() } } label: {
+                        if cancelling { ProgressView() } else { Text("Cancel") }
+                    }
+                    .disabled(finishing || cancelling)
                 }
             }
         }
@@ -251,7 +255,7 @@ struct ClassificationWizard: View {
                     Text(isState ? L("Frigate found no recordings of these cameras to take examples from.")
                                  : L("Frigate found no events of this object to take examples from."))
                         .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
-                    primaryButton(L("Make the model without examples")) { Task { await finish() } }
+                    primaryButton(L("Make the model without examples"), busy: finishing) { Task { await finish() } }
                 } else if let cls = currentClass {
                     Text(L("Tap every image with: \(cls)")).font(.system(size: 17, weight: .semibold))
                     Text(L("Class \(classIndex + 1) of \(cleanClasses.count)") + (isState ? "" : " · " + L("the rest goes to None")))
@@ -417,7 +421,11 @@ struct ClassificationWizard: View {
 
     private func cancel() async {
         // Examples were made under the model's name: remove them; the config was not written yet.
-        if generated || generating, let client { _ = try? await client.sendJSON("DELETE", "api/classification/\(cleanName)", json: nil) }
+        if generated || generating, let client {
+            cancelling = true
+            _ = try? await client.sendJSON("DELETE", "api/classification/\(cleanName)", json: nil)
+            cancelling = false
+        }
         closePresented(dismiss)
     }
 }

@@ -476,7 +476,7 @@ struct CameraView: View {
             if recordingNow == false {
                 HStack(spacing: 5) {
                     Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 10))
-                    Text("Not recording")
+                    Text("Not recording").lineLimit(1).minimumScaleFactor(0.8)
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Theme.onLabel)
@@ -553,10 +553,10 @@ struct CameraView: View {
                                           label: player.muted ? "Unmute" : "Mute") {
                                 toggleSound(); keepOverlay()
                             }
-                            OverlayButton(systemImage: "camera.fill", label: "Snapshot") {
+                            OverlayButton(systemImage: "camera.fill", label: "Snapshot", busy: snapshotBusy) {
                                 Task { await snapshot(client: client, camera: camera) }; keepOverlay()
                             }
-                            OverlayButton(systemImage: manualEventID == nil ? "record.circle" : "stop.fill", label: "Record") {
+                            OverlayButton(systemImage: manualEventID == nil ? "record.circle" : "stop.fill", label: "Record", busy: recordBusy) {
                                 Task { await toggleManualRecording() }; keepOverlay()
                             }
                             .overlay(Circle().stroke(manualEventID != nil ? Theme.recording : .clear, lineWidth: 2))
@@ -1087,11 +1087,26 @@ struct FullscreenLiveView: View {
 struct PTZSheet: View {
     let client: FrigateClient
     let camera: String
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         PTZControls(client: client, camera: camera, overlay: false)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .overlay(alignment: .topTrailing) {
+                Button { closePresented(dismiss) } label: {
+                    Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textSecondary)
+                        .frame(width: 30, height: 30).background(Theme.control, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
+                .accessibilityLabel("Close")
+                .padding(12)
+            }
+            // The Mac has no detents: a small window of its own size.
+            .frame(width: ProcessInfo.processInfo.isMacCatalystApp ? 380 : nil, height: ProcessInfo.processInfo.isMacCatalystApp ? 320 : nil)
             .background(Theme.card)
+            .presentationBackground(Theme.card)
+            .fittedSheet()
     }
 }
 

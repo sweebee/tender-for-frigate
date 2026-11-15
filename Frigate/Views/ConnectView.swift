@@ -76,6 +76,7 @@ struct ConnectView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+            .readableWidth(560)
         }
         .scrollDismissesKeyboard(.interactively)
         .screenBackground()

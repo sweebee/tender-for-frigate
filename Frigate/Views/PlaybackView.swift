@@ -469,11 +469,14 @@ struct PlaybackView: View {
     /// Deletes a review item (and with it its recordings on the server) and drops it from the list.
     private func deleteReview(_ r: ReviewItem) async {
         guard let client else { return }
+        exporter.state = .working(L("Deleting…"))
         do {
             try await client.deleteReviews([r.id])
+            exporter.state = .idle
             withAnimation(.easeOut(duration: 0.2)) { reviews.removeAll { $0.id == r.id } }
             Task { await conn?.refresh() }
         } catch {
+            exporter.state = .idle
             deleteError = error.localizedDescription
         }
     }

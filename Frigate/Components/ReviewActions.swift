@@ -56,11 +56,15 @@ final class ReviewActions {
 
     func delete(_ r: ReviewItem, serverID: UUID) async {
         guard let c = conn(serverID), let client = c.client else { return }
+        // The item stays until Frigate confirms; the pill at the top shows it is being deleted.
+        exporter.state = .working(L("Deleting…"))
         do {
             try await client.deleteReviews([r.id])
+            exporter.state = .idle
             withAnimation(.easeOut(duration: 0.2)) { _ = deletedIDs.insert(r.id) }
             Task { await c.refresh() }
         } catch {
+            exporter.state = .idle
             self.error = error.localizedDescription
         }
     }
