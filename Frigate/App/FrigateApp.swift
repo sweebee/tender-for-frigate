@@ -84,6 +84,7 @@ struct RootView: View {
                 .onChange(of: model.tab, initial: true) { _, tab in
                     let route: MoreRoute? = switch tab {
                     case .exports: .exports
+                    case .classification: .classification
                     case .chat: .chat
                     case .settings: .settings
                     default: nil

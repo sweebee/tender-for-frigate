@@ -268,6 +268,24 @@ final class FrigateClient: @unchecked Sendable {
         }
     }
 
+    /// PUT or DELETE with an optional JSON body (POST has `post`).
+    @discardableResult
+    func sendJSON(_ method: String, _ path: String, json: Any?) async throws -> Data {
+        try await send(method, path, json: json)
+    }
+
+    /// A POST that may take minutes on the server (generating examples).
+    @discardableResult
+    func postLong(_ path: String, json: Any) async throws -> Data {
+        var req = URLRequest(url: url(path))
+        req.httpMethod = "POST"
+        req.timeoutInterval = 300
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("1", forHTTPHeaderField: "X-CSRF-TOKEN")
+        req.httpBody = try JSONSerialization.data(withJSONObject: json)
+        return try await perform(req)
+    }
+
     @discardableResult
     private func send(_ method: String, _ path: String, query: [String: String?] = [:], json: Any?) async throws -> Data {
         var req = URLRequest(url: url(path, query: query))
