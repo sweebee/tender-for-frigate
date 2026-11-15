@@ -8348,6 +8348,36 @@
           }
         }
       }
+    },
+    "1 image put in %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 beeld in %@ gezet"
+          }
+        }
+      }
+    },
+    "%lld images put in %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld beelden in %@ gezet"
+          }
+        }
+      }
+    },
+    "Put in": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zet in"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

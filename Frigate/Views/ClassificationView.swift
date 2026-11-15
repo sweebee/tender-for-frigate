@@ -288,6 +288,7 @@ struct ClassificationModelView: View {
     @State private var selecting = false
     @State private var selection: Set<String> = []
     @State private var working = false
+    @State private var moving = false
     @State private var trainingAsked = false
     @State private var notice: String?
     @State private var renaming: String?
@@ -606,19 +607,39 @@ struct ClassificationModelView: View {
     private var selectionBar: some View {
         HStack(spacing: 10) {
             Text(selection.count == 1 ? L("1 image") : L("\(selection.count) images")).font(.system(size: 14, weight: .semibold))
+                .lineLimit(1).minimumScaleFactor(0.8)
             Spacer()
-            Button { selectAll() } label: { Text("Select all").font(.system(size: 14, weight: .semibold)) }
+            Button { selectAll() } label: { Text("Select all").font(.system(size: 14, weight: .semibold)).lineLimit(1).fixedSize() }
                 .buttonStyle(.plain).foregroundStyle(Theme.accent)
+            if !moveTargets.isEmpty {
+                // Plain buttons: a Picker in a Menu becomes a submenu on the Mac.
+                Menu {
+                    ForEach(moveTargets, id: \.self) { c in
+                        Button(className(c)) { Task { await moveSelection(to: c) } }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        if working && moving { ProgressView().tint(Theme.onColor).controlSize(.small) }
+                        Text("Put in").lineLimit(1)
+                    }
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.onColor)
+                    .padding(.horizontal, 14).frame(height: 34).fixedSize()
+                    .background(Theme.accent.opacity(selection.isEmpty ? 0.4 : 1), in: RoundedRectangle(cornerRadius: 10))
+                }
+                .menuStyle(.button).buttonStyle(.plain)
+                .disabled(selection.isEmpty || working)
+            }
             Button { confirmDeleteSelection = true } label: {
-                HStack(spacing: 6) {
-                    if working { ProgressView().tint(.white).controlSize(.small) }
-                    Text("Delete")
+                Group {
+                    if working && !moving { ProgressView().tint(.white).controlSize(.small) }
+                    else { Image(systemName: "trash") }
                 }
                 .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
-                .padding(.horizontal, 14).padding(.vertical, 8)
+                .frame(width: 40, height: 34)
                 .background(Theme.destructive.opacity(selection.isEmpty ? 0.4 : 1), in: RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Delete")
             .disabled(selection.isEmpty || working)
         }
         .padding(14)
@@ -626,6 +647,39 @@ struct ClassificationModelView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.controlBorder, lineWidth: 1))
         .padding(.horizontal, 12).padding(.bottom, 12)
         .readableWidth()
+    }
+
+    /// The classes the selection can go to: every class but the one it is in. Moving labelled
+    /// images needs Frigate 0.18.
+    private var moveTargets: [String] {
+        guard isAdmin, library == nil || reclassifies else { return [] }
+        return dataset.classNames.filter { $0 != library }
+    }
+
+    /// Puts every selected image in one class, as tapping each and choosing it would.
+    private func moveSelection(to category: String) async {
+        guard let client, !selection.isEmpty else { return }
+        working = true
+        moving = true
+        defer { working = false; moving = false }
+        var failed: Error?
+        for file in selection.sorted() {
+            do {
+                if let from = library {
+                    try await client.reclassify(m.name, file: file, from: from, to: category)
+                } else {
+                    try await client.categorize(m.name, file: file, into: category)
+                }
+            } catch FrigateError.http(404, _) {
+                // Already moved or pruned by Frigate.
+            } catch { failed = error }
+        }
+        if let failed { errorMessage = failed.localizedDescription }
+        let count = selection.count
+        selection = []
+        selecting = false
+        notice = count == 1 ? L("1 image put in \(className(category))") : L("\(count) images put in \(className(category))")
+        await load()
     }
 
     private func selectAll() {
