@@ -97,6 +97,13 @@ struct ServerSettingsView: View {
                         }
                         .buttonStyle(.plain)
                         Divider().overlay(Theme.cardBorder)
+                        if isAdmin {
+                            NavigationLink { ConfigEditorView(serverID: serverID) } label: {
+                                SettingsRow(icon: "doc.text", tint: Theme.accent, title: L("Configuration"), value: "YAML")
+                            }
+                            .buttonStyle(.plain)
+                            Divider().overlay(Theme.cardBorder)
+                        }
                         if let web = conn.client?.baseURL {
                             Button { webInterface = ServersView.WebTarget(url: web, title: conn.server.name) } label: {
                                 SettingsRow(icon: "safari", tint: Theme.accent, title: L("Open the web interface"),
