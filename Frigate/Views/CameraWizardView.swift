@@ -88,8 +88,8 @@ struct CameraWizardView: View {
                 field(L("Username"), text: $user, prompt: "admin", id: .user)
                 divider
                 HStack {
-                    Text("Password").font(.system(size: 15)).foregroundStyle(focus == .password ? Theme.accent : Theme.text)
-                    SecureField("", text: $password).multilineTextAlignment(.trailing).font(.system(size: 15))
+                    Text("Password").font(.system(size: 15)).foregroundStyle(focus == .password ? Theme.accent : Theme.text).formLabel()
+                    SecureField("", text: $password).multilineTextAlignment(formFieldAlignment).font(.system(size: 15))
                         .focused($focus, equals: .password)
                             .focusEffectDisabled()
                 }
@@ -104,10 +104,10 @@ struct CameraWizardView: View {
             if useOnvif {
                 card {
                     HStack {
-                        Text("ONVIF port").font(.system(size: 15))
-                        Spacer()
+                        Text("ONVIF port").font(.system(size: 15)).formLabel()
+                        if formFieldAlignment == .trailing { Spacer() }
                         TextField(focus == .port ? "" : "80", value: $onvifPort, format: .number.grouping(.never))
-                            .multilineTextAlignment(.trailing).keyboardType(.numberPad).frame(width: 80)
+                            .multilineTextAlignment(formFieldAlignment).keyboardType(.numberPad).frame(width: 80)
                             .focused($focus, equals: .port)
                             .focusEffectDisabled()
                     }
@@ -535,11 +535,9 @@ struct CameraWizardView: View {
 
     private func field(_ title: String, text: Binding<String>, prompt: String, keyboard: UIKeyboardType = .default, id: Field) -> some View {
         HStack {
-            Text(title).font(.system(size: 15)).foregroundStyle(focus == id ? Theme.accent : Theme.text)
+            Text(title).font(.system(size: 15)).foregroundStyle(focus == id ? Theme.accent : Theme.text).formLabel()
             // The example hides while typing: a right-aligned caret on top of it is invisible.
-            TextField(focus == id ? "" : prompt, text: text).multilineTextAlignment(.trailing).font(.system(size: 15))
-                // On the Mac an empty right-aligned field draws its caret on the very edge, clipped: leave it room.
-                .padding(.trailing, 2)
+            TextField(focus == id ? "" : prompt, text: text).multilineTextAlignment(formFieldAlignment).font(.system(size: 15))
                 .tint(Theme.accent)
                 .autocorrectionDisabled().textInputAutocapitalization(.never).keyboardType(keyboard)
                 .focused($focus, equals: id)
@@ -599,5 +597,16 @@ struct FocusRow: ViewModifier {
                 if on { Rectangle().fill(Theme.accent).frame(width: 3).padding(.vertical, 6) }
             }
             .animation(.easeOut(duration: 0.12), value: on)
+    }
+}
+
+/// Values in form rows: right-aligned as iOS does, left-aligned on the Mac, where an empty
+/// right-aligned field does not show its caret.
+let formFieldAlignment: TextAlignment = ProcessInfo.processInfo.isMacCatalystApp ? .leading : .trailing
+
+extension View {
+    /// On the Mac labels take a fixed width, so the left-aligned values start in one column.
+    @ViewBuilder func formLabel() -> some View {
+        if formFieldAlignment == .leading { frame(width: 140, alignment: .leading) } else { self }
     }
 }

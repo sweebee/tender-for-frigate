@@ -105,7 +105,7 @@ struct ZoneEditorView: View {
                     HStack {
                         Text("Name").font(.system(size: 15)).foregroundStyle(nameFocused ? Theme.accent : Theme.text)
                         TextField(nameFocused ? "" : kindTitle, text: $draft.title)
-                            .multilineTextAlignment(.trailing)
+                            .multilineTextAlignment(formFieldAlignment)
                             .font(.system(size: 15))
                             .focused($nameFocused)
                             .focusEffectDisabled()

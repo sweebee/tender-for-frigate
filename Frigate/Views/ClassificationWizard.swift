@@ -79,7 +79,7 @@ struct ClassificationWizard: View {
                     HStack {
                         Text("Name").font(.system(size: 15)).foregroundStyle(focus == -1 ? Theme.accent : Theme.text)
                         TextField(focus == -1 ? "" : (isState ? L("Gate") : L("Delivery service")), text: $name)
-                            .multilineTextAlignment(.trailing).font(.system(size: 15))
+                            .multilineTextAlignment(formFieldAlignment).font(.system(size: 15))
                             .autocorrectionDisabled()
                             .focused($focus, equals: -1)
                             .focusEffectDisabled()
