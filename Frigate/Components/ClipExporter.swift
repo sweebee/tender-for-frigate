@@ -121,7 +121,8 @@ struct ExportToast: View {
     private func pill(_ text: String, icon: String?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                if let icon { Image(systemName: icon) } else { ProgressView().tint(.white) }
+                // Kept from being rebuilt by every progress report: a rebuilt spinner restarts and flickers.
+                if let icon { Image(systemName: icon) } else { Stable(key: 0) { ProgressView().tint(.white) }.stable() }
                 Text(text).font(.system(size: 14, weight: .semibold)).lineLimit(2)
                 if icon == nil, let exporter, exporter.received > 0 {
                     Text(amount(exporter)).font(.system(size: 13, weight: .medium).monospacedDigit())
@@ -133,7 +134,7 @@ struct ExportToast: View {
                 if let f = exporter.fraction {
                     ProgressView(value: f).tint(Theme.accent).frame(width: 220)
                 } else {
-                    ProgressView().progressViewStyle(.linear).tint(Theme.accent).frame(width: 220)
+                    SweepingBar().frame(width: 220, height: 4)
                 }
             }
         }
@@ -165,7 +166,7 @@ enum LocalSave {
         let root = UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }.first
         guard var top = root else { return false }
-        while let next = top.presentedViewController { top = next }
+        while let next = top.presentedViewController, !next.isBeingDismissed { top = next }
         let picker = UIDocumentPickerViewController(forExporting: [file], asCopy: true)
         let delegate = Delegate()
         picker.delegate = delegate
@@ -173,6 +174,11 @@ enum LocalSave {
             delegate.done = { cont.resume(returning: $0) }
             objc_setAssociatedObject(picker, &Delegate.key, delegate, .OBJC_ASSOCIATION_RETAIN)
             top.present(picker, animated: true)
+            // Should the panel not come up (top was busy dismissing), stop waiting instead of hanging.
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(2))
+                if picker.presentingViewController == nil && picker.view.window == nil { delegate.cancel() }
+            }
         }
     }
 
@@ -181,6 +187,7 @@ enum LocalSave {
         var done: ((Bool) -> Void)?
         func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { finish(true) }
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { finish(false) }
+        func cancel() { finish(false) }
         private func finish(_ ok: Bool) { done?(ok); done = nil }
     }
 
@@ -191,6 +198,7 @@ enum LocalSave {
         if toFiles {
             return await saveFile(file) ? L("Saved") : nil
         }
+
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetCreationRequest.creationRequestForAssetFromVideo(atFileURL: file)
         }
@@ -202,5 +210,24 @@ enum LocalSave {
         if toFiles { return true }
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         return status == .authorized || status == .limited
+    }
+}
+
+/// A bar for a download of unknown size: a segment sweeping across, timed by the clock, so the
+/// many redraws while bytes come in do not restart it (the system's bar flickers then).
+struct SweepingBar: View {
+    var body: some View {
+        TimelineView(.animation) { context in
+            GeometryReader { geo in
+                let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.4) / 1.4
+                let w = geo.size.width * 0.3
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.15))
+                    Capsule().fill(Theme.accent).frame(width: w)
+                        .offset(x: -w + (geo.size.width + w) * t)
+                }
+                .clipShape(Capsule())
+            }
+        }
     }
 }
