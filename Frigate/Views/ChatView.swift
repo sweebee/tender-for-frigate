@@ -159,10 +159,8 @@ struct ChatView: View {
                 ScreenTitle(text: L("Chat"), showsBack: embedded)
                 Spacer()
                 if let session, !session.isEmpty {
-                    Button { session.reset() } label: {
-                        Image(systemName: "square.and.pencil").font(.system(size: 19, weight: .medium))
-                            .frame(width: 40, height: 40)
-                    }
+                    Button { session.reset() } label: { HeaderIconLabel(systemName: "square.and.pencil") }
+                        .buttonStyle(.plain)
                     .accessibilityLabel("New chat")
                 }
             }

@@ -72,11 +72,8 @@ struct LiveView: View {
             } else {
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) { largeTiles.toggle() }
-                } label: {
-                    Image(systemName: largeTiles ? "square.grid.2x2" : "rectangle.grid.1x2")
-                        .font(.system(size: 18, weight: .medium))
-                        .frame(width: 40, height: 40)
-                }
+                } label: { HeaderIconLabel(systemName: largeTiles ? "square.grid.2x2" : "rectangle.grid.1x2") }
+                .buttonStyle(.plain)
                 .accessibilityLabel(largeTiles ? "Small tiles" : "Large tiles")
             }
         }

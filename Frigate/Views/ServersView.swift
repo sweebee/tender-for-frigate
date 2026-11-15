@@ -30,12 +30,8 @@ struct ServersView: View {
                     HStack {
                         ScreenTitle(text: L("Servers"), showsBack: embedded)
                         Spacer()
-                        Button { model.showAddServer = true } label: {
-                            Image(systemName: "plus").font(.system(size: 18, weight: .semibold))
-                                .frame(width: 44, height: 44)
-                                .background(Theme.card, in: Circle())
-                                .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
-                        }
+                        Button { model.showAddServer = true } label: { HeaderIconLabel(systemName: "plus") }
+                            .buttonStyle(.plain)
                         .accessibilityLabel("Add server")
                     }
                     .padding(.top, 8)
