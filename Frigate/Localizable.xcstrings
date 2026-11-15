@@ -7126,16 +7126,6 @@
         }
       }
     },
-    "The last 200 lines, newest at the bottom.": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "De laatste 200 regels, nieuwste onderaan."
-          }
-        }
-      }
-    },
     "The main stream for large tiles on Wi-Fi, otherwise the lighter sub stream.": {
       "localizations": {
         "nl": {
@@ -8375,6 +8365,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zet in"
+          }
+        }
+      }
+    },
+    "The last 200 lines. Passwords in camera addresses are hidden.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De laatste 200 regels. Wachtwoorden in camera-adressen worden verborgen."
           }
         }
       }

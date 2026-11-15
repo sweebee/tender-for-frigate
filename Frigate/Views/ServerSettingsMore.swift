@@ -916,7 +916,7 @@ struct SystemStatusView: View {
                 }
                 .padding(12)
                 .card(radius: 12)
-                Text("The last 200 lines, newest at the bottom.").font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
+                Text("The last 200 lines. Passwords in camera addresses are hidden.").font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
             }
             .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
@@ -962,6 +962,12 @@ struct SystemStatusView: View {
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
+    /// go2rtc logs camera addresses with their password ("rtsp://admin:secret@…", "&password=…").
+    static func hidingPasswords(_ line: String) -> String {
+        line.replacing(#/(\w+://[^:/@\s]+:)[^@\s]+@/#) { "\($0.output.1)•••@" }
+            .replacing(#/([?&](?:password|pass|pwd)=)[^&\s"]+/#.ignoresCase()) { "\($0.output.1)•••" }
+    }
+
     private struct LogPage: Decodable { var totalLines: Int?; var lines: [String]? }
 
     private func loadLogs() async {
@@ -971,7 +977,7 @@ struct SystemStatusView: View {
         do {
             let page = try await client.get(LogPage.self, "api/logs/\(logService)")
             // Newest first: the page opens on what just happened.
-            logs = Array((page.lines ?? []).suffix(200).reversed())
+            logs = Array((page.lines ?? []).suffix(200).reversed()).map(Self.hidingPasswords)
             logError = nil
         } catch FrigateError.unauthorized {
             logError = L("Only an admin can read the logs.")
