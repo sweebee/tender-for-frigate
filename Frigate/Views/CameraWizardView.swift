@@ -538,6 +538,9 @@ struct CameraWizardView: View {
             Text(title).font(.system(size: 15)).foregroundStyle(focus == id ? Theme.accent : Theme.text)
             // The example hides while typing: a right-aligned caret on top of it is invisible.
             TextField(focus == id ? "" : prompt, text: text).multilineTextAlignment(.trailing).font(.system(size: 15))
+                // On the Mac an empty right-aligned field draws its caret on the very edge, clipped: leave it room.
+                .padding(.trailing, 2)
+                .tint(Theme.accent)
                 .autocorrectionDisabled().textInputAutocapitalization(.never).keyboardType(keyboard)
                 .focused($focus, equals: id)
                             .focusEffectDisabled()
