@@ -19,6 +19,8 @@ struct ProfilesView: View {
     @State private var deleting: String?
     @State private var nameField = ""
     @State private var errorMessage: String?
+    /// Creating, renaming or deleting a profile is under way on the server.
+    @State private var working = false
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var isAdmin: Bool { role == nil || role == "admin" }
@@ -29,6 +31,7 @@ struct ProfilesView: View {
                 HStack {
                     ScreenTitle(text: L("Profiles"), showsBack: true)
                     Spacer()
+                    if working { ProgressView().padding(.trailing, 4) }
                     if isAdmin {
                         Button { nameField = ""; creating = true } label: { HeaderIconLabel(systemName: "plus") }
                             .buttonStyle(.plain)
@@ -49,6 +52,8 @@ struct ProfilesView: View {
                         }
                     }
                     .card(radius: 12)
+                    .disabled(working)
+                    .opacity(working ? 0.6 : 1)
                     if profiles.isEmpty && isAdmin {
                         Text("Make one with +, then choose per camera what it changes.")
                             .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
@@ -143,6 +148,9 @@ struct ProfilesView: View {
         if let p = try? await client.profiles() {
             profiles = p.profiles
             active = p.active
+            // Live's switcher reads the connection's list.
+            conn?.profiles = p.profiles.map { FrigateProfile(name: $0.name, title: $0.title) }
+            conn?.activeProfile = p.active
         }
         role = await client.role()
         loaded = true
@@ -153,6 +161,8 @@ struct ProfilesView: View {
         let id = ZoneDraft.key(for: title)
         guard !id.isEmpty, let client = conn?.client else { return }
         guard !profiles.contains(where: { $0.name == id }) else { errorMessage = L("A profile with this name already exists."); return }
+        working = true
+        defer { working = false }
         do {
             try await client.setConfig(["profiles": [id: ["friendly_name": title]]], requiresRestart: false, updateTopic: nil)
             await load()
@@ -162,6 +172,8 @@ struct ProfilesView: View {
     private func rename(_ id: String?) async {
         let title = nameField.trimmingCharacters(in: .whitespaces)
         guard let id, !title.isEmpty, let client = conn?.client else { return }
+        working = true
+        defer { working = false }
         do {
             try await client.setConfig(["profiles": [id: ["friendly_name": title]]], requiresRestart: false, updateTopic: nil)
             await load()
@@ -170,6 +182,8 @@ struct ProfilesView: View {
 
     private func delete(_ id: String?) async {
         guard let id, let conn, let client = conn.client else { return }
+        working = true
+        defer { working = false }
         do {
             if active == id { conn.command("profile/set", "none"); try? await Task.sleep(for: .seconds(1)) }
             var data: [String: Any] = ["profiles": [id: ""]]
@@ -320,6 +334,8 @@ struct UsersView: View {
     @State private var passwordFor: FrigateClient.User?
     @State private var password = ""
     @State private var deleting: FrigateClient.User?
+    /// A change to the users is under way on the server.
+    @State private var working = false
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
 
@@ -329,6 +345,7 @@ struct UsersView: View {
                 HStack {
                     ScreenTitle(text: L("Users"), showsBack: true)
                     Spacer()
+                    if working { ProgressView().padding(.trailing, 4) }
                     Button { newName = ""; newPassword = ""; newRole = "viewer"; adding = true } label: {
                         HeaderIconLabel(systemName: "plus")
                     }
@@ -438,7 +455,9 @@ struct UsersView: View {
 
     private func run(_ work: @escaping (FrigateClient) async throws -> Void) {
         guard let client = conn?.client else { return }
+        working = true
         Task {
+            defer { working = false }
             do { try await work(client); await load() } catch { errorMessage = error.localizedDescription }
         }
     }

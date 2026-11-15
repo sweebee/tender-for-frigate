@@ -121,7 +121,6 @@ final class ServerConnection: Identifiable {
         notificationsPausedUntil[cam.name] = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil
     }
 
-    private var profilesUnchecked = true
     private var servesProfiles: Bool { version.map { $0.compare("0.18", options: .numeric) != .orderedAscending } ?? false }
 
     /// The active profile's name, for display.
@@ -393,12 +392,13 @@ final class ServerConnection: Identifiable {
 
     func refresh(reloadConfig: Bool = false) async {
         guard let client else { return }
-        if reloadConfig || Date().timeIntervalSince(configLoaded) > 300 || (profiles.isEmpty && profilesUnchecked) {
-            if servesProfiles, let p = try? await client.profiles() {
-                profiles = p.profiles.map { FrigateProfile(name: $0.name, title: $0.title) }
-                activeProfile = p.active
-                profilesUnchecked = false
-            }
+        // Profiles are a small list: ask every refresh, so one made in the web interface or in
+        // the settings shows in Live's switcher at once.
+        if servesProfiles, let p = try? await client.profiles() {
+            profiles = p.profiles.map { FrigateProfile(name: $0.name, title: $0.title) }
+            activeProfile = p.active
+        }
+        if reloadConfig || Date().timeIntervalSince(configLoaded) > 300 {
             if let fresh = try? await client.config() {
                 config = fresh
                 configLoaded = Date()

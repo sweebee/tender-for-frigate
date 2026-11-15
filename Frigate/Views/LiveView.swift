@@ -504,6 +504,8 @@ struct NotificationPauseMenu: View {
 struct ProfileSwitcher: View {
     @Environment(AppModel.self) private var model
     @State private var errorMessage: String?
+    /// Waiting for Frigate to switch.
+    @State private var switching = false
 
     private var servers: [ServerConnection] { model.scopedConnections.filter { $0.isOnline && !$0.profiles.isEmpty } }
 
@@ -520,7 +522,11 @@ struct ProfileSwitcher: View {
                 }
             } label: {
                 HStack(spacing: 5) {
-                    Image(systemName: "person.2.crop.square.stack").font(.system(size: 12, weight: .semibold))
+                    if switching {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "person.2.crop.square.stack").font(.system(size: 12, weight: .semibold))
+                    }
                     Text(label).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
                 }
@@ -529,6 +535,7 @@ struct ProfileSwitcher: View {
                 .background(Theme.card, in: Capsule())
                 .overlay(Capsule().stroke(active ? Theme.accent : Theme.controlBorder, lineWidth: 1))
             }
+            .disabled(switching)
             .accessibilityLabel(L("Profile: \(label)"))
             .alert("Something went wrong", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -550,10 +557,16 @@ struct ProfileSwitcher: View {
     }
 
     private func pick(_ conn: ServerConnection, _ name: String?) {
+        switching = true
         Task {
+            defer { switching = false }
             do {
                 try await conn.setProfile(name)
-                try? await Task.sleep(for: .seconds(2))
+                // Frigate applies it to every camera, which takes a few seconds.
+                for _ in 0..<10 {
+                    try? await Task.sleep(for: .seconds(1))
+                    if let p = try? await conn.client?.profiles(), p.active == name { break }
+                }
                 await conn.refresh(reloadConfig: true)
             } catch { errorMessage = error.localizedDescription }
         }
