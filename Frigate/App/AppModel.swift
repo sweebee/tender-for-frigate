@@ -42,6 +42,13 @@ final class ServerConnection: Identifiable {
     /// Detection and recording switched on or off at runtime, the same way.
     var cameraDetect: [String: Bool] = [:]
     var cameraRecord: [String: Bool] = [:]
+    /// Switches sent to Frigate and not yet confirmed by its websocket ("<camera>/detect", …).
+    var pendingSwitches: Set<String> = []
+    /// Frigate 0.18's profiles on this server, and the active one; empty before 0.18.
+    var profiles: [FrigateProfile] = []
+    var activeProfile: String?
+    /// Frigate's notifications for a camera are paused until this moment.
+    var notificationsPausedUntil: [String: Date] = [:]
     private var activitySocket: URLSessionWebSocketTask?
 
     nonisolated var id: UUID { serverID }
@@ -101,6 +108,36 @@ final class ServerConnection: Identifiable {
     /// Recording is on in the config but switched off now: worth a warning.
     func isRecordSwitchedOff(_ cam: CameraConfig) -> Bool { canSwitchRecording(cam) && !isRecordEnabled(cam) }
 
+    /// Frigate's own push notifications are on for this camera (in the config), so they can be paused.
+    func hasNotifications(_ cam: CameraConfig) -> Bool { cam.notifications?.enabled == true }
+
+    /// Paused until then, or nil when notifications run.
+    func notificationsPaused(_ cam: CameraConfig) -> Date? {
+        notificationsPausedUntil[cam.name].flatMap { $0 > Date() ? $0 : nil }
+    }
+
+    /// Pauses Frigate's notifications for a camera for some minutes (0: resume), as its web
+    /// interface does.
+    func pauseNotifications(_ cam: CameraConfig, minutes: Int) {
+        guard command("\(cam.name)/notifications/suspend", String(minutes)) else { return }
+        notificationsPausedUntil[cam.name] = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil
+    }
+
+    private var servesProfiles: Bool { version.map { $0.compare("0.18", options: .numeric) != .orderedAscending } ?? false }
+
+    /// The active profile's name, for display.
+    var activeProfileTitle: String? {
+        activeProfile.map { name in profiles.first { $0.name == name }?.title ?? FrigateFormat.prettyName(name) }
+    }
+
+    /// Activates a profile (or none), shown at once; Frigate's websocket confirms it.
+    func setProfile(_ name: String?) async throws {
+        guard let client else { return }
+        let before = activeProfile
+        activeProfile = name
+        do { try await client.setProfile(name) } catch { activeProfile = before; throw error }
+    }
+
     /// Frigate switches recording on only when it is on in the config.
     func canSwitchRecording(_ cam: CameraConfig) -> Bool { cam.record?.enabledInConfig ?? cam.record?.enabled ?? false }
 
@@ -111,10 +148,28 @@ final class ServerConnection: Identifiable {
 
     /// Sends `<camera>/<topic>/set` ON or OFF over Frigate's websocket.
     private func send(_ cam: CameraConfig, _ topic: String, _ on: Bool) -> Bool {
+        guard command("\(cam.name)/\(topic)/set", on ? "ON" : "OFF") else { return false }
+        let key = "\(cam.name)/\(topic)"
+        pendingSwitches.insert(key)
+        // Frigate answers within a second; stop waiting after a while so the switch is usable again.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(6))
+            self?.pendingSwitches.remove(key)
+        }
+        return true
+    }
+
+    func isSwitchPending(_ cam: CameraConfig, _ topic: String) -> Bool { pendingSwitches.contains("\(cam.name)/\(topic)") }
+
+    /// Sends a command over Frigate's websocket, as its web interface does ("profile/set",
+    /// "<camera>/zone/<name>/set", …). False when there is no connection.
+    @discardableResult
+    func command(_ topic: String, _ payload: String) -> Bool {
         startActivityFeed()
-        guard let task = activitySocket else { return false }
-        let msg = #"{"topic":"\#(cam.name)/\#(topic)/set","payload":"\#(on ? "ON" : "OFF")","retain":false}"#
-        task.send(.string(msg)) { _ in }
+        guard let task = activitySocket,
+              let data = try? JSONSerialization.data(withJSONObject: ["topic": topic, "payload": payload, "retain": false]),
+              let text = String(data: data, encoding: .utf8) else { return false }
+        task.send(.string(text)) { _ in }
         return true
     }
 
@@ -311,6 +366,9 @@ final class ServerConnection: Identifiable {
                     if let on = config["enabled"] as? Bool { cameraEnabled[cam] = on }
                     if let on = config["detect"] as? Bool { cameraDetect[cam] = on }
                     if let on = config["record"] as? Bool { cameraRecord[cam] = on }
+                    if let until = (config["notifications_suspended"] as? NSNumber)?.doubleValue {
+                        notificationsPausedUntil[cam] = until > 0 ? Date(timeIntervalSince1970: until) : nil
+                    }
                 }
                 let objects = info["objects"] as? [[String: Any]] ?? []
                 // Moving objects only: a parked car is tracked but not "active".
@@ -318,7 +376,14 @@ final class ServerConnection: Identifiable {
                 next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving)
             }
             activity = next
+        } else if topic == "profile/state", let payload = msg["payload"] as? String {
+            activeProfile = payload == "none" || payload.isEmpty ? nil : payload
+        } else if topic.hasSuffix("/notifications/suspended"), let payload = msg["payload"] as? String {
+            let cam = String(topic.dropLast("/notifications/suspended".count))
+            let until = Double(payload) ?? 0
+            notificationsPausedUntil[cam] = until > 0 ? Date(timeIntervalSince1970: until) : nil
         } else if let state = msg["payload"] as? String, let (cam, feature) = Self.switchState(topic) {
+            pendingSwitches.remove("\(cam)/\(feature)")
             switch feature {
             case "enabled": cameraEnabled[cam] = state == "ON"
             case "detect": cameraDetect[cam] = state == "ON"
@@ -340,6 +405,12 @@ final class ServerConnection: Identifiable {
 
     func refresh(reloadConfig: Bool = false) async {
         guard let client else { return }
+        // Profiles are a small list: ask every refresh, so one made in the web interface or in
+        // the settings shows in Live's switcher at once.
+        if servesProfiles, let p = try? await client.profiles() {
+            profiles = p.profiles.map { FrigateProfile(name: $0.name, title: $0.title) }
+            activeProfile = p.active
+        }
         if reloadConfig || Date().timeIntervalSince(configLoaded) > 300 {
             if let fresh = try? await client.config() {
                 config = fresh

@@ -71,6 +71,8 @@ struct CameraConfig: Decodable {
     var ffmpeg: Ffmpeg?
     /// License plate recognition on this camera.
     var lpr: Toggle?
+    /// Frigate's own push notifications for this camera.
+    var notifications: Toggle?
 
     struct Detect: Decodable {
         var enabled: Bool?; var width: Int?; var height: Int?
@@ -99,7 +101,7 @@ struct CameraConfig: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr
+        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr, notifications
         case friendlyName = "friendly_name"
         case enabledInConfig = "enabled_in_config"
     }
@@ -151,21 +153,60 @@ struct FrigateStats: Decodable {
 
     struct CameraStats: Decodable {
         var cameraFps: Double?
+        var detectionFps: Double?
+        var processFps: Double?
+        var skippedFps: Double?
         var detectionEnabled: Bool?
         enum CodingKeys: String, CodingKey {
             case cameraFps = "camera_fps"
+            case detectionFps = "detection_fps"
+            case processFps = "process_fps"
+            case skippedFps = "skipped_fps"
             case detectionEnabled = "detection_enabled"
         }
     }
-    struct Service: Decodable { var version: String?; var uptime: Double? }
+    struct GPU: Decodable { var gpu: String?; var mem: String? }
+    /// GPU name → its load ("12.5%").
+    var gpus: [String: GPU] = [:]
+    struct Service: Decodable {
+        var version: String?; var uptime: Double?
+        var latestVersion: String?
+        /// Mount point → sizes in MB.
+        var storage: [String: Storage]?
+        enum CodingKeys: String, CodingKey {
+            case version, uptime, storage
+            case latestVersion = "latest_version"
+        }
+    }
+    struct Storage: Decodable { var total: Double?; var used: Double? }
+    struct Detector: Decodable {
+        var inferenceSpeed: Double?
+        enum CodingKeys: String, CodingKey { case inferenceSpeed = "inference_speed" }
+    }
+    /// Detector name → its speed.
+    var detectors: [String: Detector] = [:]
+    /// The whole machine's CPU use in percent, when Frigate reports it.
+    var cpuPercent: Double?
+
+    /// The recordings disk.
+    var recordingStorage: Storage? { service?.storage?["/media/frigate/recordings"] }
 
     init(from decoder: Decoder) throws {
         // `cameras` sits next to detectors and other keys; decode leniently.
         let c = try decoder.container(keyedBy: CodingKeys.self)
         cameras = (try? c.decode([String: CameraStats].self, forKey: .cameras)) ?? [:]
         service = try? c.decode(Service.self, forKey: .service)
+        detectors = (try? c.decode([String: Detector].self, forKey: .detectors)) ?? [:]
+        gpus = (try? c.decode([String: GPU].self, forKey: .gpuUsages)) ?? [:]
+        if let cpu = try? c.decode([String: [String: String]].self, forKey: .cpuUsages) {
+            cpuPercent = cpu["frigate.full_system"]?["cpu"].flatMap(Double.init)
+        }
     }
-    enum CodingKeys: String, CodingKey { case cameras, service }
+    enum CodingKeys: String, CodingKey {
+        case cameras, service, detectors
+        case cpuUsages = "cpu_usages"
+        case gpuUsages = "gpu_usages"
+    }
 }
 
 // MARK: - Review
@@ -545,4 +586,12 @@ struct FrigateExport: Decodable, Identifiable, Hashable {
         if p.hasPrefix("/") { p.removeFirst() }
         return p
     }
+}
+
+
+/// One of Frigate 0.18's profiles ("Home", "Away").
+struct FrigateProfile: Hashable, Identifiable {
+    var name: String
+    var title: String
+    var id: String { name }
 }

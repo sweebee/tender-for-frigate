@@ -55,6 +55,7 @@ struct LiveView: View {
         HStack {
             LargeTitle(text: L("Live"))
             Spacer()
+            ProfileSwitcher()
             if sizeClass == .regular {
                 // Wide screens: how many cameras side by side, as plain numbers so it says
                 // exactly what you get.
@@ -453,11 +454,16 @@ struct CameraSwitches: View {
                 Toggle(isOn: Binding(get: { conn.isDetectEnabled(camera) }, set: { conn.setDetectEnabled(camera, $0) })) {
                     Label("Detection", systemImage: "person.crop.rectangle")
                 }
+                .toggleStyle(.automatic)
                 if conn.canSwitchRecording(camera) {
                     Toggle(isOn: Binding(get: { conn.isRecordEnabled(camera) }, set: { conn.setRecordEnabled(camera, $0) })) {
                         Label("Recordings", systemImage: "record.circle")
                     }
+                    .toggleStyle(.automatic)
                 }
+            }
+            if on && conn.hasNotifications(camera) {
+                NotificationPauseMenu(conn: conn, camera: camera)
             }
             if camera.canSwitchOff {
                 Button {
@@ -466,6 +472,107 @@ struct CameraSwitches: View {
                     Label(on ? "Switch camera off" : "Switch camera on", systemImage: "power")
                 }
             }
+        }
+    }
+}
+
+
+/// "Pause notifications" for 30 minutes, an hour, 8 hours or a day, or "Resume", as Frigate's
+/// camera menu offers.
+struct NotificationPauseMenu: View {
+    let conn: ServerConnection
+    let camera: CameraConfig
+
+    var body: some View {
+        if let until = conn.notificationsPaused(camera) {
+            Button { conn.pauseNotifications(camera, minutes: 0) } label: {
+                Label(L("Resume notifications (paused until \(FrigateFormat.time(until)))"), systemImage: "bell")
+            }
+        } else {
+            Menu {
+                ForEach([(30, L("30 minutes")), (60, L("1 hour")), (480, L("8 hours")), (1440, L("24 hours"))], id: \.0) { m, title in
+                    Button(title) { conn.pauseNotifications(camera, minutes: m) }
+                }
+            } label: {
+                Label("Pause notifications", systemImage: "bell.slash")
+            }
+        }
+    }
+}
+
+
+/// The active Frigate profile as a chip in the Live header; a tap lists the profiles to switch
+/// to, per server when several have them. Hidden when no server in view has profiles.
+struct ProfileSwitcher: View {
+    @Environment(AppModel.self) private var model
+    @State private var errorMessage: String?
+    /// Waiting for Frigate to switch.
+    @State private var switching = false
+
+    private var servers: [ServerConnection] { model.scopedConnections.filter { $0.isOnline && !$0.profiles.isEmpty } }
+
+    var body: some View {
+        if !servers.isEmpty {
+            Menu {
+                ForEach(servers) { conn in
+                    Section(servers.count > 1 ? conn.server.name : L("Profile")) {
+                        Button { pick(conn, nil) } label: { choice(L("No profile"), conn.activeProfile == nil) }
+                        ForEach(conn.profiles) { p in
+                            Button { pick(conn, p.name) } label: { choice(p.title, conn.activeProfile == p.name) }
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    if switching {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "person.2.crop.square.stack").font(.system(size: 12, weight: .semibold))
+                    }
+                    Text(label).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                    Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
+                }
+                .foregroundStyle(active ? Theme.accent : Theme.text)
+                .padding(.horizontal, 11).frame(height: 32)
+                .background(Theme.card, in: Capsule())
+                .overlay(Capsule().stroke(active ? Theme.accent : Theme.controlBorder, lineWidth: 1))
+            }
+            .disabled(switching)
+            .accessibilityLabel(L("Profile: \(label)"))
+            .alert("Something went wrong", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: { Text(errorMessage ?? "") }
+        }
+    }
+
+    private var active: Bool { servers.contains { $0.activeProfile != nil } }
+
+    /// The active profile; "Several" only when servers run different ones; "No profile" when none
+    /// runs (a server without an active profile does not make it "mixed").
+    private var label: String {
+        let titles = Set(servers.compactMap(\.activeProfileTitle))
+        if titles.isEmpty { return L("No profile") }
+        return titles.count == 1 ? titles.first! : L("Several")
+    }
+
+    @ViewBuilder
+    private func choice(_ title: String, _ selected: Bool) -> some View {
+        if selected { Label(title, systemImage: "checkmark") } else { Text(title) }
+    }
+
+    private func pick(_ conn: ServerConnection, _ name: String?) {
+        switching = true
+        Task {
+            defer { switching = false }
+            do {
+                try await conn.setProfile(name)
+                // Frigate applies it to every camera, which takes a few seconds.
+                for _ in 0..<10 {
+                    try? await Task.sleep(for: .seconds(1))
+                    if let p = try? await conn.client?.profiles(), p.active == name { break }
+                }
+                await conn.refresh(reloadConfig: true)
+            } catch { errorMessage = error.localizedDescription }
         }
     }
 }

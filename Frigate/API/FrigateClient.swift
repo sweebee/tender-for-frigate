@@ -292,6 +292,83 @@ final class FrigateClient: @unchecked Sendable {
         return id
     }
 
+    // MARK: Server settings
+
+    /// The running config as plain JSON, for the settings screens (they read nested keys and
+    /// send back only what changed).
+    func rawConfig() async throws -> [String: Any] {
+        let data = try await data("api/config")
+        guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw FrigateError.notFrigate }
+        return obj
+    }
+
+    /// The signed-in user's role ("admin", "viewer" or a custom role); nil when Frigate runs
+    /// without authentication, which makes everyone an admin.
+    func role() async -> String? {
+        guard let data = try? await data("api/profile"),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return obj["role"] as? String
+    }
+
+    /// Changes Frigate's config file as its own settings pages do (PUT /api/config/set): `data`
+    /// holds only the changed keys, nested from the root. With an `updateTopic` the change
+    /// applies at once; otherwise, with `requiresRestart`, after a restart. Admin only.
+    func setConfig(_ data: [String: Any], requiresRestart: Bool, updateTopic: String?) async throws {
+        var body: [String: Any] = ["requires_restart": requiresRestart ? 1 : 0, "config_data": data]
+        if let updateTopic { body["update_topic"] = updateTopic }
+        let reply = try await send("PUT", "api/config/set", json: body)
+        if let obj = try? JSONSerialization.jsonObject(with: reply) as? [String: Any], obj["success"] as? Bool == false {
+            throw FrigateError.http(400, obj["message"] as? String)
+        }
+    }
+
+    /// Frigate 0.18's profiles ("Thuis", "Weg") and the active one.
+    func profiles() async throws -> (profiles: [(name: String, title: String)], active: String?) {
+        let data = try await data("api/profiles")
+        guard let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return ([], nil) }
+        let list = (obj["profiles"] as? [[String: Any]] ?? []).compactMap { p -> (name: String, title: String)? in
+            guard let name = p["name"] as? String else { return nil }
+            let friendly = (p["friendly_name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+            return (name, friendly ?? FrigateFormat.prettyName(name))
+        }
+        return (list, obj["active_profile"] as? String)
+    }
+
+    /// Activates a profile on the server, or none with nil (Frigate 0.18, admin only), as
+    /// Frigate's own menu does: PUT /api/camera/*/set/profile.
+    func setProfile(_ name: String?) async throws {
+        try await send("PUT", "api/camera/*/set/profile", json: ["value": name ?? "none"])
+    }
+
+    struct User: Decodable, Identifiable, Hashable {
+        var username: String
+        var role: String?
+        var id: String { username }
+    }
+
+    func users() async throws -> [User] { try await get([User].self, "api/users") }
+
+    func createUser(_ username: String, password: String, role: String) async throws {
+        try await post("api/users", json: ["username": username, "password": password, "role": role])
+    }
+
+    func deleteUser(_ username: String) async throws {
+        try await send("DELETE", "api/users/\(username)", json: nil)
+    }
+
+    func setPassword(_ username: String, password: String) async throws {
+        try await send("PUT", "api/users/\(username)/password", json: ["password": password])
+    }
+
+    func setRole(_ username: String, role: String) async throws {
+        try await send("PUT", "api/users/\(username)/role", json: ["role": role])
+    }
+
+    /// Restarts Frigate (admin only); it is unreachable for half a minute or so.
+    func restart() async throws {
+        try await post("api/restart", json: [:])
+    }
+
     func endEvent(_ id: String) async throws {
         try await send("PUT", "api/events/\(id)/end", json: ["end_time": Int(Date().timeIntervalSince1970.rounded(.up))])
     }

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ServersView: View {
     @Environment(AppModel.self) private var model
-    @State private var webInterface: WebTarget?
     @State private var reordering = false
 
     struct WebTarget: Identifiable {
@@ -10,7 +9,6 @@ struct ServersView: View {
         let title: String
         var id: String { url.absoluteString }
     }
-    @State private var editing: ServerConfig?
 
     /// Inside another navigation stack (the phone's More tab): no stack of its own, and a
     /// back button.
@@ -121,10 +119,6 @@ struct ServersView: View {
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $reordering) { ReorderServersSheet() }
-            .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
-            .sheet(item: $editing) { server in
-                NavigationStack { ConnectView(existing: server) }
-            }
     }
 
     /// "Version 1.0 (202611121554) · fe23b90"; the commit links to it on GitHub.
@@ -184,19 +178,18 @@ struct ServersView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            // Frigate's own web interface, at the address the app uses right now (local or remote).
-            if let web = conn.client?.baseURL ?? ServerConfig.normalizedURL(conn.server.url) {
-                Button { webInterface = WebTarget(url: web, title: conn.server.name) } label: {
-                    Image(systemName: "safari").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
-                        .frame(width: 40, height: 44)
-                }
-                .accessibilityLabel(L("Open the web interface of \(conn.server.name)"))
+            // The server's settings: its connection (address, sign-in) and Frigate's own settings.
+            NavigationLink {
+                ServerSettingsView(serverID: conn.server.id)
+            } label: {
+                // The same size as the sidebar's buttons.
+                Image(systemName: "gearshape").font(.system(size: 20, weight: .medium)).foregroundStyle(Theme.textSecondary)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.control, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.controlBorder, lineWidth: 1))
             }
-            Button { editing = conn.server } label: {
-                Image(systemName: "info.circle").font(.system(size: 20)).foregroundStyle(Theme.textSecondary)
-                    .frame(width: 40, height: 44)
-            }
-            .accessibilityLabel("Edit \(conn.server.name)")
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("Settings of \(conn.server.name)"))
         }
         .padding(14)
         .card(border: active ? Theme.accent : Theme.cardBorder)
