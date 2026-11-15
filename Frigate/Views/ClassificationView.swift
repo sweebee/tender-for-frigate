@@ -62,6 +62,12 @@ struct ClassificationView: View {
                         .font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
                         .frame(maxWidth: .infinity, minHeight: 120)
                 } else {
+                    if !anyModels && connections.count > 1 {
+                        // Nothing of this kind anywhere yet: what it is, once, then a row per server.
+                        Text(showStates ? L("A state model looks at an area of a camera and tells its state, like open or closed.")
+                                        : L("An object model puts a tracked object into a class, like which delivery service."))
+                            .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                    }
                     ForEach(connections) { conn in serverSection(conn) }
                 }
             }
@@ -115,9 +121,8 @@ struct ClassificationView: View {
     private func serverSection(_ conn: ServerConnection) -> some View {
         let list = (models[conn.server.id] ?? []).filter { $0.isState == showStates }
         if connections.count > 1 { SectionLabel(text: conn.server.name).padding(.top, 8) }
-        if list.isEmpty && !anyModels {
-            // Several servers, none with a model of this kind yet: one explanation, then a short row per server.
-            if conn.id == connections.first?.id || connections.count == 1 { emptyExplanation(conn) } else { emptyRow(conn) }
+        if list.isEmpty && connections.count == 1 {
+            emptyExplanation(conn)
         } else if list.isEmpty {
             emptyRow(conn)
         } else {
