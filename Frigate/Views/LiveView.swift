@@ -459,12 +459,39 @@ struct CameraSwitches: View {
                     }
                 }
             }
+            if on && conn.hasNotifications(camera) {
+                NotificationPauseMenu(conn: conn, camera: camera)
+            }
             if camera.canSwitchOff {
                 Button {
                     conn.setCameraEnabled(camera, !on)
                 } label: {
                     Label(on ? "Switch camera off" : "Switch camera on", systemImage: "power")
                 }
+            }
+        }
+    }
+}
+
+
+/// "Pause notifications" for 30 minutes, an hour, 8 hours or a day, or "Resume", as Frigate's
+/// camera menu offers.
+struct NotificationPauseMenu: View {
+    let conn: ServerConnection
+    let camera: CameraConfig
+
+    var body: some View {
+        if let until = conn.notificationsPaused(camera) {
+            Button { conn.pauseNotifications(camera, minutes: 0) } label: {
+                Label(L("Resume notifications (paused until \(FrigateFormat.time(until)))"), systemImage: "bell")
+            }
+        } else {
+            Menu {
+                ForEach([(30, L("30 minutes")), (60, L("1 hour")), (480, L("8 hours")), (1440, L("24 hours"))], id: \.0) { m, title in
+                    Button(title) { conn.pauseNotifications(camera, minutes: m) }
+                }
+            } label: {
+                Label("Pause notifications", systemImage: "bell.slash")
             }
         }
     }

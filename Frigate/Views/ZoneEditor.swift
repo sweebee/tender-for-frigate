@@ -15,6 +15,10 @@ struct ZoneDraft {
     var enabled = true
     /// Zones: the objects that count in it (empty: all).
     var objects: [String] = []
+    /// Zones: frames an object must be inside before it counts as in the zone.
+    var inertia: Double = 3
+    /// Zones: seconds an object must stay before it counts as loitering (0: off).
+    var loiteringTime: Double = 0
 
     var isNew: Bool { name.isEmpty }
 
@@ -136,6 +140,26 @@ struct ZoneEditorView: View {
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card(radius: 12)
+
+                    SectionLabel(text: L("Timing")).padding(.top, 6)
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text("Frames before it counts").font(.system(size: 15))
+                            Spacer(minLength: 8)
+                            NumberStepper(value: draft.inertia, unit: "", step: 1, min: 1, max: 30) { draft.inertia = $0 }
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        Divider().overlay(Theme.cardBorder)
+                        HStack {
+                            Text("Loitering after").font(.system(size: 15))
+                            Spacer(minLength: 8)
+                            NumberStepper(value: draft.loiteringTime, unit: "s", step: 5, min: 0, max: 3600) { draft.loiteringTime = $0 }
+                        }
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                    }
+                    .card(radius: 12)
+                    Text("An object must be in the zone this many frames in a row before it counts; a few avoids short false entries. Loitering: an object that stays longer is marked as loitering (0 is off).")
+                        .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                 }
 
                 if !draft.isNew {
@@ -287,6 +311,8 @@ struct ZoneEditorView: View {
         var value: [String: Any] = ["coordinates": draft.coordinates, "enabled": draft.enabled]
         if title != name { value["friendly_name"] = title }
         if draft.kind == .zone {
+            value["inertia"] = Int(draft.inertia)
+            value["loitering_time"] = Int(draft.loiteringTime)
             if !draft.objects.isEmpty { value["objects"] = draft.objects } else if !(original?.objects.isEmpty ?? true) { value["objects"] = NSNull() }
         }
         let (data, topic) = location(name, value: value)

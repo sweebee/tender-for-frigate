@@ -71,6 +71,8 @@ struct CameraConfig: Decodable {
     var ffmpeg: Ffmpeg?
     /// License plate recognition on this camera.
     var lpr: Toggle?
+    /// Frigate's own push notifications for this camera.
+    var notifications: Toggle?
 
     struct Detect: Decodable {
         var enabled: Bool?; var width: Int?; var height: Int?
@@ -99,7 +101,7 @@ struct CameraConfig: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr
+        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr, notifications
         case friendlyName = "friendly_name"
         case enabledInConfig = "enabled_in_config"
     }
@@ -151,12 +153,21 @@ struct FrigateStats: Decodable {
 
     struct CameraStats: Decodable {
         var cameraFps: Double?
+        var detectionFps: Double?
+        var processFps: Double?
+        var skippedFps: Double?
         var detectionEnabled: Bool?
         enum CodingKeys: String, CodingKey {
             case cameraFps = "camera_fps"
+            case detectionFps = "detection_fps"
+            case processFps = "process_fps"
+            case skippedFps = "skipped_fps"
             case detectionEnabled = "detection_enabled"
         }
     }
+    struct GPU: Decodable { var gpu: String?; var mem: String? }
+    /// GPU name → its load ("12.5%").
+    var gpus: [String: GPU] = [:]
     struct Service: Decodable {
         var version: String?; var uptime: Double?
         var latestVersion: String?
@@ -186,6 +197,7 @@ struct FrigateStats: Decodable {
         cameras = (try? c.decode([String: CameraStats].self, forKey: .cameras)) ?? [:]
         service = try? c.decode(Service.self, forKey: .service)
         detectors = (try? c.decode([String: Detector].self, forKey: .detectors)) ?? [:]
+        gpus = (try? c.decode([String: GPU].self, forKey: .gpuUsages)) ?? [:]
         if let cpu = try? c.decode([String: [String: String]].self, forKey: .cpuUsages) {
             cpuPercent = cpu["frigate.full_system"]?["cpu"].flatMap(Double.init)
         }
@@ -193,6 +205,7 @@ struct FrigateStats: Decodable {
     enum CodingKeys: String, CodingKey {
         case cameras, service, detectors
         case cpuUsages = "cpu_usages"
+        case gpuUsages = "gpu_usages"
     }
 }
 

@@ -114,6 +114,16 @@
         }
       }
     },
+    "%@ fps": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ fps"
+          }
+        }
+      }
+    },
     "%@ goes into it.": {
       "localizations": {
         "nl": {
@@ -809,6 +819,16 @@
         }
       }
     },
+    "1 hour": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 uur"
+          }
+        }
+      }
+    },
     "1 object": {
       "localizations": {
         "nl": {
@@ -855,12 +875,42 @@
         }
       }
     },
+    "24 hours": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "24 uur"
+          }
+        }
+      }
+    },
+    "30 minutes": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 minuten"
+          }
+        }
+      }
+    },
     "5 is usually enough; more takes more of the detector.": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "5 is meestal genoeg; meer vraagt meer van de detector."
+          }
+        }
+      }
+    },
+    "8 hours": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8 uur"
           }
         }
       }
@@ -881,6 +931,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Een profiel verandert meerdere camera's tegelijk, bijvoorbeeld de binnencamera's uit als je thuis bent."
+          }
+        }
+      }
+    },
+    "A profile with this name already exists.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een profiel met deze naam."
           }
         }
       }
@@ -1185,6 +1245,16 @@
         }
       }
     },
+    "An object must be in the zone this many frames in a row before it counts; a few avoids short false entries. Loitering: an object that stays longer is marked as loitering (0 is off).": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een object moet zoveel beelden achter elkaar in de zone zijn voordat het telt; een paar voorkomt korte valse meldingen. Rondhangen: een object dat langer blijft, wordt als rondhangend gemarkeerd (0 is uit)."
+          }
+        }
+      }
+    },
     "Applies at once, no restart needed.": {
       "localizations": {
         "nl": {
@@ -1211,6 +1281,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rond een melding"
+          }
+        }
+      }
+    },
+    "As configured": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoals ingesteld"
           }
         }
       }
@@ -1375,6 +1455,16 @@
         }
       }
     },
+    "Camera order": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgorde camera's"
+          }
+        }
+      }
+    },
     "Camera tiles": {
       "localizations": {
         "nl": {
@@ -1391,6 +1481,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Camera niet beschikbaar"
+          }
+        }
+      }
+    },
+    "Camera: frames coming in per second. Detection: frames the detector looks at. Skipped frames mean the detector cannot keep up.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera: binnenkomende beelden per seconde. Detectie: beelden die de detector bekijkt. Overgeslagen beelden betekenen dat de detector het niet bijhoudt."
           }
         }
       }
@@ -1865,6 +1965,16 @@
         }
       }
     },
+    "Delete this profile?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit profiel verwijderen?"
+          }
+        }
+      }
+    },
     "Delete this review item and its recordings?": {
       "localizations": {
         "nl": {
@@ -1941,6 +2051,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Detector"
+          }
+        }
+      }
+    },
+    "Detector %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detector %@"
+          }
+        }
+      }
+    },
+    "Display": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weergave"
           }
         }
       }
@@ -2245,6 +2375,16 @@
         }
       }
     },
+    "For Live in this app and Frigate's dashboard.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voor Live in deze app en het dashboard van Frigate."
+          }
+        }
+      }
+    },
     "For all cameras that have no recording settings of their own.": {
       "localizations": {
         "nl": {
@@ -2265,12 +2405,32 @@
         }
       }
     },
+    "Frames before it counts": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beelden voordat het telt"
+          }
+        }
+      }
+    },
     "Frames per second": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Beelden per seconde"
+          }
+        }
+      }
+    },
+    "Frigate did not switch the profile.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate heeft het profiel niet gewisseld."
           }
         }
       }
@@ -2385,6 +2545,16 @@
         }
       }
     },
+    "Hidden": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verborgen"
+          }
+        }
+      }
+    },
     "Hide password": {
       "localizations": {
         "nl": {
@@ -2461,6 +2631,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "De %lld exports blijven bewaard buiten een zaak, tenzij je ze ook verwijdert."
+          }
+        }
+      }
+    },
+    "Its changes per camera are removed too.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De wijzigingen per camera worden ook verwijderd."
           }
         }
       }
@@ -2628,6 +2808,26 @@
         }
       }
     },
+    "Logs": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logboek"
+          }
+        }
+      }
+    },
+    "Loitering after": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rondhangen na"
+          }
+        }
+      }
+    },
     "Long-press an export to move it into this case.": {
       "localizations": {
         "nl": {
@@ -2648,6 +2848,16 @@
         }
       }
     },
+    "Lower comes first. Use Camera order on the server page to drag them instead.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lager komt eerst. Of sleep ze via Volgorde camera's op de serverpagina."
+          }
+        }
+      }
+    },
     "MJPEG": {
       "shouldTranslate": false
     },
@@ -2660,6 +2870,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hoofdstream"
+          }
+        }
+      }
+    },
+    "Make one with +, then choose per camera what it changes.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak er een met + en kies daarna per camera wat het verandert."
           }
         }
       }
@@ -2700,6 +2920,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Microfoon niet beschikbaar"
+          }
+        }
+      }
+    },
+    "Minimum score": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimale score"
+          }
+        }
+      }
+    },
+    "Minimum score: detections below it are ignored. Score to count: the object's median score must reach it before it is tracked. Smallest size: in pixels of the detect resolution.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimale score: detecties daaronder worden genegeerd. Score om te tellen: de mediaanscore van het object moet dit halen voordat het gevolgd wordt. Kleinste grootte: in pixels van de detectieresolutie."
           }
         }
       }
@@ -2814,6 +3054,16 @@
         }
       }
     },
+    "Name, e.g. Home or Away": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam, bijv. Thuis of Weg"
+          }
+        }
+      }
+    },
     "New %@": {
       "localizations": {
         "nl": {
@@ -2890,6 +3140,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieuw wachtwoord"
+          }
+        }
+      }
+    },
+    "New profile": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw profiel"
           }
         }
       }
@@ -3310,6 +3570,16 @@
         }
       }
     },
+    "Off: the camera is left out of Live, in this app and in Frigate.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uit: de camera staat niet in Live, in deze app en in Frigate."
+          }
+        }
+      }
+    },
     "Offline": {
       "localizations": {
         "nl": {
@@ -3380,12 +3650,32 @@
         }
       }
     },
+    "On the dashboard": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op het dashboard"
+          }
+        }
+      }
+    },
     "Only admins can start a recording.": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
             "value": "Alleen beheerders kunnen een opname starten."
+          }
+        }
+      }
+    },
+    "Only an admin can read the logs.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen een beheerder kan het logboek lezen."
           }
         }
       }
@@ -3549,6 +3839,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pauze"
+          }
+        }
+      }
+    },
+    "Pause notifications": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingen pauzeren"
+          }
+        }
+      }
+    },
+    "Paused until %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gepauzeerd tot %@"
+          }
+        }
+      }
+    },
+    "Per camera what this profile changes. \"As configured\" keeps the camera's own setting.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per camera wat dit profiel verandert. \"Zoals ingesteld\" houdt de eigen instelling van de camera."
           }
         }
       }
@@ -3723,6 +4043,16 @@
         }
       }
     },
+    "Position": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Positie"
+          }
+        }
+      }
+    },
     "Preparing clip…": {
       "localizations": {
         "nl": {
@@ -3763,6 +4093,16 @@
         }
       }
     },
+    "Processing": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerking"
+          }
+        }
+      }
+    },
     "Profile": {
       "localizations": {
         "nl": {
@@ -3789,6 +4129,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Profielen maak je in de webinterface van Frigate (Settings → Profiles); hier wissel je ertussen."
+          }
+        }
+      }
+    },
+    "Push notifications": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pushmeldingen"
           }
         }
       }
@@ -4036,6 +4386,16 @@
         }
       }
     },
+    "Rename profile": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profiel hernoemen"
+          }
+        }
+      }
+    },
     "Reorder": {
       "localizations": {
         "nl": {
@@ -4092,6 +4452,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Herstarten…"
+          }
+        }
+      }
+    },
+    "Resume notifications (paused until %@)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingen hervatten (gepauzeerd tot %@)"
           }
         }
       }
@@ -4396,6 +4766,16 @@
         }
       }
     },
+    "Score to count": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Score om te tellen"
+          }
+        }
+      }
+    },
     "Search": {
       "localizations": {
         "nl": {
@@ -4696,6 +5076,16 @@
         }
       }
     },
+    "Smallest size": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kleinste grootte"
+          }
+        }
+      }
+    },
     "Snapshot": {
       "localizations": {
         "nl": {
@@ -4906,6 +5296,16 @@
         }
       }
     },
+    "System status": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systeemstatus"
+          }
+        }
+      }
+    },
     "Talk": {
       "localizations": {
         "nl": {
@@ -4982,6 +5382,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "De export"
+          }
+        }
+      }
+    },
+    "The last 200 lines, newest at the bottom.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De laatste 200 regels, nieuwste onderaan."
           }
         }
       }
@@ -5192,6 +5602,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tijdlijn"
+          }
+        }
+      }
+    },
+    "Timing": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timing"
           }
         }
       }
@@ -5409,6 +5829,16 @@
     "WebRTC": {
       "shouldTranslate": false
     },
+    "What Frigate tracks, and per object how sure it must be and how large it must look.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wat Frigate volgt, en per object hoe zeker het moet zijn en hoe groot het in beeld moet zijn."
+          }
+        }
+      }
+    },
     "What Frigate tracks.": {
       "localizations": {
         "nl": {
@@ -5565,6 +5995,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uitzoomen"
+          }
+        }
+      }
+    },
+    "detection %@ · skipped %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "detectie %1$@ · overgeslagen %2$@"
           }
         }
       }

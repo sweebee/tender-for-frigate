@@ -42,6 +42,8 @@ final class ServerConnection: Identifiable {
     /// Detection and recording switched on or off at runtime, the same way.
     var cameraDetect: [String: Bool] = [:]
     var cameraRecord: [String: Bool] = [:]
+    /// Frigate's notifications for a camera are paused until this moment.
+    var notificationsPausedUntil: [String: Date] = [:]
     private var activitySocket: URLSessionWebSocketTask?
 
     nonisolated var id: UUID { serverID }
@@ -100,6 +102,21 @@ final class ServerConnection: Identifiable {
 
     /// Recording is on in the config but switched off now: worth a warning.
     func isRecordSwitchedOff(_ cam: CameraConfig) -> Bool { canSwitchRecording(cam) && !isRecordEnabled(cam) }
+
+    /// Frigate's own push notifications are on for this camera (in the config), so they can be paused.
+    func hasNotifications(_ cam: CameraConfig) -> Bool { cam.notifications?.enabled == true }
+
+    /// Paused until then, or nil when notifications run.
+    func notificationsPaused(_ cam: CameraConfig) -> Date? {
+        notificationsPausedUntil[cam.name].flatMap { $0 > Date() ? $0 : nil }
+    }
+
+    /// Pauses Frigate's notifications for a camera for some minutes (0: resume), as its web
+    /// interface does.
+    func pauseNotifications(_ cam: CameraConfig, minutes: Int) {
+        guard command("\(cam.name)/notifications/suspend", String(minutes)) else { return }
+        notificationsPausedUntil[cam.name] = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil
+    }
 
     /// Frigate switches recording on only when it is on in the config.
     func canSwitchRecording(_ cam: CameraConfig) -> Bool { cam.record?.enabledInConfig ?? cam.record?.enabled ?? false }
@@ -319,6 +336,9 @@ final class ServerConnection: Identifiable {
                     if let on = config["enabled"] as? Bool { cameraEnabled[cam] = on }
                     if let on = config["detect"] as? Bool { cameraDetect[cam] = on }
                     if let on = config["record"] as? Bool { cameraRecord[cam] = on }
+                    if let until = (config["notifications_suspended"] as? NSNumber)?.doubleValue {
+                        notificationsPausedUntil[cam] = until > 0 ? Date(timeIntervalSince1970: until) : nil
+                    }
                 }
                 let objects = info["objects"] as? [[String: Any]] ?? []
                 // Moving objects only: a parked car is tracked but not "active".
@@ -326,6 +346,10 @@ final class ServerConnection: Identifiable {
                 next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving)
             }
             activity = next
+        } else if topic.hasSuffix("/notifications/suspended"), let payload = msg["payload"] as? String {
+            let cam = String(topic.dropLast("/notifications/suspended".count))
+            let until = Double(payload) ?? 0
+            notificationsPausedUntil[cam] = until > 0 ? Date(timeIntervalSince1970: until) : nil
         } else if let state = msg["payload"] as? String, let (cam, feature) = Self.switchState(topic) {
             switch feature {
             case "enabled": cameraEnabled[cam] = state == "ON"

@@ -16,6 +16,7 @@ struct ServerSettingsView: View {
     @State private var errorMessage: String?
     @State private var webInterface: ServersView.WebTarget?
     @State private var activeProfile: String?
+    @State private var reordering = false
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
 
@@ -76,6 +77,11 @@ struct ServerSettingsView: View {
                             .buttonStyle(.plain)
                             Divider().overlay(Theme.cardBorder)
                         }
+                        NavigationLink { SystemStatusView(serverID: serverID) } label: {
+                            SettingsRow(icon: "gauge.with.dots.needle.33percent", tint: Theme.accent, title: L("System status"))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().overlay(Theme.cardBorder)
                         NavigationLink { MqttView(serverID: serverID) } label: {
                             SettingsRow(icon: "antenna.radiowaves.left.and.right", tint: Theme.accent, title: "MQTT",
                                         value: ((config?["mqtt"] as? [String: Any])?["enabled"] as? Bool ?? false) ? L("On") : L("Off"))
@@ -121,6 +127,7 @@ struct ServerSettingsView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
+        .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID) }
         .alert("Restart Frigate?", isPresented: $confirmRestart) {
             Button("Cancel", role: .cancel) {}
             Button("Restart", role: .destructive) { Task { await restart() } }
@@ -212,7 +219,18 @@ struct ServerSettingsView: View {
             .filter { $0.enabledInConfig != false }
             .sorted { ($0.ui?.order ?? 0, $0.name) < ($1.ui?.order ?? 0, $1.name) }
         return VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: L("Cameras")).padding(.top, 10)
+            HStack {
+                SectionLabel(text: L("Cameras"))
+                Spacer()
+                if isAdmin && cams.count > 1 {
+                    Button { reordering = true } label: {
+                        Image(systemName: "arrow.up.arrow.down").font(.system(size: 14, weight: .semibold))
+                            .frame(width: 32, height: 28).contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Camera order")
+                }
+            }
+            .padding(.top, 10)
             VStack(spacing: 0) {
                 ForEach(Array(cams.enumerated()), id: \.element.name) { i, cam in
                     if i > 0 { Divider().overlay(Theme.cardBorder) }
@@ -316,6 +334,26 @@ struct CameraSettingsView: View {
                         }
                     }
                     .card(radius: 12)
+                    if on && conn.hasNotifications(cam) {
+                        VStack(spacing: 0) {
+                            HStack {
+                                Text("Notifications").font(.system(size: 15))
+                                Spacer()
+                                if let until = conn.notificationsPaused(cam) {
+                                    Text(L("Paused until \(FrigateFormat.time(until))")).font(.system(size: 13)).foregroundStyle(Theme.warning)
+                                }
+                                Menu {
+                                    NotificationPauseMenu(conn: conn, camera: cam)
+                                } label: {
+                                    Image(systemName: conn.notificationsPaused(cam) == nil ? "bell" : "bell.slash")
+                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.accent)
+                                        .frame(width: 36, height: 30)
+                                }
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                        }
+                        .card(radius: 12)
+                    }
                     Text("Switched at once, as in the camera's menu; Frigate keeps it after a restart.")
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                     SectionLabel(text: L("Configuration")).padding(.top, 10)
@@ -330,6 +368,12 @@ struct CameraSettingsView: View {
                         Divider().overlay(Theme.cardBorder)
                         NavigationLink { ZonesMasksView(serverID: serverID, camera: camera) } label: {
                             SettingsRow(icon: "square.dashed", tint: Theme.accent, title: L("Zones and masks"))
+                        }
+                        .buttonStyle(.plain)
+                        Divider().overlay(Theme.cardBorder)
+                        NavigationLink { ServerSections.cameraUI(serverID: serverID, camera: camera) } label: {
+                            SettingsRow(icon: "rectangle.grid.2x2", tint: Theme.accent, title: L("Display"),
+                                        value: cam.ui?.dashboard == false ? L("Hidden") : "")
                         }
                         .buttonStyle(.plain)
                     }

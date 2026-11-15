@@ -36,6 +36,8 @@ struct ConfigField: Identifiable {
     var footer: String? = nil
     /// Changing it takes a restart of Frigate.
     var restart = false
+    /// What Frigate uses when the config does not set it.
+    var defaultNumber: Double? = nil
     var id: String { path }
 }
 
@@ -50,7 +52,7 @@ enum ConfigTopics {
     /// Sections whose global value is every camera's default: a global change goes to all cameras.
     static let cameraDefaults: Set<String> = ["detect", "objects", "motion", "record", "snapshots", "review", "audio", "notifications", "ffmpeg"]
     static let cameraSections: Set<String> = ["detect", "record", "snapshots", "motion", "objects", "review", "audio", "notifications",
-                                              "live", "birdseye", "face_recognition", "lpr", "semantic_search", "mqtt", "onvif", "zones"]
+                                              "live", "birdseye", "face_recognition", "lpr", "semantic_search", "mqtt", "onvif", "zones", "ui"]
 
     static func topic(section: String, camera: String?) -> String? {
         if let camera { return cameraSections.contains(section) ? "config/cameras/\(camera)/\(section)" : nil }
@@ -205,7 +207,7 @@ struct ConfigFormView: View {
             let raw = node.value(at: field.path)
             switch field.kind {
             case .toggle: v[field.path] = .bool((raw as? Bool) ?? false)
-            case .number: v[field.path] = .number((raw as? NSNumber)?.doubleValue ?? 0)
+            case .number: v[field.path] = .number((raw as? NSNumber)?.doubleValue ?? field.defaultNumber ?? 0)
             case .labels: v[field.path] = .list((raw as? [String]) ?? [])
             }
         }
@@ -313,6 +315,8 @@ struct NumberStepper: View {
     private var label: String {
         let n = value.rounded() == value ? String(Int(value)) : String(format: "%.2f", value)
         if unit == "d" { return RecordSettingsView.days(value) }
+        // Scores are 0…1 in the config, shown as a percentage.
+        if unit == "score" { return "\(Int((value * 100).rounded())) %" }
         return unit.isEmpty ? n : "\(n) \(unit)"
     }
 }
@@ -411,8 +415,25 @@ enum ServerSections {
 
     static func objects(serverID: UUID, camera: String?) -> ConfigFormView {
         ConfigFormView(serverID: serverID, section: "objects", camera: camera, title: L("Objects"),
-                       intro: L("What Frigate tracks.")) { config in
-            [ConfigGroup(fields: [ConfigField(path: "track", title: L("Track"), kind: .labels(options: objectLabels(config), display: label))])]
+                       intro: L("What Frigate tracks, and per object how sure it must be and how large it must look.")) { config in
+            let node: [String: Any]? = camera.map { ((config["cameras"] as? [String: Any])?[$0] as? [String: Any])?["objects"] as? [String: Any] }
+                ?? config["objects"] as? [String: Any]
+            let tracked = (node?["track"] as? [String]) ?? []
+            var groups = [ConfigGroup(fields: [ConfigField(path: "track", title: L("Track"), kind: .labels(options: objectLabels(config), display: label))])]
+            for l in tracked.sorted(by: { label($0) < label($1) }) {
+                groups.append(ConfigGroup(title: label(l), fields: [
+                    ConfigField(path: "filters.\(l).min_score", title: L("Minimum score"),
+                                kind: .number(unit: "score", step: 0.05, min: 0, max: 1), defaultNumber: 0.5),
+                    ConfigField(path: "filters.\(l).threshold", title: L("Score to count"),
+                                kind: .number(unit: "score", step: 0.05, min: 0, max: 1), defaultNumber: 0.7),
+                    ConfigField(path: "filters.\(l).min_area", title: L("Smallest size"),
+                                kind: .number(unit: "px", step: 100, min: 0, max: 1_000_000), defaultNumber: 0),
+                ]))
+            }
+            if !tracked.isEmpty {
+                groups[0].fields[0].footer = L("Minimum score: detections below it are ignored. Score to count: the object's median score must reach it before it is tracked. Smallest size: in pixels of the detect resolution.")
+            }
+            return groups
         }
     }
 
@@ -454,6 +475,17 @@ enum ServerSections {
              ConfigGroup(fields: [
                 ConfigField(path: "listen", title: L("Listen for"), kind: .labels(options: audioLabels(config), display: label)),
                 ConfigField(path: "min_volume", title: L("Minimum volume"), kind: .number(unit: "", step: 100, min: 100, max: 5000))])]
+        }
+    }
+
+    /// How a camera shows in the app and Frigate's dashboard.
+    static func cameraUI(serverID: UUID, camera: String) -> ConfigFormView {
+        ConfigFormView(serverID: serverID, section: "ui", camera: camera, title: L("Display")) { _ in
+            [ConfigGroup(fields: [
+                ConfigField(path: "dashboard", title: L("On the dashboard"), kind: .toggle,
+                            footer: L("Off: the camera is left out of Live, in this app and in Frigate.")),
+                ConfigField(path: "order", title: L("Position"), kind: .number(unit: "", step: 1, min: 0, max: 100),
+                            footer: L("Lower comes first. Use Camera order on the server page to drag them instead."))])]
         }
     }
 
