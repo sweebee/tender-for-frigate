@@ -6388,6 +6388,26 @@
           }
         }
       }
+    },
+    "Save event as file…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebeurtenis bewaren als bestand…"
+          }
+        }
+      }
+    },
+    "As file…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als bestand…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -409,7 +409,7 @@ struct PlaybackView: View {
             if let r = menuReview {
                 Section("\(r.labels.first.map(FrigateFormat.labelName)?.capitalizedFirst ?? L("Event")) at \(FrigateFormat.time(r.start, seconds: true))") {
                     Button { save(r.startTime - 3, (r.endTime ?? Date().timeIntervalSince1970) + 3) } label: {
-                        Label("Save event to Photos", systemImage: "square.and.arrow.down")
+                        Label(LocalSave.toFiles ? L("Save event as file…") : L("Save event to Photos"), systemImage: LocalSave.icon)
                     }
                     Button { saveToFrigate(r.startTime - 3, (r.endTime ?? Date().timeIntervalSince1970) + 3, label: r.labels.first) } label: {
                         Label("Save event to Frigate", systemImage: "externaldrive")
@@ -426,7 +426,7 @@ struct PlaybackView: View {
                 ForEach([30.0, 60, 300], id: \.self) { secs in
                     Menu {
                         Button { save(wallTime - secs / 2, wallTime + secs / 2) } label: {
-                            Label("To Photos", systemImage: "square.and.arrow.down")
+                            Label(LocalSave.toFiles ? L("As file…") : L("To Photos"), systemImage: LocalSave.icon)
                         }
                         Button { saveToFrigate(wallTime - secs / 2, wallTime + secs / 2) } label: {
                             Label("To Frigate's exports", systemImage: "externaldrive")
