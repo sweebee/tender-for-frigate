@@ -385,10 +385,9 @@ struct ClassificationModelView: View {
         .sheet(isPresented: $editing) {
             NavigationStack { ClassificationEditSheet(initial: m) { Task { await reloadModel() } } }.environment(model)
         }
-        .alert(L("Rename class"), isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Name", text: $newName)
-            Button("Cancel", role: .cancel) {}
-            Button("Rename") { if let old = renaming { Task { await rename(old, to: newName) } } }
+        .textPrompt(L("Rename class"), isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } }),
+                    text: $newName, placeholder: L("Name"), confirm: L("Rename")) {
+            if let old = renaming { Task { await rename(old, to: newName) } }
         }
         .alert(L("Delete \(deletingClass.map(className) ?? "")?"), isPresented: Binding(get: { deletingClass != nil }, set: { if !$0 { deletingClass = nil } })) {
             Button("Cancel", role: .cancel) {}
@@ -780,10 +779,8 @@ struct ClassificationAssignSheet: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) } } }
         .onAppear { picked = Set(target.files) }
-        .alert(L("New class"), isPresented: $addingClass) {
-            TextField("Name", text: $newClass)
-            Button("Cancel", role: .cancel) {}
-            Button("Add") { Task { await addClass() } }
+        .textPrompt(L("New class"), isPresented: $addingClass, text: $newClass, placeholder: L("Name"), confirm: L("Add")) {
+            Task { await addClass() }
         }
         .alert("Not saved", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK", role: .cancel) {}

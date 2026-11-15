@@ -66,16 +66,10 @@ struct ProfilesView: View {
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
-        .alert("New profile", isPresented: $creating) {
-            TextField("Name, e.g. Home or Away", text: $nameField)
-            Button("Cancel", role: .cancel) {}
-            Button("Create") { Task { await create() } }
-        }
-        .alert("Rename profile", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField("Name", text: $nameField)
-            Button("Cancel", role: .cancel) {}
-            Button("Rename") { let id = renaming; Task { await rename(id) } }
-        }
+        .textPrompt(L("New profile"), isPresented: $creating, text: $nameField, placeholder: L("Name, e.g. Home or Away"),
+                    confirm: L("Create")) { Task { await create() } }
+        .textPrompt(L("Rename profile"), isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } }),
+                    text: $nameField, placeholder: L("Name"), confirm: L("Rename")) { let id = renaming; Task { await rename(id) } }
         .alert("Delete this profile?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { let id = deleting; Task { await delete(id) } }
@@ -392,19 +386,17 @@ struct UsersView: View {
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
-        .alert("Add user", isPresented: $adding) {
-            TextField("Username", text: $newName).textInputAutocapitalization(.never).autocorrectionDisabled()
-            SecureField("Password", text: $newPassword)
-            ForEach(roles, id: \.self) { role in
-                Button(L("Add as \(roleName(role))")) { add(role: role) }
+        .sheet(isPresented: $adding) {
+            AddUserSheet(roles: roles, roleName: roleName, name: $newName, password: $newPassword, role: $newRole) {
+                adding = false
+                add(role: newRole)
             }
-            Button("Cancel", role: .cancel) {}
-        } message: { Text("Choose the role with the button.") }
-        .alert("New password", isPresented: Binding(get: { passwordFor != nil }, set: { if !$0 { passwordFor = nil } })) {
-            SecureField("Password", text: $password)
-            Button("Cancel", role: .cancel) {}
-            Button("Save") { if let u = passwordFor { setPassword(u) } }
-        } message: { Text(passwordFor.map { L("For \($0.username), at least 12 characters.") } ?? "") }
+            .presentationDetents([.medium])
+        }
+        .textPrompt(L("New password"), isPresented: Binding(get: { passwordFor != nil }, set: { if !$0 { passwordFor = nil } }),
+                    text: $password, placeholder: L("Password"), secure: true,
+                    message: passwordFor.map { L("For \($0.username), at least 12 characters.") },
+                    confirm: L("Save")) { if let u = passwordFor { setPassword(u) } }
         .alert("Remove this user?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })) {
             Button("Cancel", role: .cancel) {}
             Button("Remove", role: .destructive) { if let u = deleting { remove(u) } }
@@ -986,5 +978,51 @@ struct SystemStatusView: View {
         } catch {
             logError = error.localizedDescription
         }
+    }
+}
+
+/// A new user: name, password and role, in one form.
+struct AddUserSheet: View {
+    let roles: [String]
+    let roleName: (String) -> String
+    @Binding var name: String
+    @Binding var password: String
+    @Binding var role: String
+    let onAdd: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @FocusState private var nameFocused: Bool
+    @FocusState private var passwordFocused: Bool
+
+    private var ready: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty && password.count >= 12 }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Add user").font(.system(size: 17, weight: .semibold))
+            PromptField(placeholder: L("Username"), text: $name, focused: $nameFocused)
+            PromptField(placeholder: L("Password, at least 12 characters"), text: $password, secure: true, focused: $passwordFocused)
+            Picker("", selection: $role) {
+                ForEach(roles, id: \.self) { Text(roleName($0)).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            Text(role == "admin" ? L("An admin can change settings and users.") : L("A viewer can watch, but change nothing."))
+                .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+            HStack(spacing: 10) {
+                Spacer()
+                Button("Cancel") { closePresented(dismiss) }
+                    .keyboardShortcut(.cancelAction)
+                    .buttonStyle(PromptButtonStyle(primary: false))
+                Button("Add", action: onAdd)
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(PromptButtonStyle(primary: true))
+                    .disabled(!ready)
+            }
+        }
+        .padding(20)
+        .frame(width: ProcessInfo.processInfo.isMacCatalystApp ? 400 : nil)
+        .frame(maxWidth: .infinity, maxHeight: ProcessInfo.processInfo.isMacCatalystApp ? nil : .infinity, alignment: .top)
+        .background(Theme.card)
+        .presentationBackground(Theme.card)
+        .fittedSheet()
+        .onAppear { nameFocused = true }
     }
 }

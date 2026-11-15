@@ -118,13 +118,10 @@ private struct RenameAlert: ViewModifier {
     let onRename: (ExportEntry, String) -> Void
 
     func body(content: Content) -> some View {
-        content.alert("Rename export", isPresented: Binding(get: { target != nil }, set: { if !$0 { target = nil } })) {
-            TextField("Name", text: $name)
-            Button("Cancel", role: .cancel) { target = nil }
-            Button("Rename") {
+        content.textPrompt(L("Rename export"), isPresented: Binding(get: { target != nil }, set: { if !$0 { target = nil } }),
+                           text: $name, placeholder: L("Name"), confirm: L("Rename")) {
                 if let t = target, !name.trimmingCharacters(in: .whitespaces).isEmpty { onRename(t, name.trimmingCharacters(in: .whitespaces)) }
                 target = nil
-            }
         }
     }
 }
@@ -293,18 +290,12 @@ struct ExportsView: View {
                 }
             }
         } message: { Text("The video is removed from the Frigate server.") }
-        .alert("New case", isPresented: Binding(get: { creatingCaseOn != nil }, set: { if !$0 { creatingCaseOn = nil; creatingCaseFor = nil } })) {
-            TextField("Case name", text: $caseName)
-            Button("Cancel", role: .cancel) {}
-            Button("Create") { createCase() }
-        } message: {
-            if let e = creatingCaseFor { Text("\(e.export.name.isEmpty ? L("The export") : e.export.name) goes into it.") }
-        }
-        .alert("Rename case", isPresented: Binding(get: { renamingCase != nil }, set: { if !$0 { renamingCase = nil } })) {
-            TextField("Case name", text: $caseName)
-            Button("Cancel", role: .cancel) {}
-            Button("Rename") { renameCase() }
-        }
+        .textPrompt(L("New case"), isPresented: Binding(get: { creatingCaseOn != nil }, set: { if !$0 { creatingCaseOn = nil; creatingCaseFor = nil } }),
+                    text: $caseName, placeholder: L("Case name"),
+                    message: creatingCaseFor.map { L("\($0.export.name.isEmpty ? L("The export") : $0.export.name) goes into it.") },
+                    confirm: L("Create")) { createCase() }
+        .textPrompt(L("Rename case"), isPresented: Binding(get: { renamingCase != nil }, set: { if !$0 { renamingCase = nil } }),
+                    text: $caseName, placeholder: L("Case name"), confirm: L("Rename")) { renameCase() }
         .alert("Delete this case?", isPresented: Binding(get: { deletingCase != nil }, set: { if !$0 { deletingCase = nil } })) {
             Button("Cancel", role: .cancel) {}
             Button("Delete case only") { deleteCase(withExports: false) }

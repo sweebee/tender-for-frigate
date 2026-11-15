@@ -8148,6 +8148,36 @@
           }
         }
       }
+    },
+    "Password, at least 12 characters": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachtwoord, minstens 12 tekens"
+          }
+        }
+      }
+    },
+    "An admin can change settings and users.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een beheerder kan instellingen en gebruikers wijzigen."
+          }
+        }
+      }
+    },
+    "A viewer can watch, but change nothing.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een kijker kan kijken, maar niets wijzigen."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
