@@ -451,6 +451,14 @@ struct CameraSettingsView: View {
                             .buttonStyle(.plain)
                             Divider().overlay(Theme.cardBorder)
                         }
+                        // Frigate 0.17+ gives admins the real stream addresses (api/config/raw_paths).
+                        if isAdmin, conn.version.map({ $0.compare("0.17", options: .numeric) != .orderedAscending }) == true {
+                            NavigationLink { CameraStreamsView(serverID: serverID, camera: camera) } label: {
+                                SettingsRow(icon: "antenna.radiowaves.left.and.right", tint: Theme.accent, title: L("Streams"))
+                            }
+                            .buttonStyle(.plain)
+                            Divider().overlay(Theme.cardBorder)
+                        }
                         if isAdmin && (conn.config?.platesOnServer == true || cam.type == "lpr") {
                             typeRow
                             Divider().overlay(Theme.cardBorder)

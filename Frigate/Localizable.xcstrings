@@ -8498,6 +8498,366 @@
           }
         }
       }
+    },
+    "Add stream": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stream toevoegen"
+          }
+        }
+      }
+    },
+    "Detection, recording and audio each take one stream. Tap a stream to change its name, address or roles.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectie, opnemen en audio zitten elk op één stream. Tik een stream aan om naam, adres of rollen te wijzigen."
+          }
+        }
+      }
+    },
+    "· new": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· nieuw"
+          }
+        }
+      }
+    },
+    "· changed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· gewijzigd"
+          }
+        }
+      }
+    },
+    "Live: %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live: %@"
+          }
+        }
+      }
+    },
+    "Not used": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet gebruikt"
+          }
+        }
+      }
+    },
+    "%@ removed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ verwijderd"
+          }
+        }
+      }
+    },
+    "%@ is now called %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ heet nu %2$@"
+          }
+        }
+      }
+    },
+    "%@: address changed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: adres gewijzigd"
+          }
+        }
+      }
+    },
+    "%@: roles changed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: rollen gewijzigd"
+          }
+        }
+      }
+    },
+    "%@ added": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ toegevoegd"
+          }
+        }
+      }
+    },
+    "The camera needs at least one stream with a role.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De camera heeft minstens één stream met een rol nodig."
+          }
+        }
+      }
+    },
+    "A stream without go2rtc needs a role.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een stream zonder go2rtc heeft een rol nodig."
+          }
+        }
+      }
+    },
+    "A stream's password comes from a variable ({FRIGATE_…}). Change these streams in Configuration (YAML).": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het wachtwoord van een stream komt uit een variabele ({FRIGATE_…}). Pas deze streams aan in Configuratie (YAML)."
+          }
+        }
+      }
+    },
+    "Not saved yet": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog niet bewaard"
+          }
+        }
+      }
+    },
+    "go2rtc reads its streams when it starts, so Frigate restarts.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "go2rtc leest zijn streams bij het starten, dus Frigate herstart."
+          }
+        }
+      }
+    },
+    "This needs Frigate 0.17 or later. Change the streams in Configuration (YAML).": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiervoor is Frigate 0.17 of nieuwer nodig. Pas de streams aan in Configuratie (YAML)."
+          }
+        }
+      }
+    },
+    "Saved. Frigate has restarted.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaard. Frigate is herstart."
+          }
+        }
+      }
+    },
+    "Give the stream a name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef de stream een naam."
+          }
+        }
+      }
+    },
+    "Use letters, digits, - and _ only.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik alleen letters, cijfers, - en _."
+          }
+        }
+      }
+    },
+    "Another stream already has this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een andere stream heeft al deze naam."
+          }
+        }
+      }
+    },
+    "driveway_sub": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "oprit_sub"
+          }
+        }
+      }
+    },
+    "Address %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres %lld"
+          }
+        }
+      }
+    },
+    "%@ also uses this stream; its name and address stay as they are here.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ gebruikt deze stream ook; naam en adres blijven daarom hier zoals ze zijn."
+          }
+        }
+      }
+    },
+    "This address uses a variable or a special source. Change it in Configuration (YAML).": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit adres gebruikt een variabele of een speciale bron. Pas het aan in Configuratie (YAML)."
+          }
+        }
+      }
+    },
+    "Renaming %@ also changes the camera's input and its live view %@.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hernoemen van %1$@ past ook de camera-input en live-weergave %2$@ aan."
+          }
+        }
+      }
+    },
+    "The camera's address is filled in; add the path of the stream.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het adres van de camera staat er al; vul het pad van de stream aan."
+          }
+        }
+      }
+    },
+    "Roles": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rollen"
+          }
+        }
+      }
+    },
+    "Choosing a role takes it from the other stream. Without a role the stream is for live view only.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een rol kiezen haalt hem weg bij de andere stream. Zonder rol is de stream alleen voor live-weergave."
+          }
+        }
+      }
+    },
+    "Choosing a role takes it from the other stream. A stream without go2rtc needs a role.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een rol kiezen haalt hem weg bij de andere stream. Een stream zonder go2rtc heeft een rol nodig."
+          }
+        }
+      }
+    },
+    "Remove stream": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stream verwijderen"
+          }
+        }
+      }
+    },
+    "Edit stream": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stream bewerken"
+          }
+        }
+      }
+    },
+    "Remove this stream?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze stream verwijderen?"
+          }
+        }
+      }
+    },
+    "Frigate stops reading it and its go2rtc stream is removed when you save.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate leest hem niet meer en de go2rtc-stream verdwijnt zodra je bewaart."
+          }
+        }
+      }
+    },
+    "Frigate stops reading it for this camera when you save.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate leest hem niet meer voor deze camera zodra je bewaart."
+          }
+        }
+      }
+    },
+    "Test stream": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test stream"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
