@@ -19,6 +19,8 @@ struct ConfigEditorView: View {
     @State private var problemFirst: Int?
     @State private var notice: String?
     @State private var editor = ConfigEditorController()
+    /// The keyboard is up: the text gets the room, saving moves to a small button in the header.
+    @State private var typing = false
 
     enum SaveKind { case only, restart }
 
@@ -35,6 +37,7 @@ struct ConfigEditorView: View {
                         .accessibilityLabel("Search")
                         .keyboardShortcut("f")
                 }
+                if typing && (changed || problem != nil) { compactSave }
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 6)
 
@@ -55,9 +58,27 @@ struct ConfigEditorView: View {
                     .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.online)
                     .padding(.vertical, 8)
             }
-            if changed || problem != nil { saveBar.padding(12) }
+            if typing, let problem {
+                // One line of Frigate's refusal while typing; the whole message once the keyboard goes.
+                Button { if let line = problemFirst { editor.go(toLine: line) } } label: {
+                    Label(problem.components(separatedBy: "\n").first ?? problem, systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.destructive).lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16).padding(.vertical, 6)
+            } else if !typing && (changed || problem != nil) {
+                saveBar.padding(12)
+            }
         }
         .animation(.easeOut(duration: 0.2), value: changed)
+        .animation(.easeOut(duration: 0.2), value: typing)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
+            // A Mac or iPad hardware keyboard reports a keyboard with no height: keep the full bar there.
+            let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect) ?? .zero
+            typing = frame.height > 120
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in typing = false }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
@@ -105,6 +126,24 @@ struct ConfigEditorView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(problem == nil ? Theme.controlBorder : Theme.destructive.opacity(0.6), lineWidth: 1))
         .readableWidth()
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Saving while the keyboard is up: one button, its choices in a menu.
+    private var compactSave: some View {
+        Menu {
+            Button { Task { await save(.restart) } } label: { Label("Save and restart", systemImage: "arrow.clockwise") }
+            Button { Task { await save(.only) } } label: { Label("Save only", systemImage: "square.and.arrow.down") }
+            Divider()
+            Button(role: .destructive) {
+                text = original; problem = nil; problemLine = nil; editor.reload(original)
+            } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
+        } label: {
+            Group { if saving != nil { ProgressView().tint(Theme.onColor) } else { Text("Save") } }
+                .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.onColor)
+                .padding(.horizontal, 14).frame(height: 36)
+                .background(Theme.accent, in: Capsule())
+        }
+        .disabled(!changed || saving != nil)
     }
 
     private var undoButton: some View {
