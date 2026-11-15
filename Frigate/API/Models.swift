@@ -13,6 +13,8 @@ struct FrigateConfig: Decodable {
     /// License plate recognition is on, for the server or a camera (a camera can only turn it
     /// off when the server has it on).
     var recognizesPlates = false
+    /// License plate recognition is on for the whole server (Frigate offers camera types then).
+    var platesOnServer = false
 
     enum CodingKeys: String, CodingKey {
         case cameras, genai, lpr
@@ -30,6 +32,7 @@ struct FrigateConfig: Decodable {
             supportsChat = providers.values.contains { $0.roles?.contains("chat") == true }
         }
         let global = (try? c.decodeIfPresent(CameraConfig.Toggle.self, forKey: .lpr))??.enabled == true
+        platesOnServer = global
         recognizesPlates = cameras.values.contains { $0.enabled != false && ($0.lpr?.enabled ?? global) }
     }
 
@@ -73,6 +76,8 @@ struct CameraConfig: Decodable {
     var lpr: Toggle?
     /// Frigate's own push notifications for this camera.
     var notifications: Toggle?
+    /// "generic", or "lpr" for a dedicated license plate camera (Frigate 0.16+).
+    var type: String?
 
     struct Detect: Decodable {
         var enabled: Bool?; var width: Int?; var height: Int?
@@ -101,7 +106,7 @@ struct CameraConfig: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr, notifications
+        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr, notifications, type
         case friendlyName = "friendly_name"
         case enabledInConfig = "enabled_in_config"
     }

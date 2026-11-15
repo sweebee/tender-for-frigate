@@ -246,9 +246,12 @@ struct ServerSettingsView: View {
     // MARK: Cameras
 
     private func cameraSection(_ conn: ServerConnection) -> some View {
-        let cams = (conn.config?.cameras.values.map { $0 } ?? [])
-            .filter { $0.enabledInConfig != false }
+        let all = (conn.config?.cameras.values.map { $0 } ?? [])
             .sorted { ($0.ui?.order ?? 0, $0.name) < ($1.ui?.order ?? 0, $1.name) }
+        let cams = all.filter { $0.enabledInConfig != false }
+        // Off in the config file: Frigate lists them apart, under its own heading.
+        let disabled = all.filter { $0.enabledInConfig == false }
+            .sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending }
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 SectionLabel(text: L("Cameras"))
@@ -280,6 +283,23 @@ struct ServerSettingsView: View {
                                     title: cam.displayName, value: cameraSummary(conn, cam))
                     }
                     .buttonStyle(.plain)
+                }
+                if !disabled.isEmpty {
+                    if !cams.isEmpty { Divider().overlay(Theme.cardBorder) }
+                    Text("DISABLED IN CONFIGURATION")
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 2)
+                    ForEach(Array(disabled.enumerated()), id: \.element.name) { i, cam in
+                        if i > 0 { Divider().overlay(Theme.cardBorder) }
+                        NavigationLink {
+                            CameraSettingsView(serverID: serverID, camera: cam.name)
+                        } label: {
+                            SettingsRow(icon: "video.slash", tint: Theme.textSecondary, title: cam.displayName, value: L("Disabled"))
+                                .opacity(0.7)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
             .card(radius: 12)
@@ -345,15 +365,41 @@ struct CameraSettingsView: View {
     let serverID: UUID
     let camera: String
     @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var role: String?
+    @State private var confirmingDelete = false
+    /// Saved but not applied until Frigate restarts (its /api/config shows the old value till then).
+    @State private var savedType: String?
+    @State private var savedEnabled: Bool?
+    @State private var busy: String?
+    @State private var askRestart = false
+    @State private var restarting = false
+    @State private var errorMessage: String?
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var cam: CameraConfig? { conn?.config?.cameras[camera] }
+    private var isAdmin: Bool { (role ?? "admin") == "admin" }
+    private var offInConfig: Bool { savedEnabled.map { !$0 } ?? (cam?.enabledInConfig == false) }
+    private var cameraType: String { savedType ?? (cam?.type == "lpr" ? "lpr" : "generic") }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 ScreenTitle(text: cam?.displayName ?? FrigateFormat.prettyName(camera), showsBack: true).padding(.top, 8)
-                if let conn, let cam {
+                if let cam, cam.enabledInConfig == false || savedEnabled == true {
+                    disabledCard(cam)
+                }
+                if restarting {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("Restarting…").font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
+                    }
+                    .padding(.horizontal, 4)
+                }
+                if let errorMessage {
+                    Text(errorMessage).font(.system(size: 12)).foregroundStyle(Theme.destructive).padding(.horizontal, 4)
+                }
+                if let conn, let cam, cam.enabledInConfig != false, savedEnabled != true {
                     let on = conn.isCameraEnabled(cam)
                     VStack(spacing: 0) {
                         if cam.canSwitchOff {
@@ -391,8 +437,14 @@ struct CameraSettingsView: View {
                     }
                     Text("Switched at once, as in the camera's menu; Frigate keeps it after a restart.")
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
+                }
+                if let conn, let cam {
                     SectionLabel(text: L("Configuration")).padding(.top, 10)
                     VStack(spacing: 0) {
+                        if isAdmin && (conn.config?.platesOnServer == true || cam.type == "lpr") {
+                            typeRow
+                            Divider().overlay(Theme.cardBorder)
+                        }
                         NavigationLink {
                             RecordSettingsView(serverID: serverID, camera: camera)
                         } label: {
@@ -415,6 +467,37 @@ struct CameraSettingsView: View {
                     .card(radius: 12)
                     Text("Settings here apply to this camera only and override the global configuration.")
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
+                    if isAdmin {
+                        VStack(spacing: 0) {
+                            // As Frigate's "Disabled": stops it now and keeps it off in the config.
+                            if !offInConfig {
+                                Button { Task { await setEnabledInConfig(false) } } label: {
+                                    HStack(spacing: 8) {
+                                        Label("Disable in configuration", systemImage: "video.slash")
+                                        Spacer()
+                                        if busy == "enabled" { ProgressView().controlSize(.small) }
+                                    }
+                                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
+                                    .padding(.horizontal, 14).padding(.vertical, 12).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(busy != nil)
+                            }
+                            // Frigate 0.18 deletes a camera with its recordings (DELETE /api/cameras/<name>).
+                            if conn.version.map({ $0.compare("0.18", options: .numeric) != .orderedAscending }) == true {
+                                if !offInConfig { Divider().overlay(Theme.cardBorder) }
+                                Button { confirmingDelete = true } label: {
+                                    Label("Delete camera", systemImage: "trash")
+                                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.destructive)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 14).padding(.vertical, 12).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .card(radius: 12)
+                        .padding(.top, 18)
+                    }
                 }
             }
             .padding(.horizontal, 16).readableWidth()
@@ -422,6 +505,125 @@ struct CameraSettingsView: View {
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
+        .task { role = await conn?.client?.role() }
+        .alert("Restart Frigate now?", isPresented: $askRestart) {
+            Button("Later", role: .cancel) {}
+            Button("Restart") { Task { await restart() } }
+        } message: {
+            Text("Saved. Frigate applies this after a restart.")
+        }
+        .sheet(isPresented: $confirmingDelete) {
+            DeleteCameraSheet(serverID: serverID, camera: camera, title: cam?.displayName ?? camera) {
+                confirmingDelete = false
+                dismiss()
+            }
+            .environment(model)
+        }
+    }
+
+    /// Off in the config file: Frigate does not run it; switching it on takes a restart.
+    private func disabledCard(_ cam: CameraConfig) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(savedEnabled == true ? L("Enabled after a restart") : L("Disabled in configuration"),
+                  systemImage: savedEnabled == true ? "arrow.clockwise" : "video.slash")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(savedEnabled == true ? Theme.warning : Theme.textSecondary)
+            Text(savedEnabled == true ? "Frigate starts this camera after a restart."
+                                      : "Frigate does not process or record this camera. Enabling it takes a restart of Frigate.")
+                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            if isAdmin {
+                if savedEnabled == true {
+                    Button { Task { await restart() } } label: { Text(restarting ? L("Restarting…") : L("Restart Frigate")) }
+                        .buttonStyle(PromptButtonStyle(primary: true))
+                        .disabled(restarting)
+                } else {
+                    Button { Task { await setEnabledInConfig(true) } } label: {
+                        HStack(spacing: 6) {
+                            if busy == "enabled" { ProgressView().tint(Theme.onColor).controlSize(.small) }
+                            Text("Enable")
+                        }
+                    }
+                    .buttonStyle(PromptButtonStyle(primary: true))
+                    .disabled(busy != nil)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .card(radius: 12)
+    }
+
+    /// Normal or dedicated LPR camera, as Frigate's camera type; applies after a restart.
+    private var typeRow: some View {
+        Menu {
+            Picker("Type", selection: Binding(get: { cameraType }, set: { t in Task { await setType(t) } })) {
+                Text("Normal").tag("generic")
+                Text("Dedicated LPR").tag("lpr")
+            }
+        } label: {
+            SettingsRow(icon: "car.rear", tint: Theme.accent, title: L("Type"),
+                        value: cameraType == "lpr" ? L("Dedicated LPR") : L("Normal"),
+                        chevronIcon: "chevron.up.chevron.down", pending: busy == "type")
+        }
+        .buttonStyle(.plain)
+        .disabled(busy != nil)
+    }
+
+    private func setType(_ type: String) async {
+        guard type != cameraType, let client = conn?.client else { return }
+        busy = "type"
+        defer { busy = nil }
+        errorMessage = nil
+        do {
+            // nil removes the key, so the camera is "generic" again.
+            try await client.setConfig(["cameras": [camera: ["type": type == "lpr" ? "lpr" : ""]]], requiresRestart: true, updateTopic: nil)
+            savedType = type
+            askRestart = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func setEnabledInConfig(_ on: Bool) async {
+        guard let conn, let client = conn.client, let cam else { return }
+        busy = "enabled"
+        defer { busy = nil }
+        errorMessage = nil
+        do {
+            if on {
+                try await client.setConfig(["cameras": [camera: ["enabled": true]]], requiresRestart: true, updateTopic: nil)
+                savedEnabled = true
+                askRestart = true
+            } else {
+                // Stop it now, as Frigate does, then keep it off in the config.
+                if conn.isCameraEnabled(cam) { conn.setCameraEnabled(cam, false) }
+                try await client.setConfig(["cameras": [camera: ["enabled": false]]], requiresRestart: false, updateTopic: nil)
+                savedEnabled = false
+                await conn.refresh(reloadConfig: true)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func restart() async {
+        guard let conn, let client = conn.client else { return }
+        restarting = true
+        defer { restarting = false }
+        errorMessage = nil
+        do {
+            try await client.restart()
+            try? await Task.sleep(for: .seconds(5))
+            for _ in 0..<40 {
+                if (try? await client.version(timeout: 3)) != nil { break }
+                try? await Task.sleep(for: .seconds(3))
+            }
+            await conn.refresh(reloadConfig: true)
+            savedType = nil
+            savedEnabled = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func toggleRow(_ title: String, isOn: Bool, pending: Bool = false, set: @escaping (Bool) -> Void) -> some View {
@@ -653,6 +855,9 @@ struct SettingsRow: View {
     let title: String
     var value: String = ""
     var chevron = true
+    /// "chevron.up.chevron.down" for a row that opens a choice menu.
+    var chevronIcon = "chevron.right"
+    var pending = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -661,9 +866,10 @@ struct SettingsRow: View {
                 .background(Theme.control, in: RoundedRectangle(cornerRadius: 8))
             Text(title).font(.system(size: 15)).foregroundStyle(Theme.text).lineLimit(1)
             Spacer(minLength: 8)
+            if pending { ProgressView().controlSize(.small) }
             Text(value).font(.system(size: 13)).foregroundStyle(Theme.textSecondary).lineLimit(1)
             if chevron {
-                Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textTertiary)
+                Image(systemName: chevronIcon).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textTertiary)
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -721,5 +927,99 @@ struct SectionLinks: View {
             SettingsRow(icon: icon, tint: Theme.accent, title: title, value: value ?? "")
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Deleting a camera, as Frigate's own dialog: everything of it goes, exports only when asked.
+/// Its go2rtc streams that no other camera uses are removed as well (Frigate leaves them).
+struct DeleteCameraSheet: View {
+    let serverID: UUID
+    let camera: String
+    let title: String
+    let onDeleted: () -> Void
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var deleteExports = false
+    @State private var deleting = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(L("Delete \(title)?"), systemImage: "exclamationmark.triangle.fill")
+                .font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.destructive)
+            Text("The camera, its settings, recordings and tracked objects are removed from Frigate for good. This cannot be undone.")
+                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+            Toggle(isOn: $deleteExports) { Text("Also delete its exports").font(.system(size: 14)) }
+                .tint(Theme.destructive)
+            if let errorMessage {
+                Text(errorMessage).font(.system(size: 12)).foregroundStyle(Theme.destructive)
+            }
+            HStack(spacing: 10) {
+                Spacer()
+                Button("Cancel") { closePresented(dismiss) }
+                    .keyboardShortcut(.cancelAction)
+                    .buttonStyle(PromptButtonStyle(primary: false))
+                    .disabled(deleting)
+                Button { Task { await delete() } } label: {
+                    HStack(spacing: 6) {
+                        if deleting { ProgressView().tint(.white).controlSize(.small) }
+                        Text("Delete for good")
+                    }
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 16).frame(height: 34)
+                    .background(Theme.destructive, in: RoundedRectangle(cornerRadius: 9))
+                }
+                .buttonStyle(.plain)
+                .disabled(deleting)
+            }
+        }
+        .padding(20)
+        .frame(width: ProcessInfo.processInfo.isMacCatalystApp ? 420 : nil)
+        .frame(maxWidth: .infinity, maxHeight: ProcessInfo.processInfo.isMacCatalystApp ? nil : .infinity, alignment: .top)
+        .background(Theme.card)
+        .presentationBackground(Theme.card)
+        .presentationDetents([.height(300)])
+        .fittedSheet()
+        .interactiveDismissDisabled(deleting)
+    }
+
+    private func delete() async {
+        guard let conn = model.connection(for: serverID), let client = conn.client else { return }
+        deleting = true
+        defer { deleting = false }
+        errorMessage = nil
+        // The go2rtc streams this camera reads and no other camera does, to clean up afterwards.
+        var orphans: [String] = []
+        if let cfg = try? await client.rawConfig() {
+            let cams = cfg["cameras"] as? [String: Any] ?? [:]
+            func streams(_ c: Any?) -> Set<String> {
+                guard let c = c as? [String: Any] else { return [] }
+                var out = Set<String>()
+                for case let input as [String: Any] in ((c["ffmpeg"] as? [String: Any])?["inputs"] as? [Any] ?? []) {
+                    if let path = input["path"] as? String, path.hasPrefix("rtsp://127.0.0.1:8554/") {
+                        out.insert(String(path.dropFirst("rtsp://127.0.0.1:8554/".count)).components(separatedBy: "?").first ?? "")
+                    }
+                }
+                for case let name as String in (((c["live"] as? [String: Any])?["streams"] as? [String: Any]) ?? [:]).values { out.insert(name) }
+                return out
+            }
+            let mine = streams(cams[camera])
+            let others = cams.filter { $0.key != camera }.values.reduce(into: Set<String>()) { $0.formUnion(streams($1)) }
+            let defined = Set(((cfg["go2rtc"] as? [String: Any])?["streams"] as? [String: Any] ?? [:]).keys)
+            orphans = Array(mine.subtracting(others).intersection(defined))
+        }
+        do {
+            try await client.sendJSON("DELETE", "api/cameras/\(camera)?delete_exports=\(deleteExports)", json: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+            return
+        }
+        if !orphans.isEmpty {
+            var streams: [String: Any] = [:]
+            for o in orphans { streams[o] = "" }
+            try? await client.setConfig(["go2rtc": ["streams": streams]], requiresRestart: false, updateTopic: nil)
+        }
+        await conn.refresh(reloadConfig: true)
+        onDeleted()
     }
 }

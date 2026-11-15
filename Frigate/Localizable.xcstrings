@@ -8178,6 +8178,176 @@
           }
         }
       }
+    },
+    "Delete camera": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera verwijderen"
+          }
+        }
+      }
+    },
+    "The camera, its settings, recordings and tracked objects are removed from Frigate for good. This cannot be undone.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De camera, zijn instellingen, opnames en gevolgde objecten worden voorgoed uit Frigate verwijderd. Dit kan niet ongedaan worden gemaakt."
+          }
+        }
+      }
+    },
+    "Also delete its exports": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ook zijn exports verwijderen"
+          }
+        }
+      }
+    },
+    "Delete for good": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Definitief verwijderen"
+          }
+        }
+      }
+    },
+    "DISABLED IN CONFIGURATION": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UITGESCHAKELD IN CONFIGURATIE"
+          }
+        }
+      }
+    },
+    "Disabled": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitgeschakeld"
+          }
+        }
+      }
+    },
+    "Disabled in configuration": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitgeschakeld in configuratie"
+          }
+        }
+      }
+    },
+    "Enabled after a restart": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingeschakeld na herstart"
+          }
+        }
+      }
+    },
+    "Frigate starts this camera after a restart.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate start deze camera na een herstart."
+          }
+        }
+      }
+    },
+    "Frigate does not process or record this camera. Enabling it takes a restart of Frigate.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate verwerkt en neemt deze camera niet op. Inschakelen vraagt een herstart van Frigate."
+          }
+        }
+      }
+    },
+    "Enable": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inschakelen"
+          }
+        }
+      }
+    },
+    "Disable in configuration": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uitschakelen in configuratie"
+          }
+        }
+      }
+    },
+    "Normal": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normaal"
+          }
+        }
+      }
+    },
+    "Dedicated LPR": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kentekencamera (LPR)"
+          }
+        }
+      }
+    },
+    "Restart Frigate now?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate nu herstarten?"
+          }
+        }
+      }
+    },
+    "Later": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Later"
+          }
+        }
+      }
+    },
+    "Saved. Frigate applies this after a restart.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opgeslagen. Frigate past dit toe na een herstart."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
