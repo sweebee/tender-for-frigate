@@ -6298,6 +6298,16 @@
           }
         }
       }
+    },
+    "Only for %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen voor %@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -261,15 +261,18 @@ struct ScreenTitle: View {
     let text: String
     var showsBack = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         if showsBack {
-            HStack(spacing: 4) {
+            // iPad and Mac show the back arrow in a square: it needs room before the title, and the title room below it.
+            HStack(spacing: sizeClass == .regular ? 12 : 4) {
                 // Default button style: the arrow takes the accent color, like on other screens.
                 Button { dismiss() } label: { BackButtonLabel() }
                     .accessibilityLabel("Back")
                 Text(text).font(.system(size: 28, weight: .bold)).kerning(-0.4).foregroundStyle(Theme.text)
             }
+            .padding(.bottom, sizeClass == .regular ? 6 : 0)
         } else {
             LargeTitle(text: text)
         }
@@ -606,6 +609,20 @@ enum MacWindow {
         let top: CGFloat = fullScreen ? (videoFills ? 0 : 10) : -18
         for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
             for window in scene.windows { window.rootViewController?.additionalSafeAreaInsets.top = top }
+        }
+    }
+}
+
+
+/// A toggle as a row: the label on the left, a switch on the right, also on the Mac.
+struct RowSwitchStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 12) {
+            configuration.label
+            Spacer(minLength: 8)
+            Toggle("", isOn: configuration.$isOn)
+                .toggleStyle(.switch)
+                .labelsHidden()
         }
     }
 }

@@ -1,6 +1,38 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "amazon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amazon"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amazon"
+          }
+        }
+      }
+    },
+    "an_post": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Post"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Post"
+          }
+        }
+      }
+    },
     "baby_crying": {
       "localizations": {
         "en": {
@@ -97,6 +129,22 @@
         }
       }
     },
+    "canada_post": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canada Post"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canada Post"
+          }
+        }
+      }
+    },
     "car": {
       "localizations": {
         "en": {
@@ -145,6 +193,22 @@
         }
       }
     },
+    "dhl": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DHL"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DHL"
+          }
+        }
+      }
+    },
     "dog": {
       "localizations": {
         "en": {
@@ -161,6 +225,22 @@
         }
       }
     },
+    "dpd": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DPD"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DPD"
+          }
+        }
+      }
+    },
     "face": {
       "localizations": {
         "en": {
@@ -173,6 +253,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "gezicht"
+          }
+        }
+      }
+    },
+    "fedex": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FedEx"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FedEx"
           }
         }
       }
@@ -241,6 +337,22 @@
         }
       }
     },
+    "gls": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLS"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLS"
+          }
+        }
+      }
+    },
     "horse": {
       "localizations": {
         "en": {
@@ -285,6 +397,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "motor"
+          }
+        }
+      }
+    },
+    "nzpost": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NZ Post"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NZ Post"
           }
         }
       }
@@ -337,6 +465,54 @@
         }
       }
     },
+    "postnl": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PostNL"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PostNL"
+          }
+        }
+      }
+    },
+    "postnord": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PostNord"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PostNord"
+          }
+        }
+      }
+    },
+    "purolator": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purolator"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purolator"
+          }
+        }
+      }
+    },
     "rabbit": {
       "localizations": {
         "en": {
@@ -349,6 +525,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "konijn"
+          }
+        }
+      }
+    },
+    "royal_mail": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Royal Mail"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Royal Mail"
           }
         }
       }
@@ -413,6 +605,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "vrachtwagen"
+          }
+        }
+      }
+    },
+    "ups": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UPS"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UPS"
+          }
+        }
+      }
+    },
+    "usps": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USPS"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "USPS"
+          }
+        }
+      }
+    },
+    "waste_bin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "waste bin"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "afvalbak"
           }
         }
       }

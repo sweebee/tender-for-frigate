@@ -49,6 +49,21 @@ struct AppDestinations: ViewModifier {
 extension View {
     func appDestinations() -> some View { modifier(AppDestinations()) }
 
+    /// Keeps a page of settings at a readable width on iPad and Mac, centred; a phone uses its full width.
+    func readableWidth(_ maxWidth: CGFloat = 720) -> some View {
+        frame(maxWidth: maxWidth).frame(maxWidth: .infinity)
+    }
+
+    /// On iPad and Mac a sheet is small by default; this one gets a page's size so a picture and its fields fit.
+    @ViewBuilder
+    func largeSheetOnWideScreens() -> some View {
+        if #available(iOS 18.0, macCatalyst 18.0, *) {
+            presentationSizing(.page)
+        } else {
+            self
+        }
+    }
+
     /// Standard screen background for the dark design.
     func screenBackground() -> some View {
         background(Theme.background.ignoresSafeArea())

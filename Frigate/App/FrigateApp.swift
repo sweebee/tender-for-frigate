@@ -29,6 +29,9 @@ struct FrigateApp: App {
                 // The biggest iPhones report a regular width in landscape; the iPad and Mac
                 // layouts are not meant for them, so a phone is always compact.
                 .modifier(PhoneIsCompact())
+                // On the Mac a toggle is a checkbox by default and hugs its label; this keeps every
+                // settings row the same as on the iPhone: label on the left, switch on the right.
+                .toggleStyle(RowSwitchStyle())
                 .environment(model)
                 .preferredColorScheme(.dark)
                 .tint(Theme.accent)

@@ -119,14 +119,14 @@ struct ConfigFormView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 16).readableWidth()
                 .padding(.bottom, changed.isEmpty ? 24 : (needsRestart ? 200 : 150))
             }
             if !changed.isEmpty {
                 SaveBar(count: changed.count, restart: needsRestart, saving: saving,
                         undo: { values = original },
                         save: { restart in Task { await save(restart: restart) } })
-                    .padding(.horizontal, 12).padding(.bottom, 12)
+                    .padding(.horizontal, 12).readableWidth().padding(.bottom, 12)
             }
         }
         .animation(.easeOut(duration: 0.2), value: changed.isEmpty)
@@ -560,7 +560,7 @@ struct EnrichmentsView: View {
                 }
                 .card(radius: 12)
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)

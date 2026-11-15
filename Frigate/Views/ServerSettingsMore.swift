@@ -60,7 +60,7 @@ struct ProfilesView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .refreshable { await load() }
         .screenBackground()
@@ -267,7 +267,7 @@ struct ProfileEditView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
@@ -386,7 +386,7 @@ struct UsersView: View {
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .refreshable { await load() }
         .screenBackground()
@@ -528,7 +528,9 @@ struct ZonesMasksView: View {
         var objects: [String] = []
         var inertia: Double = 3
         var loiteringTime: Double = 0
-        var id: String { kind.rawValue + "/" + name }
+        /// Object masks for one object type only (objects.filters.<label>.mask).
+        var label: String? = nil
+        var id: String { kind.rawValue + "/" + (label.map { $0 + "/" } ?? "") + name }
         var color: Color {
             switch kind {
             case .zone: return Theme.accent
@@ -595,7 +597,7 @@ struct ZonesMasksView: View {
                     .padding(.top, 8)
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
@@ -604,7 +606,10 @@ struct ZonesMasksView: View {
         .sheet(isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             if let draft = editing {
                 ZoneEditorView(serverID: serverID, camera: camera, draft: draft,
-                               taken: Set(shapes.filter { $0.kind.rawValue == draft.kind.rawValue }.map(\.name))) { Task { await load() } }
+                               taken: Set(shapes.filter { $0.kind.rawValue == draft.kind.rawValue && $0.label == draft.label }.map(\.name))) { Task { await load() } }
+                    // A sheet on the Mac does not always carry the presenter's environment.
+                    .environment(model)
+                    .largeSheetOnWideScreens()
             }
         }
     }
@@ -621,11 +626,17 @@ struct ZonesMasksView: View {
                         Button {
                             editing = ZoneDraft(kind: s.kind, name: s.name, title: s.title, points: s.points,
                                                 enabled: s.enabled, objects: s.objects,
-                                                inertia: s.inertia, loiteringTime: s.loiteringTime)
+                                                inertia: s.inertia, loiteringTime: s.loiteringTime, label: s.label)
                         } label: {
                             HStack(spacing: 10) {
                                 RoundedRectangle(cornerRadius: 3).fill(s.color.opacity(0.7)).frame(width: 14, height: 14)
-                                Text(s.title).font(.system(size: 15)).foregroundStyle(Theme.text)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(s.title).font(.system(size: 15)).foregroundStyle(Theme.text)
+                                    if let label = s.label {
+                                        Text(L("Only for \(FrigateFormat.labelName(label))"))
+                                            .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+                                    }
+                                }
                                 if isAdmin {
                                     Image(systemName: "pencil").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textSecondary)
                                 }
@@ -647,8 +658,14 @@ struct ZonesMasksView: View {
     }
 
     private func set(_ shape: Shape, _ on: Bool) {
-        guard let conn, let i = shapes.firstIndex(where: { $0.id == shape.id }),
-              conn.command("\(camera)/\(shape.kind.rawValue)/\(shape.name)/set", on ? "ON" : "OFF") else { return }
+        guard let conn, let client = conn.client, let i = shapes.firstIndex(where: { $0.id == shape.id }) else { return }
+        if let label = shape.label {
+            // A mask for one object type has no switch on Frigate's websocket: it is switched in the config.
+            let data: [String: Any] = ["cameras": [camera: ["objects": ["filters": [label: ["mask": [shape.name: ["enabled": on]]]]]]]]
+            Task { try? await client.setConfig(data, requiresRestart: false, updateTopic: "config/cameras/\(camera)/objects") }
+        } else {
+            guard conn.command("\(camera)/\(shape.kind.rawValue)/\(shape.name)/set", on ? "ON" : "OFF") else { return }
+        }
         shapes[i].enabled = on
         switching.insert(shape.id)
         // Wait until Frigate's config shows it, then show what Frigate has.
@@ -669,7 +686,9 @@ struct ZonesMasksView: View {
         switch shape.kind {
         case .zone: node = cam["zones"]
         case .motionMask: node = (cam["motion"] as? [String: Any])?["mask"]
-        case .objectMask: node = (cam["objects"] as? [String: Any])?["mask"]
+        case .objectMask:
+            let objects = cam["objects"] as? [String: Any]
+            node = shape.label.map { ((objects?["filters"] as? [String: Any])?[$0] as? [String: Any])?["mask"] } ?? objects?["mask"]
         }
         return ((node as? [String: Any])?[shape.name] as? [String: Any])?["enabled"] as? Bool
     }
@@ -681,14 +700,14 @@ struct ZonesMasksView: View {
         let detect = cam["detect"] as? [String: Any]
         let size = CGSize(width: (detect?["width"] as? NSNumber)?.doubleValue ?? 1, height: (detect?["height"] as? NSNumber)?.doubleValue ?? 1)
         var out: [Shape] = []
-        func add(_ node: Any?, _ kind: Shape.Kind) {
+        func add(_ node: Any?, _ kind: Shape.Kind, label: String? = nil) {
             for (name, value) in (node as? [String: Any] ?? [:]).sorted(by: { $0.key < $1.key }) {
                 guard let item = value as? [String: Any] else { continue }
                 let title = (item["friendly_name"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? FrigateFormat.prettyName(name)
                 out.append(Shape(kind: kind, name: name, title: title, points: Self.points(item["coordinates"], size: size),
                                  enabled: item["enabled"] as? Bool ?? true, objects: item["objects"] as? [String] ?? [],
                                  inertia: (item["inertia"] as? NSNumber)?.doubleValue ?? 3,
-                                 loiteringTime: (item["loitering_time"] as? NSNumber)?.doubleValue ?? 0))
+                                 loiteringTime: (item["loitering_time"] as? NSNumber)?.doubleValue ?? 0, label: label))
             }
         }
         let motionMask = (cam["motion"] as? [String: Any])?["mask"]
@@ -696,6 +715,10 @@ struct ZonesMasksView: View {
         add(cam["zones"], .zone)
         add((cam["motion"] as? [String: Any])?["mask"], .motionMask)
         add((cam["objects"] as? [String: Any])?["mask"], .objectMask)
+        // Masks for one object type, as Frigate's page makes them ("Object Mask 1 (person)").
+        for (label, filter) in ((cam["objects"] as? [String: Any])?["filters"] as? [String: Any] ?? [:]).sorted(by: { $0.key < $1.key }) {
+            add((filter as? [String: Any])?["mask"], .objectMask, label: label)
+        }
         shapes = out
         loaded = true
     }
@@ -741,7 +764,7 @@ struct MqttView: View {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 120)
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
@@ -911,7 +934,7 @@ struct SystemStatusView: View {
                 .card(radius: 12)
                 Text("The last 200 lines, newest at the bottom.").font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         .refreshable { await conn?.refresh(); await loadLogs() }
         .screenBackground()

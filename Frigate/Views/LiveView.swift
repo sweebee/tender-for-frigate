@@ -454,10 +454,12 @@ struct CameraSwitches: View {
                 Toggle(isOn: Binding(get: { conn.isDetectEnabled(camera) }, set: { conn.setDetectEnabled(camera, $0) })) {
                     Label("Detection", systemImage: "person.crop.rectangle")
                 }
+                .toggleStyle(.automatic)
                 if conn.canSwitchRecording(camera) {
                     Toggle(isOn: Binding(get: { conn.isRecordEnabled(camera) }, set: { conn.setRecordEnabled(camera, $0) })) {
                         Label("Recordings", systemImage: "record.circle")
                     }
+                    .toggleStyle(.automatic)
                 }
             }
             if on && conn.hasNotifications(camera) {

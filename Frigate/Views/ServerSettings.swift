@@ -118,7 +118,7 @@ struct ServerSettingsView: View {
                     Text(loadError).font(.system(size: 13)).foregroundStyle(Theme.destructive).padding(.top, 8)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, 24)
         }
         .refreshable { await load() }
@@ -126,7 +126,7 @@ struct ServerSettingsView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
-        .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID) }
+        .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID).environment(model) }
         .alert("Restart Frigate?", isPresented: $confirmRestart) {
             Button("Cancel", role: .cancel) {}
             Button("Restart", role: .destructive) { Task { await restart() } }
@@ -378,7 +378,7 @@ struct CameraSettingsView: View {
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, 24)
         }
         .screenBackground()
@@ -460,10 +460,10 @@ struct RecordSettingsView: View {
                         group([("detections.pre_capture", L("Before")), ("detections.post_capture", L("After"))], unit: .seconds)
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 16).readableWidth()
                 .padding(.bottom, dirty ? 140 : 24)
             }
-            if dirty { saveBar.padding(.horizontal, 12).padding(.bottom, 12) }
+            if dirty { saveBar.padding(.horizontal, 12).readableWidth().padding(.bottom, 12) }
         }
         .animation(.easeOut(duration: 0.2), value: dirty)
         .screenBackground()

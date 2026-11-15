@@ -19,6 +19,8 @@ struct ZoneDraft {
     var inertia: Double = 3
     /// Zones: seconds an object must stay before it counts as loitering (0: off).
     var loiteringTime: Double = 0
+    /// Object masks that hold for one object type only (objects.filters.<label>.mask); nil: every object.
+    var label: String? = nil
 
     var isNew: Bool { name.isEmpty }
 
@@ -175,7 +177,7 @@ struct ZoneEditorView: View {
                     .padding(.top, 8)
                 }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
         // Dragging a corner must not scroll the page.
         .scrollDisabled(dragging != nil)
@@ -305,7 +307,11 @@ struct ZoneEditorView: View {
         switch draft.kind {
         case .zone: return (["zones": [name: value]], "config/cameras/\(camera)/zones")
         case .motionMask: return (["motion": ["mask": [name: value]]], "config/cameras/\(camera)/motion")
-        case .objectMask: return (["objects": ["mask": [name: value]]], "config/cameras/\(camera)/objects")
+        case .objectMask:
+            if let label = draft.label {
+                return (["objects": ["filters": [label: ["mask": [name: value]]]]], "config/cameras/\(camera)/objects")
+            }
+            return (["objects": ["mask": [name: value]]], "config/cameras/\(camera)/objects")
         }
     }
 
