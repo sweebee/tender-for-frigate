@@ -87,14 +87,17 @@ struct ZoneEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Button("Cancel") { closePresented(dismiss) }
+                    Button { closePresented(dismiss) } label: { HeaderTextLabel(title: "Cancel") }
+                        .buttonStyle(.plain)
                     Spacer()
                     Text(draft.isNew ? L("New \(kindTitle.lowercased())") : kindTitle).font(.system(size: 16, weight: .semibold))
                     Spacer()
                     Button { Task { await save() } } label: {
-                        if saving && !deleting { ProgressView() } else { Text("Save").fontWeight(.semibold) }
+                        HeaderTextLabel(title: "Save", loading: saving && !deleting)
                     }
+                    .buttonStyle(.plain)
                     .disabled(!canSave)
+                    .opacity(canSave || saving ? 1 : 0.4)
                 }
                 .padding(.top, 12)
 

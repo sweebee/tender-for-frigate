@@ -476,6 +476,32 @@ struct BackButtonLabel: View {
     }
 }
 
+/// A text button in a screen's top bar ("Mark all reviewed"): a glass capsule on iOS 26 and
+/// later, like the system's Done and Cancel; plain accent text before that.
+struct HeaderTextLabel: View {
+    let title: LocalizedStringKey
+    var loading = false
+
+    var body: some View {
+        let label = HStack(spacing: 6) {
+            if loading { ProgressView().controlSize(.small).tint(Theme.text) }
+            Text(title).lineLimit(1)
+        }
+        if hasGlass, #available(iOS 26.0, macCatalyst 26.0, *) {
+            label
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.text)
+                .padding(.horizontal, 16).frame(height: 44)
+                .glassEffect(.regular.interactive(), in: Capsule())
+                .contentShape(Capsule())
+        } else {
+            label
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Theme.accent)
+        }
+    }
+}
+
 /// A button in a screen's top bar beside the back button: the same raised square on iPad and
 /// Mac, a bare icon on the phone.
 struct HeaderIconLabel: View {

@@ -57,7 +57,8 @@ builds; when a new screen breaks one, it is a bug.
 - Pushed screens use `ScreenTitle(showsBack: true)`, so the back button looks and sits the same
   on every screen. Video screens with their own bar use `BackButtonLabel`, the same arrow. On iOS 26 and later
   the back button and the top bar's icon buttons (`HeaderIconLabel`) are round glass buttons, like
-  the system's Done and Cancel.
+  the system's Done and Cancel. Text buttons in a top bar (Mark all reviewed, Select, Save) are
+  glass capsules (`HeaderTextLabel`).
 - Prefer an icon over a word where the icon is clear (sorting, objects in a picture). Object
   icons sit at the top left of a picture, everywhere.
 - Text in bars, buttons and chips never wraps: short labels, `lineLimit(1)`, `fixedSize()`.

@@ -418,8 +418,7 @@ struct ClassificationModelView: View {
                 Spacer()
                 if isAdmin && loaded {
                     Button { selecting.toggle(); selection = [] } label: {
-                        Text(selecting ? L("Done") : L("Select")).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.accent)
-                            .lineLimit(1).fixedSize()
+                        HeaderTextLabel(title: selecting ? "Done" : "Select").fixedSize()
                     }
                     .buttonStyle(.plain)
                     if working && !selecting {

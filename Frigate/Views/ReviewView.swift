@@ -111,13 +111,11 @@ struct ReviewView: View {
                 Spacer()
                 if kind != .motion {
                     Button { Task { await markAllReviewed() } } label: {
-                        HStack(spacing: 6) {
-                            if markingAll { ProgressView().controlSize(.small) }
-                            Text("Mark all reviewed").lineLimit(1)
-                        }
+                        HeaderTextLabel(title: "Mark all reviewed", loading: markingAll)
                     }
-                    .font(.system(size: 15, weight: .medium))
+                    .buttonStyle(.plain)
                     .disabled(markingAll || !entries.contains { !$0.item.hasBeenReviewed })
+                    .opacity(entries.contains { !$0.item.hasBeenReviewed } || markingAll ? 1 : 0.4)
                 }
             }
             if isWide {
