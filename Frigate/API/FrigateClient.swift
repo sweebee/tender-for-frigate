@@ -340,6 +340,29 @@ final class FrigateClient: @unchecked Sendable {
         }
     }
 
+    /// The config file as it is on disk (YAML). Admin only.
+    func rawConfigText() async throws -> String {
+        let data = try await data("api/config/raw")
+        // Frigate sends it as a JSON string (text/plain header, JSON body); older versions as plain text.
+        if let s = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? String { return s }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    /// Writes the config file after Frigate has checked it; with `restart` Frigate restarts to use it.
+    /// Throws with Frigate's message ("Line 66: cameras -> carport -> … - Extra inputs are not permitted").
+    func saveRawConfig(_ text: String, restart: Bool) async throws {
+        var req = URLRequest(url: url("api/config/save", query: ["save_option": restart ? "restart" : "saveonly"]))
+        req.httpMethod = "POST"
+        req.setValue("text/plain", forHTTPHeaderField: "Content-Type")
+        req.setValue("1", forHTTPHeaderField: "X-CSRF-TOKEN")
+        req.timeoutInterval = 60
+        req.httpBody = Data(text.utf8)
+        let data = try await perform(req)
+        if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any], obj["success"] as? Bool == false {
+            throw FrigateError.http(400, obj["message"] as? String)
+        }
+    }
+
     /// Frigate 0.18's profiles ("Thuis", "Weg") and the active one.
     func profiles() async throws -> (profiles: [(name: String, title: String)], active: String?) {
         let data = try await data("api/profiles")

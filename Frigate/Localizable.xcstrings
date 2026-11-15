@@ -7608,6 +7608,96 @@
           }
         }
       }
+    },
+    "Frigate refused the configuration": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate weigerde de configuratie"
+          }
+        }
+      }
+    },
+    "Go to line %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ga naar regel %lld"
+          }
+        }
+      }
+    },
+    "Changed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewijzigd"
+          }
+        }
+      }
+    },
+    "Frigate checks the configuration before it saves it. Most changes apply after a restart.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate controleert de configuratie voor het opslaan. De meeste wijzigingen gelden na een herstart."
+          }
+        }
+      }
+    },
+    "Only an admin can read the configuration.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen een beheerder kan de configuratie lezen."
+          }
+        }
+      }
+    },
+    "Saved; Frigate is restarting": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaard; Frigate herstart"
+          }
+        }
+      }
+    },
+    "Saved; restart Frigate to apply it": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaard; herstart Frigate om het toe te passen"
+          }
+        }
+      }
+    },
+    "Frigate did not save it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate heeft het niet bewaard."
+          }
+        }
+      }
+    },
+    "Line %lld:": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regel %lld:"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
