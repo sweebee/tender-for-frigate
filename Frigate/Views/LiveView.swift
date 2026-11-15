@@ -630,6 +630,7 @@ private struct ServerProblemsSheet: View {
                         Image(systemName: p.severity == .error ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
                             .foregroundStyle(p.severity == .error ? Theme.destructive : Theme.warning)
                     }
+                    .listRowBackground(Theme.card)
                 }
             } footer: {
                 if conn.problems.isEmpty { Text("No problems anymore.") }
@@ -638,8 +639,13 @@ private struct ServerProblemsSheet: View {
                 NavigationLink { SystemStatusView(serverID: conn.server.id) } label: {
                     Label("System status and logs", systemImage: "waveform.path.ecg")
                 }
+                .listRowBackground(Theme.card)
             }
         }
+        // Solid, like the app's other screens: the sheet's glass shows the cameras through the list otherwise.
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+        .presentationBackground(Theme.background)
         .navigationTitle(conn.server.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) } } }
