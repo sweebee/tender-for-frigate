@@ -3,6 +3,8 @@ import SwiftUI
 @main
 struct FrigateApp: App {
     @State private var model = AppModel()
+    /// Tab and Shift-Tab between text fields on the Mac.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let network = NetworkStatus.shared
 
     init() {

@@ -8378,6 +8378,126 @@
           }
         }
       }
+    },
+    "Camera address": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera-adres"
+          }
+        }
+      }
+    },
+    "IP address or name": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IP-adres of naam"
+          }
+        }
+      }
+    },
+    "Unchanged": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongewijzigd"
+          }
+        }
+      }
+    },
+    "Changes the address in %@.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past het adres aan in %@."
+          }
+        }
+      }
+    },
+    "Leave the password empty to keep it.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laat het wachtwoord leeg om het te houden."
+          }
+        }
+      }
+    },
+    "%@ uses the same streams and changes along.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ gebruikt dezelfde streams en verandert mee."
+          }
+        }
+      }
+    },
+    "This camera's password comes from a variable ({FRIGATE_…}). Change the address in Configuration (YAML).": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het wachtwoord van deze camera komt uit een variabele ({FRIGATE_…}). Pas het adres aan in Configuratie (YAML)."
+          }
+        }
+      }
+    },
+    "Not every stream answered at the new address. Save anyway if the camera is not reachable yet, for example because it still has to move.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet elke stream reageerde op het nieuwe adres. Bewaar toch als de camera nog niet bereikbaar is, bijvoorbeeld omdat hij nog moet verhuizen."
+          }
+        }
+      }
+    },
+    "Frigate restarts to use the new address; live view and recording stop for a moment.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate herstart om het nieuwe adres te gebruiken; live beeld en opnemen stoppen even."
+          }
+        }
+      }
+    },
+    "Save anyway": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toch bewaren"
+          }
+        }
+      }
+    },
+    "Not tested": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet getest"
+          }
+        }
+      }
+    },
+    "Saving…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewaren…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

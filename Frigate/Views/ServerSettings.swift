@@ -375,6 +375,9 @@ struct CameraSettingsView: View {
     @State private var askRestart = false
     @State private var restarting = false
     @State private var errorMessage: String?
+    /// Where the camera's address is written (admins, Frigate 0.17+).
+    @State private var addressPlan: CameraAddressPlan?
+    @State private var editingAddress = false
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
     private var cam: CameraConfig? { conn?.config?.cameras[camera] }
@@ -441,6 +444,13 @@ struct CameraSettingsView: View {
                 if let conn, let cam {
                     SectionLabel(text: L("Configuration")).padding(.top, 10)
                     VStack(spacing: 0) {
+                        if isAdmin, let addressPlan {
+                            Button { editingAddress = true } label: {
+                                SettingsRow(icon: "network", tint: Theme.accent, title: L("Camera address"), value: addressPlan.host)
+                            }
+                            .buttonStyle(.plain)
+                            Divider().overlay(Theme.cardBorder)
+                        }
                         if isAdmin && (conn.config?.platesOnServer == true || cam.type == "lpr") {
                             typeRow
                             Divider().overlay(Theme.cardBorder)
@@ -505,7 +515,19 @@ struct CameraSettingsView: View {
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
-        .task { role = await conn?.client?.role() }
+        .task {
+            role = await conn?.client?.role()
+            await loadAddress()
+        }
+        .sheet(isPresented: $editingAddress) {
+            if let addressPlan {
+                NavigationStack {
+                    CameraAddressSheet(serverID: serverID, plan: addressPlan) { Task { await loadAddress() } }
+                }
+                .environment(model)
+                .largeSheetOnWideScreens()
+            }
+        }
         .alert("Restart Frigate now?", isPresented: $askRestart) {
             Button("Later", role: .cancel) {}
             Button("Restart") { Task { await restart() } }
@@ -551,6 +573,11 @@ struct CameraSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .card(radius: 12)
+    }
+
+    private func loadAddress() async {
+        guard isAdmin, let client = conn?.client else { return }
+        addressPlan = try? await CameraAddressPlan.load(client, camera: camera)
     }
 
     /// Normal or dedicated LPR camera, as Frigate's camera type; applies after a restart.
