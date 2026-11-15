@@ -96,7 +96,7 @@ struct RootView: View {
         }
         .background(Theme.background)
         .sheet(isPresented: $model.showAddServer) {
-            NavigationStack { ConnectView() }
+            NavigationStack { ConnectView() }.largeSheetOnWideScreens()
         }
         .task {
             await model.connectAll()

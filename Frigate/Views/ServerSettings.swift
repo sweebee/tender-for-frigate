@@ -137,7 +137,9 @@ struct ServerSettingsView: View {
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
         .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID).environment(model) }
         .sheet(isPresented: $editingConnection) {
-            if let server = conn?.server { NavigationStack { ConnectView(existing: server) }.environment(model) }
+            if let server = conn?.server {
+                NavigationStack { ConnectView(existing: server) }.environment(model).largeSheetOnWideScreens()
+            }
         }
         // Removed in the connection sheet: nothing left to show here.
         .onChange(of: conn == nil) { _, gone in if gone { dismiss() } }
