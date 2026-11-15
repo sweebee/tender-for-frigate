@@ -556,9 +556,11 @@ struct CameraSettingsView: View {
     /// Normal or dedicated LPR camera, as Frigate's camera type; applies after a restart.
     private var typeRow: some View {
         Menu {
-            Picker("Type", selection: Binding(get: { cameraType }, set: { t in Task { await setType(t) } })) {
-                Text("Normal").tag("generic")
-                Text("Dedicated LPR").tag("lpr")
+            // Plain buttons: a Picker in a Menu becomes a "Type" submenu on the Mac.
+            ForEach([("generic", L("Normal")), ("lpr", L("Dedicated LPR"))], id: \.0) { value, title in
+                Button { Task { await setType(value) } } label: {
+                    if cameraType == value { Label(title, systemImage: "checkmark") } else { Text(title) }
+                }
             }
         } label: {
             SettingsRow(icon: "car.rear", tint: Theme.accent, title: L("Type"),
