@@ -590,7 +590,8 @@ struct StreamEditSheet: View {
             }
         }
         .onChange(of: texts) { test = nil }
-        .confirmationDialog(L("Remove this stream?"), isPresented: $confirmingDelete, titleVisibility: .visible) {
+        .alert(L("Remove this stream?"), isPresented: $confirmingDelete) {
+            Button("Cancel", role: .cancel) {}
             Button("Remove stream", role: .destructive) { onDelete(); closePresented(dismiss) }
         } message: {
             Text(stream.sharedWith.isEmpty ? L("Frigate stops reading it and its go2rtc stream is removed when you save.")
