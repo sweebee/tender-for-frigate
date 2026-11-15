@@ -28,6 +28,8 @@ struct ServerSettingsView: View {
         let names = on.filter { ((config?[$0.0] as? [String: Any])?["enabled"] as? Bool) == true }.map(\.1)
         return names.isEmpty ? L("Off") : names.joined(separator: ", ")
     }
+    /// Login is on (auth.enabled; on unless the config turns it off).
+    private var authEnabled: Bool { ((config?["auth"] as? [String: Any])?["enabled"] as? Bool) ?? true }
     /// Without authentication Frigate treats everyone as admin.
     private var isAdmin: Bool { role == nil || role == "admin" }
 
@@ -79,7 +81,8 @@ struct ServerSettingsView: View {
                     .card(radius: 12)
                     SectionLabel(text: L("System")).padding(.top, 10)
                     VStack(spacing: 0) {
-                        if isAdmin {
+                        // Without login (auth off) Frigate uses no users: everyone is an admin.
+                        if isAdmin && authEnabled {
                             NavigationLink { UsersView(serverID: serverID) } label: {
                                 SettingsRow(icon: "person.crop.circle", tint: Theme.accent, title: L("Users"))
                             }
