@@ -329,7 +329,7 @@ struct ExportsView: View {
             Spacer()
             if caseWork > 0 {
                 // A case is made, renamed or deleted on the server: the spinner takes the button's place.
-                ProgressView().frame(width: 40, height: 40)
+                HeaderIconLabel(systemName: "ellipsis", loading: true)
             } else if let c = currentCase {
                 Menu { caseMenu(c) } label: { HeaderIconLabel(systemName: "ellipsis") }
                     .accessibilityLabel("More options")

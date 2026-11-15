@@ -423,7 +423,7 @@ struct ClassificationModelView: View {
                     }
                     .buttonStyle(.plain)
                     if working && !selecting {
-                        ProgressView().frame(width: 40, height: 40)
+                        HeaderIconLabel(systemName: "ellipsis", loading: true)
                     } else {
                         Menu {
                             Button { editing = true } label: { Label("Edit", systemImage: "pencil") }

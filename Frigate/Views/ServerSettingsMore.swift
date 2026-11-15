@@ -34,7 +34,7 @@ struct ProfilesView: View {
                     Spacer()
                     if isAdmin {
                         Button { nameField = ""; creating = true } label: {
-                            if workingOn == "" { ProgressView().frame(width: 40, height: 40) } else { HeaderIconLabel(systemName: "plus") }
+                            HeaderIconLabel(systemName: "plus", loading: workingOn == "")
                         }
                             .buttonStyle(.plain)
                             .disabled(working)
@@ -368,7 +368,7 @@ struct UsersView: View {
                     ScreenTitle(text: L("Users"), showsBack: true)
                     Spacer()
                     Button { newName = ""; newPassword = ""; newRole = "viewer"; adding = true } label: {
-                        if workingOn == "" { ProgressView().frame(width: 40, height: 40) } else { HeaderIconLabel(systemName: "plus") }
+                        HeaderIconLabel(systemName: "plus", loading: workingOn == "")
                     }
                     .buttonStyle(.plain)
                     .disabled(working)

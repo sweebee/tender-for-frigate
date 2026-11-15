@@ -267,7 +267,7 @@ struct ScreenTitle: View {
     var body: some View {
         if showsBack {
             // iPad and Mac show the back arrow in a square: it needs room before the title, and the title room below it.
-            HStack(spacing: sizeClass == .regular ? 12 : 4) {
+            HStack(spacing: sizeClass == .regular || hasGlass ? 12 : 4) {
                 // Default button style: the arrow takes the accent color, like on other screens.
                 Button { dismiss() } label: { BackButtonLabel() }
                     .accessibilityLabel("Back")
@@ -427,13 +427,37 @@ enum MenuPresence {
     }
 }
 
-/// The back button's look. On iPad and Mac an arrow on a raised square, like Frigate's own
-/// web app: a bare chevron was easy to miss there. On the phone the usual bare chevron.
+/// The look of the round glass buttons in a screen's top bar (iOS 26 and later), like the
+/// system's own Done and Cancel: the same everywhere, iPhone, iPad and Mac.
+private struct GlassHeaderButton: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, macCatalyst 26.0, *) {
+            content
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.text)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular.interactive(), in: Circle())
+                .contentShape(Circle())
+        } else {
+            content
+        }
+    }
+}
+
+private var hasGlass: Bool {
+    if #available(iOS 26.0, macCatalyst 26.0, *) { return true } else { return false }
+}
+
+/// The back button's look: a round glass button on iOS 26 and later. Before that, on iPad and
+/// Mac an arrow on a raised square (a bare chevron was easy to miss there), on the phone the
+/// usual bare chevron.
 struct BackButtonLabel: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
-        if sizeClass == .regular {
+        if hasGlass {
+            Image(systemName: "chevron.left").modifier(GlassHeaderButton())
+        } else if sizeClass == .regular {
             Image(systemName: "arrow.left")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Theme.text)
@@ -469,7 +493,9 @@ struct HeaderIconLabel: View {
     }
 
     var body: some View {
-        if sizeClass == .regular {
+        if hasGlass {
+            icon.modifier(GlassHeaderButton())
+        } else if sizeClass == .regular {
             icon
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(Theme.text)
