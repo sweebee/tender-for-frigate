@@ -135,7 +135,15 @@ final class FrigateClient: @unchecked Sendable {
         }
     }
 
-    func config() async throws -> FrigateConfig { try await get(FrigateConfig.self, "api/config") }
+    func config() async throws -> FrigateConfig {
+        let data = try await data("api/config")
+        var config = try decoder.decode(FrigateConfig.self, from: data)
+        // Decoding loses the order of live.streams, and its first entry is the default stream.
+        for name in config.cameras.keys {
+            config.cameras[name]?.liveOrder = JSONKeyOrder.keys(in: data, at: ["cameras", name, "live", "streams"])
+        }
+        return config
+    }
     func stats() async throws -> FrigateStats { try await get(FrigateStats.self, "api/stats") }
 
     // MARK: Review

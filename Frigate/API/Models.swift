@@ -78,6 +78,8 @@ struct CameraConfig: Decodable {
     var notifications: Toggle?
     /// "generic", or "lpr" for a dedicated license plate camera (Frigate 0.16+).
     var type: String?
+    /// The names in `live.streams` in Frigate's order: the first is the stream live view opens with.
+    var liveOrder: [String]?
 
     struct Detect: Decodable {
         var enabled: Bool?; var width: Int?; var height: Int?
@@ -142,6 +144,10 @@ struct CameraConfig: Decodable {
             list = names.map { (title: $0 == name ? "Main" : $0, name: $0) }
         }
         if let available { list = list.filter { available.contains($0.name) } }
+        if let order = liveOrder, live?.streams?.isEmpty == false {
+            // As Frigate: in the order of the config, the first one opens.
+            return list.sorted { (order.firstIndex(of: $0.title) ?? .max) < (order.firstIndex(of: $1.title) ?? .max) }
+        }
         return list.sorted { lhs, rhs in
             if lhs.name == name { return true }
             if rhs.name == name { return false }

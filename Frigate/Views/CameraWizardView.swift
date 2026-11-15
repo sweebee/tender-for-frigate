@@ -89,7 +89,7 @@ struct CameraWizardView: View {
                 divider
                 HStack {
                     Text("Password").font(.system(size: 15)).foregroundStyle(focus == .password ? Theme.accent : Theme.text).formLabel()
-                    SecureField("", text: $password).multilineTextAlignment(formFieldAlignment).font(.system(size: 15))
+                    RevealableField(text: $password).multilineTextAlignment(formFieldAlignment).font(.system(size: 15))
                         .focused($focus, equals: .password)
                             .focusEffectDisabled()
                 }

@@ -301,12 +301,13 @@ struct CameraView: View {
     private var moreMenu: some View {
             Menu {
                 // The stream is picked on the video itself (streamChip).
-                Picker("Playback", selection: $player.preferred) {
-                    Text("Automatic").tag(LivePlayerState.Mode.auto)
-                    Text("MSE").tag(LivePlayerState.Mode.mse)
-                    Text("WebRTC").tag(LivePlayerState.Mode.webrtc)
-                    Text("MJPEG").tag(LivePlayerState.Mode.mjpeg)
+                // Plain buttons: a Picker in a Menu becomes a "Playback ›" submenu on the Mac.
+                ForEach([(LivePlayerState.Mode.auto, L("Automatic")), (.mse, "MSE"), (.webrtc, "WebRTC"), (.mjpeg, "MJPEG")], id: \.0) { mode, title in
+                    Button { player.preferred = mode } label: {
+                        if player.preferred == mode { Label(title, systemImage: "checkmark") } else { Text(title) }
+                    }
                 }
+                Divider()
                 Button { player.reloadToken += 1 } label: { Label("Reload stream", systemImage: "arrow.clockwise") }
                 if let conn, let camera {
                     CameraSwitches(conn: conn, camera: camera)

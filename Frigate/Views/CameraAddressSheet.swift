@@ -195,7 +195,7 @@ struct CameraAddressSheet: View {
                     }
                     Divider().overlay(Theme.cardBorder)
                     row(L("Password"), id: .password) {
-                        SecureField("", text: $password, prompt: Text(plan.hasLogin ? "Unchanged" : "None").foregroundStyle(Theme.textTertiary))
+                        RevealableField(text: $password, prompt: Text(plan.hasLogin ? "Unchanged" : "None").foregroundStyle(Theme.textTertiary))
                     }
                 }
                 .card(radius: 12)

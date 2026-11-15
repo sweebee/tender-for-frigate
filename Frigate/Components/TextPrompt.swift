@@ -90,7 +90,7 @@ struct PromptField: View {
 
     var body: some View {
         Group {
-            if secure { SecureField("", text: $text, prompt: Text(placeholder).foregroundStyle(Theme.textSecondary)) }
+            if secure { RevealableField(text: $text, prompt: Text(placeholder).foregroundStyle(Theme.textSecondary)) }
             else { TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(Theme.textSecondary)) }
         }
         .textInputAutocapitalization(.never)
@@ -124,5 +124,29 @@ extension View {
     /// A sheet as large as its content (iPad and Mac), instead of the standard form size.
     @ViewBuilder func fittedSheet() -> some View {
         if #available(iOS 18.0, macCatalyst 18.0, *) { presentationSizing(.fitted) } else { self }
+    }
+}
+
+/// A password field with an eye button that shows what was typed.
+struct RevealableField: View {
+    @Binding var text: String
+    var prompt: Text? = nil
+    @State private var shown = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Group {
+                if shown { TextField("", text: $text, prompt: prompt) } else { SecureField("", text: $text, prompt: prompt) }
+            }
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            Button { shown.toggle() } label: {
+                Image(systemName: shown ? "eye.slash" : "eye")
+                    .font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
+                    .frame(width: 28, height: 28).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(shown ? L("Hide password") : L("Show password"))
+        }
     }
 }

@@ -8754,7 +8754,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hernoemen van %1$@ past ook de camera-input en live-weergave %2$@ aan."
+            "value": "Hernoemen van %1$@ past ook de camera-input en liveweergave %2$@ aan."
           }
         }
       }
@@ -8784,7 +8784,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Een rol kiezen haalt hem weg bij de andere stream. Zonder rol is de stream alleen voor live-weergave."
+            "value": "Een rol kiezen haalt hem weg bij de andere stream. Zonder rol is de stream alleen voor liveweergave."
           }
         }
       }
@@ -8855,6 +8855,106 @@
           "stringUnit": {
             "state": "translated",
             "value": "Test stream"
+          }
+        }
+      }
+    },
+    "Live: %@ · default": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live: %@ · standaard"
+          }
+        }
+      }
+    },
+    "%@: live view changed": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: liveweergave gewijzigd"
+          }
+        }
+      }
+    },
+    "%@ opens first in live view": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ speelt nu standaard in liveweergave"
+          }
+        }
+      }
+    },
+    "Every stream in live view needs its own name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elke stream in de liveweergave heeft een eigen naam nodig."
+          }
+        }
+      }
+    },
+    "Give the stream a name for live view.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef de stream een naam voor de liveweergave."
+          }
+        }
+      }
+    },
+    "Another stream already shows with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een andere stream staat al met deze naam in de liveweergave."
+          }
+        }
+      }
+    },
+    "Show in live view": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon in liveweergave"
+          }
+        }
+      }
+    },
+    "Name in the choice": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naam in de keuze"
+          }
+        }
+      }
+    },
+    "The name shows in the stream choice on the live picture. This stream plays when you open the camera; to change that, make another stream the default.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De naam zie je in de streamkeuze op het live beeld. Deze stream speelt als je de camera opent; maak een andere stream standaard om dat te veranderen."
+          }
+        }
+      }
+    },
+    "The name shows in the stream choice on the live picture. The default stream plays when you open the camera.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De naam zie je in de streamkeuze op het live beeld. De standaardstream speelt als je de camera opent."
           }
         }
       }

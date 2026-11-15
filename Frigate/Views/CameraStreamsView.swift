@@ -49,6 +49,11 @@ struct CameraStreamsView: View {
     @State private var phase: Phase = .editing
     @State private var errorMessage: String?
     @State private var notice: String?
+    /// The labels of `live.streams` in Frigate's order, as loaded; the first opens in live view.
+    @State private var savedLiveOrder: [String] = []
+    /// The stream live view opens with (the first in `live.streams`).
+    @State private var liveDefault: UUID?
+    @State private var savedLiveDefault: UUID?
 
     enum Phase { case editing, saving, restarting }
     struct Editing: Identifiable { let id: UUID; let isNew: Bool }
@@ -87,7 +92,7 @@ struct CameraStreamsView: View {
                     .disabled(busy)
                     Text("Detection, recording and audio each take one stream. Tap a stream to change its name, address or roles.")
                         .font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
-                    if streams != saved || busy { changesCard.padding(.top, 10) }
+                    if streams != saved || liveDefault != savedLiveDefault || busy { changesCard.padding(.top, 10) }
                 }
             }
             .padding(.horizontal, 16).readableWidth()
@@ -145,7 +150,7 @@ struct CameraStreamsView: View {
     private func chips(_ s: CameraStream) -> [(String, Bool)] {
         var out = s.roles.map { (Self.roleTitle($0), true) }
         if s.name != nil { out.append(("go2rtc", false)) }
-        out += s.liveLabels.map { (L("Live: \($0)"), false) }
+        out += s.liveLabels.map { (s.id == liveDefault ? L("Live: \($0) · default") : L("Live: \($0)"), false) }
         if !s.isInput && s.liveLabels.isEmpty { out.append((L("Not used"), false)) }
         return out
     }
@@ -174,6 +179,14 @@ struct CameraStreamsView: View {
         for (i, s) in streams.enumerated() where !saved.contains(where: { $0.id == s.id }) {
             out.append(L("\(title(s, number: i + 1)) added"))
         }
+        for (i, s) in streams.enumerated() {
+            if let old = saved.first(where: { $0.id == s.id }), old.liveLabels != s.liveLabels {
+                out.append(L("\(title(s, number: i + 1)): live view changed"))
+            }
+        }
+        if liveDefault != savedLiveDefault, let i = streams.firstIndex(where: { $0.id == liveDefault }) {
+            out.append(L("\(title(streams[i], number: i + 1)) opens first in live view"))
+        }
         return out
     }
 
@@ -195,6 +208,10 @@ struct CameraStreamsView: View {
         if readers.isEmpty { return L("The camera needs at least one stream with a role.") }
         if readers.filter({ $0.roles.contains("detect") }).count != 1 { return L("One stream needs Detection.") }
         if streams.contains(where: { $0.name == nil && $0.roles.isEmpty }) { return L("A stream without go2rtc needs a role.") }
+        let labels = streams.flatMap(\.liveLabels)
+        if labels.contains(where: { $0.trimmingCharacters(in: .whitespaces).isEmpty }) || Set(labels).count != labels.count {
+            return L("Every stream in live view needs its own name.")
+        }
         if inputKey(streams) != inputKey(saved), streams.contains(where: { $0.name == nil && $0.locked }) {
             return L("A stream's password comes from a variable ({FRIGATE_…}). Change these streams in Configuration (YAML).")
         }
@@ -226,8 +243,6 @@ struct CameraStreamsView: View {
         for s in streams where !saved.contains(where: { $0.id == s.id }) {
             guard let name = s.name else { continue }
             go2rtc[name] = s.sources
-            // Without a role it is there for live view.
-            if !s.isInput { live[name] = name }
         }
         var data: [String: Any] = [:]
         if !go2rtc.isEmpty { data["go2rtc"] = ["streams": go2rtc] }
@@ -236,6 +251,27 @@ struct CameraStreamsView: View {
         if !live.isEmpty { cam["live"] = ["streams": live] }
         if !cam.isEmpty { data["cameras"] = [camera: cam] }
         return data
+    }
+
+    /// `live.streams` as it should be: label and go2rtc stream, the default first, otherwise in the loaded order.
+    private func liveEntries(_ list: [CameraStream], default def: UUID?) -> [String] {
+        var entries: [(entry: String, rank: Int)] = []
+        for (i, s) in list.enumerated() {
+            guard let name = s.name else { continue }
+            for label in s.liveLabels {
+                entries.append(("\(label)\u{0}\(name)", s.id == def ? -1 : (savedLiveOrder.firstIndex(of: label) ?? 1000 + i)))
+            }
+        }
+        return entries.enumerated().sorted { ($0.element.rank, $0.offset) < ($1.element.rank, $1.offset) }.map(\.element.entry)
+    }
+
+    /// `live.streams` after the first save, which follows renames and removals in place.
+    private var liveAfterFirstSave: [String] {
+        savedLiveOrder.compactMap { label in
+            guard let old = saved.first(where: { $0.liveLabels.contains(label) }),
+                  let now = streams.first(where: { $0.id == old.id }), let name = now.name else { return nil }
+            return "\(label)\u{0}\(name)"
+        }
     }
 
     private var changesCard: some View {
@@ -253,7 +289,7 @@ struct CameraStreamsView: View {
                 Text(errorMessage).font(.system(size: 12)).foregroundStyle(Theme.destructive)
             }
             HStack(spacing: 10) {
-                Button("Undo") { streams = saved; errorMessage = nil }
+                Button("Undo") { streams = saved; liveDefault = savedLiveDefault; errorMessage = nil }
                     .buttonStyle(PromptButtonStyle(primary: false))
                     .disabled(busy)
                 Spacer()
@@ -283,19 +319,32 @@ struct CameraStreamsView: View {
         let taken = defined.union(streams.compactMap(\.name))
             .subtracting(saved.first { $0.id == e.id }?.name.map { [$0] } ?? [])
             .subtracting(existing?.name.map { [$0] } ?? [])
-        StreamEditSheet(stream: template, isNew: existing == nil, takenNames: taken, client: conn?.client) { updated in
-            apply(updated)
+        let labels = Set(streams.filter { $0.id != e.id }.flatMap(\.liveLabels))
+        StreamEditSheet(stream: template, isNew: existing == nil, takenNames: taken, takenLabels: labels,
+                        isDefault: liveDefault == e.id, client: conn?.client) { updated, isDefault in
+            apply(updated, isDefault: isDefault)
         } onDelete: {
             streams.removeAll { $0.id == e.id }
+            if liveDefault == e.id { liveDefault = firstInLive() }
         }
     }
 
-    private func apply(_ updated: CameraStream) {
+    /// The stream that comes first in live view without a chosen default.
+    private func firstInLive() -> UUID? {
+        liveEntries(streams, default: nil).first.flatMap { entry in
+            streams.first { s in s.name.map { entry.hasSuffix("\u{0}\($0)") } ?? false }?.id
+        }
+    }
+
+    private func apply(_ updated: CameraStream, isDefault: Bool) {
         // A role sits on one stream only.
         for i in streams.indices where streams[i].id != updated.id {
             streams[i].roles.removeAll { updated.roles.contains($0) }
         }
         if let i = streams.firstIndex(where: { $0.id == updated.id }) { streams[i] = updated } else { streams.append(updated) }
+        if isDefault { liveDefault = updated.id }
+        else if liveDefault == updated.id && updated.liveLabels.isEmpty { liveDefault = nil; liveDefault = firstInLive() }
+        else if liveDefault == nil { liveDefault = firstInLive() }
     }
 
     // MARK: Loading and saving
@@ -306,14 +355,18 @@ struct CameraStreamsView: View {
         defer { loading = false }
         do {
             async let rawRequest = client.data("api/config/raw_paths")
-            async let configRequest = client.rawConfig()
+            async let configRequest = client.data("api/config")
             async let yamlRequest = client.rawConfigText()
             let raw = (try JSONSerialization.jsonObject(with: try await rawRequest) as? [String: Any]) ?? [:]
-            let config = try await configRequest
+            let configData = try await configRequest
+            let config = (try JSONSerialization.jsonObject(with: configData) as? [String: Any]) ?? [:]
             let yaml = (try? await yamlRequest) ?? ""
             let loaded = Self.parse(raw: raw, config: config, yaml: yaml, camera: camera)
             saved = loaded.streams
             streams = loaded.streams
+            savedLiveOrder = JSONKeyOrder.keys(in: configData, at: ["cameras", camera, "live", "streams"]) ?? []
+            savedLiveDefault = savedLiveOrder.first.flatMap { first in loaded.streams.first { $0.liveLabels.contains(first) }?.id }
+            liveDefault = savedLiveDefault
             extras = loaded.extras
             defined = loaded.defined
             prefix = loaded.prefix
@@ -411,7 +464,22 @@ struct CameraStreamsView: View {
         notice = nil
         phase = .saving
         do {
-            try await client.setConfig(configChange, requiresRestart: true, updateTopic: nil)
+            let change = configChange
+            if !change.isEmpty { try await client.setConfig(change, requiresRestart: true, updateTopic: nil) }
+            // live.streams is a map whose order counts, and /api/config/set keeps the old order:
+            // clear it and add the entries one by one.
+            let wanted = liveEntries(streams, default: liveDefault)
+            let current = change.isEmpty ? liveEntries(saved, default: savedLiveDefault) : liveAfterFirstSave
+            if wanted != current {
+                if !current.isEmpty {
+                    try await client.setConfig(["cameras": [camera: ["live": ["streams": ""]]]], requiresRestart: true, updateTopic: nil)
+                }
+                for entry in wanted {
+                    let parts = entry.components(separatedBy: "\u{0}")
+                    try await client.setConfig(["cameras": [camera: ["live": ["streams": [parts[0]: parts[1]]]]]],
+                                               requiresRestart: true, updateTopic: nil)
+                }
+            }
             phase = .restarting
             try await client.restart()
             try? await Task.sleep(for: .seconds(5))
@@ -450,8 +518,11 @@ struct StreamEditSheet: View {
     let stream: CameraStream
     let isNew: Bool
     let takenNames: Set<String>
+    /// Live view names other streams of this camera have.
+    let takenLabels: Set<String>
+    let isDefault: Bool
     let client: FrigateClient?
-    let onDone: (CameraStream) -> Void
+    let onDone: (CameraStream, Bool) -> Void
     let onDelete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -462,13 +533,21 @@ struct StreamEditSheet: View {
     @State private var testing = false
     @State private var test: Result<StreamProbe, Error>?
     @State private var confirmingDelete = false
+    @State private var showInLive: Bool
+    @State private var liveLabel: String
+    @State private var makeDefault: Bool
     @FocusState private var focus: Int?
 
-    init(stream: CameraStream, isNew: Bool, takenNames: Set<String>, client: FrigateClient?,
-         onDone: @escaping (CameraStream) -> Void, onDelete: @escaping () -> Void) {
+    init(stream: CameraStream, isNew: Bool, takenNames: Set<String>, takenLabels: Set<String>, isDefault: Bool,
+         client: FrigateClient?, onDone: @escaping (CameraStream, Bool) -> Void, onDelete: @escaping () -> Void) {
         self.stream = stream
         self.isNew = isNew
         self.takenNames = takenNames
+        self.takenLabels = takenLabels
+        self.isDefault = isDefault
+        _showInLive = State(initialValue: !stream.liveLabels.isEmpty)
+        _liveLabel = State(initialValue: stream.liveLabels.first ?? "")
+        _makeDefault = State(initialValue: isDefault)
         self.client = client
         self.onDone = onDone
         self.onDelete = onDelete
@@ -496,8 +575,17 @@ struct StreamEditSheet: View {
         return nil
     }
 
+    private var trimmedLabel: String { liveLabel.trimmingCharacters(in: .whitespaces) }
+
+    private var labelProblem: String? {
+        guard hasName, showInLive else { return nil }
+        if trimmedLabel.isEmpty { return L("Give the stream a name for live view.") }
+        if takenLabels.contains(trimmedLabel) { return L("Another stream already shows with this name.") }
+        return nil
+    }
+
     private var canFinish: Bool {
-        nameProblem == nil && !addresses.isEmpty && (hasName || !roles.isEmpty)
+        nameProblem == nil && labelProblem == nil && !addresses.isEmpty && (hasName || !roles.isEmpty)
             && addresses.allSatisfy { StreamAddress.host($0) != nil || $0.hasPrefix("ffmpeg:") || stream.locked }
     }
 
@@ -564,6 +652,8 @@ struct StreamEditSheet: View {
                 }
                 note(hasName ? L("Choosing a role takes it from the other stream. Without a role the stream is for live view only.")
                              : L("Choosing a role takes it from the other stream. A stream without go2rtc needs a role."))
+
+                if hasName { liveSection }
 
                 if !isNew {
                     Button { confirmingDelete = true } label: {
@@ -645,12 +735,51 @@ struct StreamEditSheet: View {
         .buttonStyle(.plain)
     }
 
+    /// Whether and how the stream shows in the stream choice on the live picture.
+    private var liveSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionLabel(text: L("Live view")).padding(.top, 10)
+            VStack(spacing: 0) {
+                Toggle(isOn: $showInLive.animation(.easeOut(duration: 0.15))) { Text("Show in live view").font(.system(size: 15)) }
+                    .tint(Theme.online)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                if showInLive {
+                    Divider().overlay(Theme.cardBorder)
+                    HStack {
+                        Text("Name in the choice").font(.system(size: 15)).foregroundStyle(focus == -2 ? Theme.accent : Theme.text).formLabel()
+                        TextField("", text: $liveLabel, prompt: Text(trimmedName.isEmpty ? "Main" : trimmedName).foregroundStyle(Theme.textTertiary))
+                            .multilineTextAlignment(formFieldAlignment).font(.system(size: 15))
+                            .autocorrectionDisabled()
+                            .focused($focus, equals: -2).focusEffectDisabled()
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .modifier(FocusRow(on: focus == -2))
+                    Divider().overlay(Theme.cardBorder)
+                    // Only switched on here: another stream becomes the default by switching it on there.
+                    Toggle(isOn: $makeDefault) { Text("Default").font(.system(size: 15)) }
+                        .tint(Theme.online)
+                        .disabled(isDefault)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                }
+            }
+            .card(radius: 12)
+            if let labelProblem, !(isNew && liveLabel.isEmpty) {
+                note(labelProblem, color: Theme.destructive)
+            } else {
+                note(isDefault ? L("The name shows in the stream choice on the live picture. This stream plays when you open the camera; to change that, make another stream the default.")
+                               : L("The name shows in the stream choice on the live picture. The default stream plays when you open the camera."))
+            }
+        }
+    }
+
     private func finish() {
         var s = stream
         s.name = hasName ? trimmedName : nil
         if !stream.locked { s.sources = addresses }
         s.roles = roles.sorted { CameraStreamsView.roleOrder($0) < CameraStreamsView.roleOrder($1) }
-        onDone(s)
+        // Other live view names of the stream (rare) stay as they are.
+        s.liveLabels = hasName && showInLive ? [trimmedLabel] + stream.liveLabels.dropFirst() : []
+        onDone(s, hasName && showInLive && makeDefault)
         closePresented(dismiss)
     }
 
