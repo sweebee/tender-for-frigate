@@ -373,9 +373,14 @@ struct ClassificationModelView: View {
         .sheet(item: $assigning) { target in
             NavigationStack {
                 ClassificationAssignSheet(model: m, target: target, classes: dataset.classNames, reclassifies: reclassifies,
-                                          isAdmin: isAdmin) { Task { await load() } }
+                                          isAdmin: isAdmin) {
+                    // Closed from here: on the Mac the sheet's own dismiss does not always take.
+                    assigning = nil
+                    Task { await load() }
+                }
             }
             .environment(model)
+            .largeSheetOnWideScreens()
         }
         .sheet(isPresented: $editing) {
             NavigationStack { ClassificationEditSheet(initial: m) { Task { await reloadModel() } } }.environment(model)
@@ -467,6 +472,8 @@ struct ClassificationModelView: View {
         if training { return L("Training") }
         if state == "failed" { return L("Training failed") }
         if !dataset.hasTrained { return L("Not trained yet") }
+        // After a move Frigate's record says "trained now, 0 images": its date says nothing then.
+        if dataset.lastTrainedImages == 0 { return L("Train again") }
         if let d = dataset.lastTrained { return L("Trained \(FrigateFormat.relative(d).lowercased())") }
         return L("Trained")
     }
@@ -786,7 +793,8 @@ struct ClassificationAssignSheet: View {
     @ViewBuilder
     private var images: some View {
         if target.files.count == 1, let file = target.files.first {
-            image(file).frame(maxWidth: 360).frame(maxWidth: .infinity)
+            // Small enough that the classes stay in view, also in the Mac's sheet.
+            image(file).frame(maxWidth: 280, maxHeight: 280).frame(maxWidth: .infinity)
         } else {
             Text("The tries for this object; the ones ticked are put in the class.")
                 .font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
@@ -838,10 +846,14 @@ struct ClassificationAssignSheet: View {
         guard let client else { return }
         do {
             for file in target.files where picked.contains(file) {
-                if let from = target.category {
-                    try await client.reclassify(model.name, file: file, from: from, to: category)
-                } else {
-                    try await client.categorize(model.name, file: file, into: category)
+                do {
+                    if let from = target.category {
+                        try await client.reclassify(model.name, file: file, from: from, to: category)
+                    } else {
+                        try await client.categorize(model.name, file: file, into: category)
+                    }
+                } catch FrigateError.http(404, _) {
+                    // Already moved (a second tap, or Frigate pruned it): nothing left to do for this one.
                 }
             }
             // The tries not ticked are of no use once the object is classified.

@@ -7528,6 +7528,16 @@
           }
         }
       }
+    },
+    "Train again": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnieuw trainen"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

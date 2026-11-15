@@ -53,6 +53,8 @@ struct ClassificationDataset {
     /// Images added or moved since the last training.
     var newImages = 0
     var totalImages = 0
+    /// Images in the last training; Frigate sets it to 0 (and the date to now) when images are moved or renamed.
+    var lastTrainedImages = 0
     /// Something changed since the last training, so training again makes sense.
     var changed = false
 
@@ -102,6 +104,7 @@ extension FrigateClient {
             }
             set.newImages = (meta["new_images_count"] as? NSNumber)?.intValue ?? 0
             set.totalImages = (meta["current_image_count"] as? NSNumber)?.intValue ?? 0
+            set.lastTrainedImages = (meta["last_training_image_count"] as? NSNumber)?.intValue ?? 0
             set.changed = meta["dataset_changed"] as? Bool ?? false
         }
         return set
