@@ -535,12 +535,13 @@ struct RelativeTimeText: View {
 /// colours the icon blue next to the red title.
 struct DestructiveMenuLabel: View {
     let title: LocalizedStringKey
+    var systemImage = "trash"
 
     var body: some View {
         Label {
             Text(title)
         } icon: {
-            Image(systemName: "trash").foregroundStyle(Theme.destructive)
+            Image(systemName: systemImage).foregroundStyle(Theme.destructive)
         }
         .tint(Theme.destructive)
     }

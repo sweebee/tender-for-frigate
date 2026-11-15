@@ -136,7 +136,7 @@ struct ConfigEditorView: View {
             Divider()
             Button(role: .destructive) {
                 text = original; problem = nil; problemLine = nil; editor.reload(original)
-            } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
+            } label: { DestructiveMenuLabel(title: "Undo", systemImage: "arrow.uturn.backward") }
         } label: {
             Group { if saving != nil { ProgressView().tint(Theme.onColor) } else { Text("Save") } }
                 .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.onColor)

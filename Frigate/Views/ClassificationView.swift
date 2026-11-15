@@ -216,7 +216,7 @@ struct ClassificationView: View {
         .contextMenu {
             if isAdmin(m.serverID) {
                 Button { editing = m } label: { Label("Edit", systemImage: "pencil") }
-                Button(role: .destructive) { deleting = m } label: { Label("Delete", systemImage: "trash") }
+                Button(role: .destructive) { deleting = m } label: { DestructiveMenuLabel(title: "Delete") }
             }
         }
     }
@@ -420,7 +420,7 @@ struct ClassificationModelView: View {
                     .buttonStyle(.plain)
                     Menu {
                         Button { editing = true } label: { Label("Edit", systemImage: "pencil") }
-                        Button(role: .destructive) { deletingModel = true } label: { Label("Delete model", systemImage: "trash") }
+                        Button(role: .destructive) { deletingModel = true } label: { DestructiveMenuLabel(title: "Delete model") }
                     } label: { HeaderIconLabel(systemName: "ellipsis") }
                 }
             }
@@ -498,7 +498,7 @@ struct ClassificationModelView: View {
                             if isAdmin && c != "none" {
                                 Button { newName = c; renaming = c } label: { Label("Rename", systemImage: "pencil") }
                                 if dataset.categories.count > 2 {
-                                    Button(role: .destructive) { deletingClass = c } label: { Label("Delete", systemImage: "trash") }
+                                    Button(role: .destructive) { deletingClass = c } label: { DestructiveMenuLabel(title: "Delete") }
                                 }
                             }
                         }
