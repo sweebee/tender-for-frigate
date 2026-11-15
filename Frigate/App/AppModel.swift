@@ -183,6 +183,41 @@ final class ServerConnection: Identifiable {
         return true
     }
 
+    /// What is wrong with the server, as Frigate's status bar lists it: errors first; empty when all is well.
+    struct Problem: Identifiable, Hashable {
+        enum Severity: Int { case error, warning }
+        let severity: Severity
+        let text: String
+        var id: String { text }
+    }
+
+    var problems: [Problem] {
+        guard isOnline, let stats, let config else { return [] }
+        // Just started: cameras and the detector are still warming up.
+        if let uptime = stats.service?.uptime, uptime < 120 { return [] }
+        var out: [Problem] = []
+        if stats.service?.retentionUnmet == true {
+            out.append(Problem(severity: .error, text: L("The disk is too small to keep recordings as long as set")))
+        }
+        for (name, det) in stats.detectors.sorted(by: { $0.key < $1.key }) {
+            guard let speed = det.inferenceSpeed else { continue }
+            if speed > 100 {
+                out.append(Problem(severity: .error, text: L("Detector \(name) is very slow (\(Int(speed.rounded())) ms)")))
+            } else if speed > 50 {
+                out.append(Problem(severity: .warning, text: L("Detector \(name) is slow (\(Int(speed.rounded())) ms)")))
+            }
+        }
+        for cam in config.orderedCameras where isCameraEnabled(cam) {
+            guard let s = stats.cameras[cam.name] else { continue }
+            if s.cameraFps == 0 {
+                out.append(Problem(severity: .error, text: L("\(cam.displayName) is offline")))
+            } else if let pct = s.skippedPct, pct >= 5 {
+                out.append(Problem(severity: .warning, text: L("\(cam.displayName) skips \(Int(pct.rounded()))% of detections")))
+            }
+        }
+        return out.sorted { $0.severity.rawValue < $1.severity.rawValue }
+    }
+
     /// "6 cameras · v0.18 · Local" or "Offline · last seen 2 days ago".
     var metaLine: String {
         switch status {

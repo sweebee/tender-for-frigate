@@ -7538,6 +7538,76 @@
           }
         }
       }
+    },
+    "The disk is too small to keep recordings as long as set": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De schijf is te klein om opnames zo lang te bewaren als ingesteld"
+          }
+        }
+      }
+    },
+    "Detector %@ is very slow (%lld ms)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detector %1$@ is erg traag (%2$lld ms)"
+          }
+        }
+      }
+    },
+    "Detector %@ is slow (%lld ms)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detector %1$@ is traag (%2$lld ms)"
+          }
+        }
+      }
+    },
+    "%@ skips %lld%% of detections": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ slaat %2$lld%% van de detecties over"
+          }
+        }
+      }
+    },
+    "+%lld more": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld meer"
+          }
+        }
+      }
+    },
+    "No problems anymore.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen problemen meer."
+          }
+        }
+      }
+    },
+    "System status and logs": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systeemstatus en logs"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

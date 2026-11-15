@@ -167,6 +167,8 @@ struct LiveView: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.controlBorder, style: StrokeStyle(lineWidth: 1, dash: [4])))
         default:
             let cams = cameras(for: conn)
+            // Only when something is wrong; nothing at all when Frigate is fine.
+            if !conn.problems.isEmpty { ServerProblemsBanner(conn: conn) }
             if cams.isEmpty {
                 EmptyStateView(systemImage: "video.slash", title: L("No cameras"), message: group == nil ? nil : L("This group has no cameras on \(conn.server.name)."))
             } else {
@@ -574,5 +576,72 @@ struct ProfileSwitcher: View {
                 await conn.refresh(reloadConfig: true)
             } catch { errorMessage = error.localizedDescription }
         }
+    }
+}
+
+
+/// What is wrong with a server (an offline camera, a slow detector, a full disk), as Frigate's
+/// status bar shows it; tap for the whole list and the system status.
+struct ServerProblemsBanner: View {
+    let conn: ServerConnection
+    @Environment(AppModel.self) private var model
+    @State private var showing = false
+
+    var body: some View {
+        let problems = conn.problems
+        let isError = problems.first?.severity == .error
+        let tint = isError ? Theme.destructive : Theme.warning
+        Button { showing = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(tint)
+                Text(problems.first?.text ?? "").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.text)
+                    .lineLimit(1)
+                Spacer(minLength: 6)
+                if problems.count > 1 {
+                    Text(L("+\(problems.count - 1) more")).font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                }
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textTertiary)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.35), lineWidth: 1))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showing) {
+            NavigationStack { ServerProblemsSheet(conn: conn) }
+                .environment(model)
+                .presentationDetents([.medium, .large])
+        }
+    }
+}
+
+private struct ServerProblemsSheet: View {
+    let conn: ServerConnection
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(conn.problems) { p in
+                    Label {
+                        Text(p.text)
+                    } icon: {
+                        Image(systemName: p.severity == .error ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
+                            .foregroundStyle(p.severity == .error ? Theme.destructive : Theme.warning)
+                    }
+                }
+            } footer: {
+                if conn.problems.isEmpty { Text("No problems anymore.") }
+            }
+            Section {
+                NavigationLink { SystemStatusView(serverID: conn.server.id) } label: {
+                    Label("System status and logs", systemImage: "waveform.path.ecg")
+                }
+            }
+        }
+        .navigationTitle(conn.server.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { closePresented(dismiss) } } }
     }
 }

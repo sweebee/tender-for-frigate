@@ -156,12 +156,15 @@ struct FrigateStats: Decodable {
         var detectionFps: Double?
         var processFps: Double?
         var skippedFps: Double?
+        /// Share of frames the detector had to skip (Frigate 0.18).
+        var skippedPct: Double?
         var detectionEnabled: Bool?
         enum CodingKeys: String, CodingKey {
             case cameraFps = "camera_fps"
             case detectionFps = "detection_fps"
             case processFps = "process_fps"
             case skippedFps = "skipped_fps"
+            case skippedPct = "skipped_pct"
             case detectionEnabled = "detection_enabled"
         }
     }
@@ -171,11 +174,14 @@ struct FrigateStats: Decodable {
     struct Service: Decodable {
         var version: String?; var uptime: Double?
         var latestVersion: String?
+        /// Recordings cannot be kept as long as configured: the disk is too small.
+        var retentionUnmet: Bool?
         /// Mount point → sizes in MB.
         var storage: [String: Storage]?
         enum CodingKeys: String, CodingKey {
             case version, uptime, storage
             case latestVersion = "latest_version"
+            case retentionUnmet = "retention_unmet"
         }
     }
     struct Storage: Decodable { var total: Double?; var used: Double? }
