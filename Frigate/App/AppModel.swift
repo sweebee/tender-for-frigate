@@ -447,8 +447,8 @@ final class ServerConnection: Identifiable {
     /// Refreshes the frequently changing state. `reloadConfig` also fetches the config again
     /// (new or renamed cameras); it is fetched anyway when older than five minutes.
     /// Live streams of a camera that go2rtc can play; see `CameraConfig.streams(available:)`.
-    func liveStreams(_ camera: CameraConfig) -> [(title: String, name: String)] {
-        camera.streams(available: go2rtcStreams)
+    func liveStreams(_ camera: CameraConfig, inFrigateOrder: Bool = true) -> [(title: String, name: String)] {
+        camera.streams(available: go2rtcStreams, inFrigateOrder: inFrigateOrder)
     }
 
     func refresh(reloadConfig: Bool = false) async {

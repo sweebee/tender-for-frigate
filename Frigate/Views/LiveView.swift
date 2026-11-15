@@ -199,7 +199,8 @@ struct CameraTile: View {
     /// unless the tile is wider than about 800 pixels on screen and the connection is not metered:
     /// then the main stream, as Frigate's own dashboard plays large tiles.
     private var tileStream: (title: String, name: String)? {
-        let streams = conn.liveStreams(camera)
+        // Main first and the lightest last, whichever Frigate opens the camera with.
+        let streams = conn.liveStreams(camera, inFrigateOrder: false)
         switch model.tileStream {
         case .main: return streams.first
         case .sub: return streams.last

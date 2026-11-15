@@ -129,7 +129,9 @@ struct CameraConfig: Decodable {
     /// restreams the camera itself reads (rtsp://127.0.0.1:8554/<name>), which Frigate's web UI
     /// would not offer. `available` is the server's go2rtc stream list when known; streams
     /// missing from it are left out, so an empty result means there is no restream to play.
-    func streams(available: Set<String>?) -> [(title: String, name: String)] {
+    /// `inFrigateOrder`: the camera screen opens with the first, as Frigate does. Without it the
+    /// main stream (the camera's own name) comes first and the lightest last, which live tiles use.
+    func streams(available: Set<String>?, inFrigateOrder: Bool = true) -> [(title: String, name: String)] {
         var list: [(title: String, name: String)]
         if let s = live?.streams, !s.isEmpty {
             list = s.map { (title: $0.key, name: $0.value) }
@@ -144,7 +146,7 @@ struct CameraConfig: Decodable {
             list = names.map { (title: $0 == name ? "Main" : $0, name: $0) }
         }
         if let available { list = list.filter { available.contains($0.name) } }
-        if let order = liveOrder, live?.streams?.isEmpty == false {
+        if inFrigateOrder, let order = liveOrder, live?.streams?.isEmpty == false {
             // As Frigate: in the order of the config, the first one opens.
             return list.sorted { (order.firstIndex(of: $0.title) ?? .max) < (order.firstIndex(of: $1.title) ?? .max) }
         }
