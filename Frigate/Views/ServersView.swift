@@ -182,10 +182,11 @@ struct ServersView: View {
             NavigationLink {
                 ServerSettingsView(serverID: conn.server.id)
             } label: {
-                Image(systemName: "gearshape").font(.system(size: 22, weight: .medium)).foregroundStyle(Theme.textSecondary)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.control, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.controlBorder, lineWidth: 1))
+                // The same size as the sidebar's buttons.
+                Image(systemName: "gearshape").font(.system(size: 20, weight: .medium)).foregroundStyle(Theme.textSecondary)
+                    .frame(width: 48, height: 48)
+                    .background(Theme.control, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.controlBorder, lineWidth: 1))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L("Settings of \(conn.server.name)"))
