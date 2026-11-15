@@ -7608,6 +7608,456 @@
           }
         }
       }
+    },
+    "Add camera": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera toevoegen"
+          }
+        }
+      }
+    },
+    "Address": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres"
+          }
+        }
+      }
+    },
+    "Another stream address": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog een streamadres"
+          }
+        }
+      }
+    },
+    "Apple compatible (h265)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-compatibel (h265)"
+          }
+        }
+      }
+    },
+    "Brand": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merk"
+          }
+        }
+      }
+    },
+    "Brand or address": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merk of adres"
+          }
+        }
+      }
+    },
+    "Check": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controle"
+          }
+        }
+      }
+    },
+    "Detection takes one stream, recording one, audio one. Through go2rtc the camera is opened once and shared, which most cameras like better.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectie, opnemen en audio gebruiken elk één stream. Via go2rtc wordt de camera één keer geopend en gedeeld; daar kunnen de meeste camera's beter tegen."
+          }
+        }
+      }
+    },
+    "Detection uses a large stream; a sub stream takes far less of the server.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectie gebruikt een grote stream; een substream vraagt veel minder van de server."
+          }
+        }
+      }
+    },
+    "Driveway": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oprit"
+          }
+        }
+      }
+    },
+    "Fill in an address that starts with rtsp://.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vul een adres in dat begint met rtsp://."
+          }
+        }
+      }
+    },
+    "Fill in the camera's address.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vul het adres van de camera in."
+          }
+        }
+      }
+    },
+    "Find camera": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek camera"
+          }
+        }
+      }
+    },
+    "Find it (ONVIF)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch (ONVIF)"
+          }
+        }
+      }
+    },
+    "Frigate is connecting to the camera and opening its streams; this takes up to half a minute.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate maakt verbinding met de camera en opent de streams; dit duurt tot een halve minuut."
+          }
+        }
+      }
+    },
+    "Frigate starts the camera at once; no restart needed. The camera's password is kept in Frigate's config, as with Frigate's own wizard.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate start de camera meteen, zonder herstart. Het wachtwoord van de camera komt in de configuratie van Frigate te staan, net als bij de wizard van Frigate zelf."
+          }
+        }
+      }
+    },
+    "Give the camera a name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geef de camera een naam."
+          }
+        }
+      }
+    },
+    "Most cameras answer on port 80; some on 8000 or 8899. ONVIF has to be on in the camera.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De meeste camera's antwoorden op poort 80, sommige op 8000 of 8899. ONVIF moet aan staan in de camera."
+          }
+        }
+      }
+    },
+    "No answer over ONVIF: %@ Check the address, port and login, or try Brand or address.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen antwoord via ONVIF: %@ Controleer adres, poort en inlog, of probeer Merk of adres."
+          }
+        }
+      }
+    },
+    "ONVIF port": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ONVIF-poort"
+          }
+        }
+      }
+    },
+    "One stream needs Detection.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eén stream heeft Detectie nodig."
+          }
+        }
+      }
+    },
+    "Other (RTSP address)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anders (RTSP-adres)"
+          }
+        }
+      }
+    },
+    "Pan, tilt and zoom (ONVIF)": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draaien, kantelen en zoomen (ONVIF)"
+          }
+        }
+      }
+    },
+    "Recordings in h265 play on iPhone, iPad and Mac only with this on.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnames in h265 spelen op iPhone, iPad en Mac alleen af met deze optie aan."
+          }
+        }
+      }
+    },
+    "Recordings will have no sound: the stream has no audio.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opnames krijgen geen geluid: de stream heeft geen audio."
+          }
+        }
+      }
+    },
+    "Step %lld of 4": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stap %lld van 4"
+          }
+        }
+      }
+    },
+    "Stream %lld": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stream %lld"
+          }
+        }
+      }
+    },
+    "Streams": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streams"
+          }
+        }
+      }
+    },
+    "Test": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test"
+          }
+        }
+      }
+    },
+    "The audio is not AAC; recordings may play without sound in some players.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De audio is geen AAC; opnames spelen in sommige spelers zonder geluid."
+          }
+        }
+      }
+    },
+    "The audio stream has no audio.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De audiostream heeft geen audio."
+          }
+        }
+      }
+    },
+    "The camera answered but reported no streams. Try Brand or address.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De camera antwoordde maar meldde geen streams. Probeer Merk of adres."
+          }
+        }
+      }
+    },
+    "The detection stream is very small; objects will be hard to see.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De detectiestream is erg klein; objecten zijn dan moeilijk te zien."
+          }
+        }
+      }
+    },
+    "The stream has no video Frigate can use.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De stream heeft geen video die Frigate kan gebruiken."
+          }
+        }
+      }
+    },
+    "There is already a camera with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een camera met deze naam."
+          }
+        }
+      }
+    },
+    "Through go2rtc": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Via go2rtc"
+          }
+        }
+      }
+    },
+    "Tick at least one stream that works.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vink minstens één stream aan die werkt."
+          }
+        }
+      }
+    },
+    "Tick the streams to use: usually the main stream for recording and the sub stream for detection.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vink de streams aan die je wilt gebruiken: meestal de hoofdstream voor opnemen en de substream voor detectie."
+          }
+        }
+      }
+    },
+    "%lld profiles": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld profielen"
+          }
+        }
+      }
+    },
+    "firmware %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "firmware %@"
+          }
+        }
+      }
+    },
+    "The camera refused the login. Check the username and password.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De camera weigert de inlog. Controleer gebruikersnaam en wachtwoord."
+          }
+        }
+      }
+    },
+    "The camera has no stream at this address.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De camera heeft geen stream op dit adres."
+          }
+        }
+      }
+    },
+    "The camera does not answer at this address.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De camera antwoordt niet op dit adres."
+          }
+        }
+      }
+    },
+    "Frigate could not open this stream.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate kon deze stream niet openen."
+          }
+        }
+      }
+    },
+    "Other address": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ander adres"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

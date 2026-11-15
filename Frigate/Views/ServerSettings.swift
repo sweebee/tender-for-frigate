@@ -16,6 +16,7 @@ struct ServerSettingsView: View {
     @State private var errorMessage: String?
     @State private var webInterface: ServersView.WebTarget?
     @State private var reordering = false
+    @State private var addingCamera = false
     @State private var editingConnection = false
     @Environment(\.dismiss) private var dismiss
 
@@ -136,6 +137,11 @@ struct ServerSettingsView: View {
         .task { await load() }
         .fullScreenCover(item: $webInterface) { WebInterfaceView(url: $0.url, title: $0.title) }
         .sheet(isPresented: $reordering) { CameraOrderView(serverID: serverID).environment(model) }
+        .sheet(isPresented: $addingCamera) {
+            NavigationStack { CameraWizardView(serverID: serverID) { Task { await load() } } }
+                .environment(model)
+                .largeSheetOnWideScreens()
+        }
         .sheet(isPresented: $editingConnection) {
             if let server = conn?.server {
                 NavigationStack { ConnectView(existing: server) }.environment(model).largeSheetOnWideScreens()
@@ -243,6 +249,13 @@ struct ServerSettingsView: View {
                             .frame(width: 32, height: 28).contentShape(Rectangle())
                     }
                     .accessibilityLabel("Camera order")
+                }
+                if isAdmin && conn.version.map({ $0.compare("0.17", options: .numeric) != .orderedAscending }) == true {
+                    Button { addingCamera = true } label: {
+                        Image(systemName: "plus").font(.system(size: 15, weight: .semibold))
+                            .frame(width: 32, height: 28).contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Add camera")
                 }
             }
             .padding(.top, 10)

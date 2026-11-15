@@ -103,6 +103,9 @@ final class FrigateClient: @unchecked Sendable {
         }
     }
 
+    /// For requests built elsewhere (camera setup): the same checks as every call.
+    func performPublic(_ req: URLRequest) async throws -> Data { try await perform(req) }
+
     private func perform(_ req: URLRequest) async throws -> Data {
         let (data, response) = try await session.data(for: req)
         guard let http = response as? HTTPURLResponse else { return data }
