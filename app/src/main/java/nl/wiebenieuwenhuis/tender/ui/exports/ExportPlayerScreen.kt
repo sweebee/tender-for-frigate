@@ -3,8 +3,6 @@ package nl.wiebenieuwenhuis.tender.ui.exports
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,12 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Share
@@ -43,7 +38,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,7 +50,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.Player
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import nl.wiebenieuwenhuis.tender.R
@@ -76,9 +69,11 @@ import nl.wiebenieuwenhuis.tender.ui.components.ScreenScaffold
 import nl.wiebenieuwenhuis.tender.ui.components.ServerBadge
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
 import nl.wiebenieuwenhuis.tender.ui.components.TextPromptDialog
-import nl.wiebenieuwenhuis.tender.ui.components.VideoSurface
-import nl.wiebenieuwenhuis.tender.ui.components.load
-import nl.wiebenieuwenhuis.tender.ui.components.rememberVideoPlayer
+import nl.wiebenieuwenhuis.tender.ui.explore.zoomable
+import nl.wiebenieuwenhuis.tender.ui.playback.PlaybackOverlayControls
+import nl.wiebenieuwenhuis.tender.ui.playback.PlayerTexture
+import nl.wiebenieuwenhuis.tender.ui.playback.VideoSpinner
+import nl.wiebenieuwenhuis.tender.ui.playback.rememberRecordingPlayer
 
 /** One export: watch it, share or save the file, rename or delete it. */
 @Composable
@@ -94,7 +89,7 @@ fun ExportPlayerScreen(route: ExportPlayerRoute) {
     }
     val e = export
     if (e == null) {
-        ScreenScaffold(stringResource(R.string.exports_export)) { pad ->
+        ScreenScaffold("") { pad ->
             Box(Modifier.padding(pad).fillMaxSize()) {
                 if (failed != null) EmptyState(Icons.Outlined.Share, stringResource(R.string.exports_could_not_load), failed)
                 else LoadingBox(Modifier.padding(top = 80.dp))
@@ -118,7 +113,7 @@ private fun ExportPlayer(entry: ExportEntry) {
     val conn = AppModel.connection(entry.serverId)
     val client = conn?.client
     val camera = conn?.camera(entry.export.camera)
-    val player = rememberVideoPlayer()
+    val player = rememberRecordingPlayer()
     var name by remember { mutableStateOf(entry.export.name) }
     var renaming by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -127,13 +122,6 @@ private fun ExportPlayer(entry: ExportEntry) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val busy = AppModel.busyExports[entry.export.id] == true
 
-    // Player state, read a few times a second.
-    var position by remember { mutableLongStateOf(0L) }
-    var duration by remember { mutableLongStateOf(0L) }
-    var playing by remember { mutableStateOf(false) }
-    var wantsToPlay by remember { mutableStateOf(true) }
-    var buffering by remember { mutableStateOf(true) }
-    var playerError by remember { mutableStateOf<String?>(null) }
     var scrubbing by remember { mutableStateOf(false) }
     var scrubValue by remember { mutableFloatStateOf(0f) }
     var overlayVisible by remember { mutableStateOf(true) }
@@ -142,20 +130,9 @@ private fun ExportPlayer(entry: ExportEntry) {
     LaunchedEffect(client) {
         if (client != null) player.load(client.exportFileUrl(entry.export))
     }
-    LaunchedEffect(player) {
-        while (true) {
-            if (!scrubbing) position = player.currentPosition.coerceAtLeast(0)
-            duration = player.duration.takeIf { it > 0 } ?: 0
-            playing = player.isPlaying
-            wantsToPlay = player.playWhenReady
-            buffering = player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_IDLE
-            playerError = player.playerError?.message
-            delay(200)
-        }
-    }
     // Controls hide a moment after the last touch while playing; a paused video keeps them.
-    LaunchedEffect(overlayToken, wantsToPlay, scrubbing) {
-        if (!wantsToPlay) { overlayVisible = true; return@LaunchedEffect }
+    LaunchedEffect(overlayToken, player.wantsToPlay, scrubbing) {
+        if (!player.wantsToPlay) { overlayVisible = true; return@LaunchedEffect }
         delay(4000)
         if (!scrubbing) overlayVisible = false
     }
@@ -197,8 +174,9 @@ private fun ExportPlayer(entry: ExportEntry) {
         }
     }
 
+    // No title: the info under the video already names the export.
     ScreenScaffold(
-        name.ifEmpty { stringResource(R.string.exports_export) },
+        "",
         actions = {
             IconButton(onClick = { shareFile() }, enabled = client != null) {
                 if (job == FileJob.Share) SmallSpinner() else Icon(Icons.Outlined.Share, stringResource(R.string.exports_share))
@@ -209,52 +187,45 @@ private fun ExportPlayer(entry: ExportEntry) {
             val wide = maxWidth >= 600.dp
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.then(if (wide) Modifier.widthIn(max = 900.dp) else Modifier).fillMaxWidth()) {
-                    // The video, with a play/pause button and the time over it.
+                    // The video, pinch to zoom, with the playback controls along its bottom.
                     Box(
                         Modifier.fillMaxWidth().padding(horizontal = if (wide) 16.dp else 0.dp)
                             .clip(RoundedCornerShape(if (wide) 12.dp else 0.dp))
-                            .aspectRatio(camera?.aspectRatio ?: (16f / 9f)).background(Color.Black)
-                            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
-                                overlayVisible = !overlayVisible; overlayToken++
-                            },
+                            .aspectRatio(camera?.aspectRatio ?: (16f / 9f)).background(Color.Black),
                     ) {
-                        VideoSurface(player, Modifier.fillMaxSize())
-                        val err = playerError
+                        PlayerTexture(
+                            player.exo, player.videoAspect,
+                            Modifier.fillMaxSize().zoomable(onTap = { overlayVisible = !overlayVisible; overlayToken++ }),
+                        )
+                        val err = player.error
                         if (err != null) {
                             Text(err, color = Color.White, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.Center).padding(16.dp))
-                        } else if (buffering && wantsToPlay) {
-                            CircularProgressIndicator(Modifier.align(Alignment.Center).size(36.dp), color = Color.White, strokeWidth = 3.dp)
+                        } else if (player.isBuffering || player.duration == 0.0) {
+                            Box(Modifier.align(Alignment.Center)) { VideoSpinner(large = wide) }
                         }
-                        androidx.compose.animation.AnimatedVisibility(overlayVisible && err == null && !(buffering && wantsToPlay), Modifier.align(Alignment.Center),
+                        androidx.compose.animation.AnimatedVisibility(overlayVisible && player.duration > 0, Modifier.align(Alignment.BottomCenter),
                             enter = fadeIn(), exit = fadeOut()) {
-                            IconButton(
-                                onClick = { if (player.playWhenReady) player.pause() else player.play(); overlayToken++ },
-                                modifier = Modifier.size(56.dp).background(Color.Black.copy(alpha = 0.55f), CircleShape),
-                            ) {
-                                Icon(if (wantsToPlay) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                                    stringResource(if (wantsToPlay) R.string.exports_pause else R.string.exports_play),
-                                    tint = Color.White, modifier = Modifier.size(32.dp))
-                            }
+                            PlaybackOverlayControls(player, large = wide, onUse = { overlayToken++ })
                         }
                     }
                     // Scrubber and times.
                     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 6.dp)) {
-                        val total = duration.coerceAtLeast(1)
+                        val total = player.duration.coerceAtLeast(0.1)
                         Slider(
-                            value = if (scrubbing) scrubValue else (position.toFloat() / total).coerceIn(0f, 1f),
+                            value = if (scrubbing) scrubValue else (player.currentTime / total).toFloat().coerceIn(0f, 1f),
                             onValueChange = {
                                 scrubbing = true; scrubValue = it; overlayToken++
-                                player.seekTo((it * total).toLong())
+                                player.seek(it * total)
                             },
-                            onValueChangeFinished = { position = (scrubValue * total).toLong(); scrubbing = false },
-                            enabled = duration > 0,
+                            onValueChangeFinished = { player.seek(scrubValue * total, precise = true); scrubbing = false },
+                            enabled = player.duration > 0,
                         )
                         Row(Modifier.fillMaxWidth()) {
-                            val shown = if (scrubbing) (scrubValue * total).toLong() else position
-                            Text(Format.duration(shown / 1000.0), style = MaterialTheme.typography.bodySmall.merge(MonoDigits),
+                            val shown = if (scrubbing) scrubValue * total else player.currentTime
+                            Text(Format.duration(shown), style = MaterialTheme.typography.bodySmall.merge(MonoDigits),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.weight(1f))
-                            Text(Format.duration(duration / 1000.0), style = MaterialTheme.typography.bodySmall.merge(MonoDigits),
+                            Text(Format.duration(player.duration), style = MaterialTheme.typography.bodySmall.merge(MonoDigits),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

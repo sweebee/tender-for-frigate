@@ -21,8 +21,9 @@ import androidx.compose.ui.input.pointer.positionChanged
 /**
  * Pinch to zoom a picture, drag to move it while zoomed, double-tap to zoom in or back out.
  * A single finger on an unzoomed picture is left alone, so the screen around it still scrolls.
+ * `onTap`: a single tap (a video's controls).
  */
-fun Modifier.zoomable(maxScale: Float = 5f): Modifier = composed {
+fun Modifier.zoomable(maxScale: Float = 5f, onTap: (() -> Unit)? = null): Modifier = composed {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     this
@@ -47,7 +48,7 @@ fun Modifier.zoomable(maxScale: Float = 5f): Modifier = composed {
             }
         }
         .pointerInput(Unit) {
-            detectTapGestures(onDoubleTap = {
+            detectTapGestures(onTap = onTap?.let { f -> { _ -> f() } }, onDoubleTap = {
                 if (scale > 1f) { scale = 1f; offset = Offset.Zero } else scale = 2.5f
             })
         }

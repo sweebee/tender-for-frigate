@@ -4,12 +4,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -128,8 +133,15 @@ object ChatSessions {
     fun session(serverId: String): ChatSession = sessions.getOrPut(serverId) { ChatSession() }
 }
 
-/** Markdown from the model: bold, italics and code inline; lists and headings turned into plain lines. */
-fun chatMarkdown(text: String): AnnotatedString {
+/** `[text](url)` with a scheme (https://…, mailto:…). */
+private val markdownLink = Regex("""^\[([^\]\n]+)]\(((?:[a-zA-Z][a-zA-Z0-9+.-]*://|mailto:)[^\s)]+)\)""")
+
+/**
+ * Markdown from the model: bold, italics, code and links inline; lists and headings turned into
+ * plain lines. Links are tappable and drawn in `linkColor`, underlined.
+ */
+fun chatMarkdown(text: String, linkColor: Color = Color.Unspecified): AnnotatedString {
+    val linkStyles = TextLinkStyles(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline))
     val lines = text.split("\n").map { raw ->
         val trimmed = raw.trimStart()
         val indent = (raw.length - trimmed.length) / 2
@@ -151,6 +163,14 @@ fun chatMarkdown(text: String): AnnotatedString {
                 withStyle(style) { append(s.substring(i + marker.length, end)) }
                 i = end + marker.length
                 return true
+            }
+            if (rest.startsWith("[")) {
+                val m = markdownLink.find(rest)
+                if (m != null) {
+                    withLink(LinkAnnotation.Url(m.groupValues[2], linkStyles)) { append(m.groupValues[1]) }
+                    i += m.value.length
+                    continue
+                }
             }
             if (span("**", SpanStyle(fontWeight = FontWeight.Bold))) continue
             if (span("__", SpanStyle(fontWeight = FontWeight.Bold))) continue

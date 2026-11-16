@@ -216,7 +216,7 @@ private fun ChatLineView(line: ChatLine) {
         ChatLine.Kind.Assistant -> Row(Modifier.fillMaxWidth()) {
             SelectionContainer(Modifier.weight(1f, fill = false)) {
                 Text(
-                    chatMarkdown(line.text), style = MaterialTheme.typography.bodyLarge,
+                    chatMarkdown(line.text, MaterialTheme.colorScheme.primary), style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(18.dp))
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(18.dp))
