@@ -2,7 +2,8 @@
 
 Native Android client for [Frigate NVR](https://frigate.video): a port of the iOS app
 [Tender for Frigate](https://github.com/sweebee/tender-for-frigate) to Kotlin, Jetpack Compose and
-Material 3. It follows the system's light/dark theme and dynamic colours, in English and Dutch.
+Material 3. It is always dark, as the iOS app, with the wallpaper's colours where Android offers them,
+in English and Dutch.
 Tender is an independent app; it is not affiliated with or endorsed by the Frigate project.
 
 > Like the iOS app, this port was written by an AI coding agent (Claude Code) and tested in the

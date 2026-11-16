@@ -51,5 +51,5 @@ app/src/main/java/nl/wiebenieuwenhuis/tender/
   - hide what does not apply (no face library without face recognition, admin-only actions
     only for admins: `ServerConnection.isAdmin`);
   - text in buttons and chips never wraps (`maxLines = 1`), check Dutch.
-- Follow the system light/dark theme and dynamic colours (`MaterialTheme.colorScheme`); no
-  hard-coded dark backgrounds except behind video.
+- The app is always dark, as the iOS app (`TenderTheme`, dark system bars), with dynamic colours
+  where available. Use `MaterialTheme.colorScheme`; no hard-coded colours except behind video.

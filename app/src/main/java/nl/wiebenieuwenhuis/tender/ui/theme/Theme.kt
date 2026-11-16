@@ -1,12 +1,9 @@
 package nl.wiebenieuwenhuis.tender.ui.theme
 
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -64,18 +61,14 @@ private val DarkFallback = darkColorScheme(
     outline = Color(0xFF2A2E35), outlineVariant = Color(0xFF23272E),
 )
 
-private val LightFallback = lightColorScheme(primary = Color(0xFF2F6FDB))
-
-/** Follows the system: light or dark, and the wallpaper's colours where Android offers them. */
+/**
+ * Always dark, as the iOS app and Frigate's own UI: camera pictures read best on a dark
+ * background. The wallpaper's colours are used where Android offers them.
+ */
 @Composable
 fun TenderTheme(content: @Composable () -> Unit) {
-    val dark = isSystemInDarkTheme()
     val ctx = LocalContext.current
-    val scheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
-        dark -> DarkFallback
-        else -> LightFallback
-    }
+    val scheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) dynamicDarkColorScheme(ctx) else DarkFallback
     androidx.compose.runtime.CompositionLocalProvider(LocalStatusColors provides StatusColors()) {
         MaterialTheme(colorScheme = scheme, content = content)
     }
