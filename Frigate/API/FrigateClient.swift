@@ -500,7 +500,7 @@ final class FrigateClient: @unchecked Sendable {
     /// its `searchDistance`. Needs semantic_search to be on.
     func semanticSearch(query: String? = nil, similarTo: String? = nil, sources: Set<SearchSource> = [.thumbnail, .description],
                         cameras: [String]? = nil, labels: [String]? = nil, zones: [String]? = nil, subLabels: [String]? = nil,
-                        after: Date? = nil, before: Date? = nil, limit: Int = 100) async throws -> [FrigateEvent] {
+                        plate: String? = nil, after: Date? = nil, before: Date? = nil, limit: Int = 100) async throws -> [FrigateEvent] {
         var q: [String: String?] = ["limit": String(limit), "include_thumbnails": "0", "timezone": TimeZone.current.identifier]
         if let similarTo {
             q["event_id"] = similarTo
@@ -514,6 +514,7 @@ final class FrigateClient: @unchecked Sendable {
         if let labels, !labels.isEmpty { q["labels"] = labels.joined(separator: ",") }
         if let zones, !zones.isEmpty { q["zones"] = zones.joined(separator: ",") }
         if let subLabels, !subLabels.isEmpty { q["sub_labels"] = subLabels.joined(separator: ",") }
+        if let plate { q["recognized_license_plate"] = plate }
         if let after { q["after"] = String(after.timeIntervalSince1970) }
         if let before { q["before"] = String(before.timeIntervalSince1970) }
         return try await get([FrigateEvent].self, "api/events/search", query: q)

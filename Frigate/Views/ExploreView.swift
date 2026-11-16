@@ -46,8 +46,6 @@ struct ExploreView: View {
     @State private var knownLabels: [String] = []
     @State private var knownSubLabels: [String] = []
     @State private var knownPlates: [String] = []
-    @State private var plateQuery = ""
-    @FocusState private var plateFocused: Bool
     @State private var searchText = ""
     @FocusState private var searchFocused: Bool
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -120,10 +118,7 @@ struct ExploreView: View {
                 .accessibilityLabel(gridByDefault ? "Per label" : "All in a grid")
             }
             .padding(.horizontal, 16)
-            // Only when a server recognizes plates now (Frigate's license plate recognition) and
-            // has found some; plates left from before it was turned off do not count.
-            if searchConnections.isEmpty == false && filter.similar == nil { semanticSearchField }
-            if !knownPlates.isEmpty && connections.contains(where: { $0.config?.recognizesPlates == true }) { plateSearch }
+            if showsSearchField { searchField }
             filters
         }
         .padding(.top, 8)
@@ -132,59 +127,35 @@ struct ExploreView: View {
     /// Servers with semantic search on: they can search by text and find similar objects.
     private var searchConnections: [ServerConnection] { connections.filter { $0.config?.semanticSearch == true } }
 
-    /// Frigate's search box: searches the pictures and descriptions of tracked objects when
-    /// Return is pressed, as Frigate's Explore page does.
-    private var semanticSearchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
-            TextField("", text: $searchText, prompt: Text("Search…").foregroundStyle(Theme.textSecondary))
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .focused($searchFocused)
-                .onSubmit { filter.query = searchText.trimmingCharacters(in: .whitespaces) }
-            if !searchText.isEmpty {
-                Button { searchText = ""; filter.query = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .font(.system(size: 16))
-        .padding(.horizontal, 12)
-        .frame(height: 40)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(searchFocused ? Theme.accent : Theme.controlBorder, lineWidth: 1))
-        .padding(.horizontal, 16)
-        // "Clear filters" also clears the search text.
-        .onChange(of: filter.query) { _, q in if q.isEmpty && !searchFocused { searchText = "" } }
+    /// Text search: a server has semantic search on.
+    private var canSearchText: Bool { !searchConnections.isEmpty }
+    /// Plate search: a server recognizes plates now (Frigate's license plate recognition) and has
+    /// found some; plates left from before it was turned off do not count.
+    private var canSearchPlates: Bool {
+        !knownPlates.isEmpty && connections.contains { $0.config?.recognizesPlates == true }
     }
+    private var showsSearchField: Bool { canSearchText || canSearchPlates }
 
-    private var sourcesTitle: String {
-        if filter.sources.count == 1, let only = filter.sources.first {
-            return only == .thumbnail ? L("Thumbnail") : L("Description")
-        }
-        return L("Thumbnail and description")
-    }
-
-    private var plateSuggestions: [String] {
-        let q = PlateSearch.normalized(plateQuery)
-        guard plateFocused, !q.isEmpty else { return [] }
-        return knownPlates.filter { PlateSearch.normalized($0).contains(q) && $0 != plateQuery }.prefix(8).map { $0 }
-    }
-
-    private var plateSearch: some View {
+    /// Frigate's one search box. With semantic search, Return searches the pictures and
+    /// descriptions of tracked objects, and a license plate is picked from the suggestions under
+    /// it: it becomes a filter chip, as in Frigate's search. Without semantic search the box
+    /// searches license plates as you type.
+    private var searchField: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
-                TextField("", text: $plateQuery, prompt: Text("Search license plate").foregroundStyle(Theme.textSecondary))
-                    .textInputAutocapitalization(.characters)
+                TextField("", text: $searchText,
+                          prompt: Text(canSearchText ? "Search…" : "Search license plate").foregroundStyle(Theme.textSecondary))
+                    .textInputAutocapitalization(canSearchText ? .sentences : .characters)
                     .autocorrectionDisabled()
                     .submitLabel(.search)
-                    .focused($plateFocused)
-                    .onSubmit { filter.plate = plateQuery.trimmingCharacters(in: .whitespaces) }
-                if !plateQuery.isEmpty {
-                    Button { plateQuery = ""; filter.plate = "" } label: {
+                    .focused($searchFocused)
+                    .onSubmit { submitSearch() }
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                        if canSearchText { filter.query = "" } else { filter.plate = "" }
+                    } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary)
                     }
                     .buttonStyle(.plain)
@@ -195,17 +166,13 @@ struct ExploreView: View {
             .padding(.horizontal, 12)
             .frame(height: 40)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(plateFocused ? Theme.accent : Theme.controlBorder, lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(searchFocused ? Theme.accent : Theme.controlBorder, lineWidth: 1))
             .padding(.horizontal, 16)
             if !plateSuggestions.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(plateSuggestions, id: \.self) { plate in
-                            Button {
-                                plateQuery = plate
-                                filter.plate = plate
-                                plateFocused = false
-                            } label: {
+                            Button { pickPlate(plate) } label: {
                                 Chip(title: plate, systemImage: "rectangle.and.text.magnifyingglass")
                             }
                             .buttonStyle(.plain)
@@ -216,14 +183,49 @@ struct ExploreView: View {
             }
         }
         // "Clear filters" also clears the search text.
-        .onChange(of: filter.plate) { _, plate in if plate.isEmpty && !plateFocused { plateQuery = "" } }
-        // Search a moment after typing stops.
-        .task(id: plateQuery) {
+        .onChange(of: filter.query) { _, q in if q.isEmpty && canSearchText && !searchFocused { searchText = "" } }
+        .onChange(of: filter.plate) { _, p in if p.isEmpty && !canSearchText && !searchFocused { searchText = "" } }
+        // Plates only: search a moment after typing stops, as before.
+        .task(id: searchText) {
+            guard !canSearchText else { return }
             try? await Task.sleep(for: .milliseconds(500))
             guard !Task.isCancelled else { return }
-            let q = plateQuery.trimmingCharacters(in: .whitespaces)
+            let q = searchText.trimmingCharacters(in: .whitespaces)
             if filter.plate != q { filter.plate = q }
         }
+    }
+
+    private func submitSearch() {
+        let q = searchText.trimmingCharacters(in: .whitespaces)
+        if canSearchText {
+            // A new text search ends a similarity search, as in Frigate.
+            if !q.isEmpty { filter.similar = nil }
+            filter.query = q
+        } else {
+            filter.plate = q
+        }
+    }
+
+    /// A suggested plate: the filter. With text search it becomes a chip and the box is free again.
+    private func pickPlate(_ plate: String) {
+        filter.plate = plate
+        searchText = canSearchText ? "" : plate
+        searchFocused = false
+    }
+
+    /// Plates that contain what is typed, loosely ("hk008" finds "HK-008-X").
+    private var plateSuggestions: [String] {
+        let q = PlateSearch.normalized(searchText)
+        guard canSearchPlates, searchFocused, !q.isEmpty else { return [] }
+        return knownPlates.filter { PlateSearch.normalized($0).contains(q) && $0 != searchText && $0 != filter.plate }
+            .prefix(8).map { $0 }
+    }
+
+    private var sourcesTitle: String {
+        if filter.sources.count == 1, let only = filter.sources.first {
+            return only == .thumbnail ? L("Thumbnail") : L("Description")
+        }
+        return L("Thumbnail and description")
     }
 
     private var cameraOptions: [CameraConfig] {
@@ -268,6 +270,13 @@ struct ExploreView: View {
                     } label: {
                         Chip(title: sourcesTitle, outlined: filter.sources.count == 1, trailingChevron: true)
                     }
+                }
+                // With text search the plate is a filter of its own, as a tag in Frigate's search box.
+                if canSearchText && !filter.plate.isEmpty {
+                    Button { filter.plate = "" } label: {
+                        Chip(title: filter.plate, outlined: true, systemImage: "rectangle.and.text.magnifyingglass", trailingXmark: true)
+                    }
+                    .accessibilityLabel("Clear license plate")
                 }
                 Menu {
                     option(L("All cameras"), filter.cameras.isEmpty) { filter.cameras = [] }
@@ -518,6 +527,7 @@ struct ExploreView: View {
         let labels = f.labels.isEmpty ? nil : Array(f.labels)
         let zones = f.zones.isEmpty ? nil : Array(f.zones)
         let subs = f.subLabels.isEmpty ? nil : Array(f.subLabels)
+        let plate = f.plate.isEmpty ? nil : PlateSearch.pattern(f.plate)
         let servers = targets().filter { t in
             if let similar = f.similar { return t.conn.server.id == similar.serverID }
             return t.conn.config?.semanticSearch == true
@@ -529,7 +539,7 @@ struct ExploreView: View {
                 group.addTask {
                     try await client.semanticSearch(query: f.similar == nil ? f.query : nil, similarTo: f.similar?.event.id,
                                                     sources: f.sources, cameras: cams, labels: labels, zones: zones, subLabels: subs,
-                                                    after: range.after, before: range.before)
+                                                    plate: plate, after: range.after, before: range.before)
                         .map { ExploreEntry(serverID: id, event: $0) }
                 }
             }

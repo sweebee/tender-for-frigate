@@ -9708,6 +9708,16 @@
           }
         }
       }
+    },
+    "Clear license plate": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kenteken wissen"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
