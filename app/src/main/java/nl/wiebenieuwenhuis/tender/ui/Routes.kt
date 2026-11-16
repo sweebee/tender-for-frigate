@@ -81,8 +81,18 @@ import java.util.concurrent.ConcurrentHashMap
 /** Adding a camera (admin), as Frigate 0.17's camera wizard. */
 @Serializable data class CameraWizardRoute(val serverId: String)
 
-/** Zones and masks of a camera, drawn on its picture (admin). */
-@Serializable data class ZoneEditorRoute(val serverId: String, val camera: String, val zone: String? = null)
+/**
+ * Zones and masks of a camera, drawn on its picture (admin). `kind`: "zone", "motion_mask" or
+ * "object_mask"; `zone`: the name of the zone or mask to edit (null: a new one); `label`: for an
+ * object mask of one object type, that label (null: all objects).
+ */
+@Serializable data class ZoneEditorRoute(
+    val serverId: String,
+    val camera: String,
+    val zone: String? = null,
+    val kind: String = "zone",
+    val label: String? = null,
+)
 
 /** Frigate's own web interface in a web view. */
 @Serializable data class WebInterfaceRoute(val serverId: String, val path: String = "")

@@ -234,7 +234,7 @@ fun ServerProblemsBanner(conn: ServerConnection) {
                 Text(p.text, style = MaterialTheme.typography.bodyLarge)
             }
             if (conn.problems.isEmpty()) Text(stringResource(R.string.no_problems_anymore))
-            if (conn.isAdmin) TextButton(onClick = { showing = false; nav.navigate(ServerSettingsRoute(conn.id)) }) {
+            if (conn.isAdmin) TextButton(onClick = { showing = false; nav.navigate(nl.wiebenieuwenhuis.tender.ui.settings.SystemStatusRoute(conn.id)) }) {
                 Text(stringResource(R.string.system_status_and_logs))
             }
         }

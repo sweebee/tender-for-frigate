@@ -156,11 +156,11 @@ fun AppRoot(activity: MainActivity) {
                 composable<ReviewTab> { ReviewScreen() }
                 composable<ExploreTab> { ExploreScreen() }
                 composable<MoreTab> { MoreScreen() }
-                composable<ExportsTab> { ExportsScreen(ExportsRoute(), showsBack = false) }
-                composable<FacesTab> { FaceLibraryScreen(showsBack = false) }
-                composable<ClassificationTab> { ClassificationScreen(showsBack = false) }
-                composable<ChatTab> { ChatScreen(showsBack = false) }
-                composable<SettingsTab> { ServersScreen(showsBack = false) }
+                composable<ExportsTab> { ExportsScreen(ExportsRoute(), showsBack = !wide) }
+                composable<FacesTab> { FaceLibraryScreen(showsBack = !wide) }
+                composable<ClassificationTab> { ClassificationScreen(showsBack = !wide) }
+                composable<ChatTab> { ChatScreen(showsBack = !wide) }
+                composable<SettingsTab> { ServersScreen(showsBack = !wide) }
 
                 composable<CameraRoute> { CameraScreen(it.toRoute()) }
                 composable<CameraDebugRoute> { CameraDebugScreen(it.toRoute()) }

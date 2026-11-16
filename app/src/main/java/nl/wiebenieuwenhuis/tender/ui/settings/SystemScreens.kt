@@ -229,12 +229,13 @@ fun ZonesMasksScreen(route: ZonesMasksRoute) {
                             if (i > 0) RowDivider()
                             val color = when (kind) { ShapeKind.Zone -> MaterialTheme.colorScheme.primary; ShapeKind.MotionMask -> Color.Gray
                                 ShapeKind.ObjectMask -> MaterialTheme.colorScheme.error }
-                            // Zones open in the editor; ZoneEditorRoute has no way yet to name a mask.
-                            val editable = isAdmin && kind == ShapeKind.Zone
+                            val editable = isAdmin
                             Row(Modifier.fillMaxWidth().padding(end = 14.dp), verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Row(
-                                    Modifier.weight(1f).clickable(enabled = editable) { nav.navigate(ZoneEditorRoute(route.serverId, camera, s.name)) }
+                                    Modifier.weight(1f).clickable(enabled = editable) { nav.navigate(ZoneEditorRoute(route.serverId, camera, s.name,
+                                        kind = when (kind) { ShapeKind.Zone -> "zone"; ShapeKind.MotionMask -> "motion_mask"; ShapeKind.ObjectMask -> "object_mask" },
+                                        label = s.label)) }
                                         .padding(start = 14.dp, top = 10.dp, bottom = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 ) {
