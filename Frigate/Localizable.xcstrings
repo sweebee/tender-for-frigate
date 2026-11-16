@@ -9948,6 +9948,16 @@
           }
         }
       }
+    },
+    "Admins only": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alleen voor beheerders"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

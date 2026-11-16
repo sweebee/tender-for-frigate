@@ -21,6 +21,7 @@ final class ReviewActions {
     }
 
     private func conn(_ serverID: UUID) -> ServerConnection? { model?.connection(for: serverID) }
+    func isAdmin(_ serverID: UUID) -> Bool { conn(serverID)?.isAdmin ?? false }
 
     func saveToPhotos(_ r: ReviewItem, serverID: UUID) {
         guard let client = conn(serverID)?.client else { return }
@@ -34,7 +35,7 @@ final class ReviewActions {
         let name = ClipExporter.exportName(camera: r.camera, displayName: c.config?.cameras[r.camera]?.displayName,
                                            start: r.startTime, label: r.labels.first)
         // A sheet first: the name, and the case to file it in.
-        saveRequest = SaveToFrigateRequest(client: client, camera: r.camera, start: s, end: e, name: name)
+        saveRequest = SaveToFrigateRequest(client: client, camera: r.camera, start: s, end: e, name: name, isAdmin: c.isAdmin)
     }
 
     func shareClip(_ r: ReviewItem, serverID: UUID) {
@@ -86,9 +87,12 @@ struct ReviewItemMenu: View {
         Button { actions.shareClip(item, serverID: serverID) } label: {
             Label("Share", systemImage: "square.and.arrow.up")
         }
-        Divider()
-        Button(role: .destructive) { actions.pendingDelete = (item, serverID) } label: {
-            DestructiveMenuLabel(title: "Delete")
+        // Deleting is for admins, as in Frigate.
+        if actions.isAdmin(serverID) {
+            Divider()
+            Button(role: .destructive) { actions.pendingDelete = (item, serverID) } label: {
+                DestructiveMenuLabel(title: "Delete")
+            }
         }
     }
 }

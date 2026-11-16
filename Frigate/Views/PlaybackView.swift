@@ -422,8 +422,10 @@ struct PlaybackView: View {
                     Button { shareClip(r.startTime - 3, (r.endTime ?? Date().timeIntervalSince1970) + 3) } label: {
                         Label("Share event", systemImage: "square.and.arrow.up")
                     }
-                    Button(role: .destructive) { deletingReview = r } label: {
-                        DestructiveMenuLabel(title: "Delete event")
+                    if conn?.isAdmin == true {
+                        Button(role: .destructive) { deletingReview = r } label: {
+                            DestructiveMenuLabel(title: "Delete event")
+                        }
                     }
                 }
             }
@@ -489,7 +491,7 @@ struct PlaybackView: View {
         let (s, e) = clampRange(start, end)
         let name = ClipExporter.exportName(camera: camera, displayName: conn?.config?.cameras[camera]?.displayName, start: s, label: label)
         // A sheet first: the name, and the case to file it in.
-        saveRequest = SaveToFrigateRequest(client: client, camera: camera, start: s, end: e, name: name)
+        saveRequest = SaveToFrigateRequest(client: client, camera: camera, start: s, end: e, name: name, isAdmin: conn?.isAdmin ?? false)
     }
 
     /// Frigate's Export dialog: a span of choice, from this camera or several.
@@ -505,7 +507,8 @@ struct PlaybackView: View {
                                            label: currentReview?.labels.first)
         var cams = conn?.config?.orderedCameras ?? []
         if !cams.contains(where: { $0.name == camera }), let own = conn?.config?.cameras[camera] { cams.insert(own, at: 0) }
-        saveRequest = SaveToFrigateRequest(client: client, camera: camera, start: s, end: e, name: name, cameras: cams)
+        saveRequest = SaveToFrigateRequest(client: client, camera: camera, start: s, end: e, name: name, cameras: cams,
+                                           isAdmin: conn?.isAdmin ?? false)
     }
 
     private func shareClip(_ start: Double, _ end: Double) {

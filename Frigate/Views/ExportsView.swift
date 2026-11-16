@@ -194,6 +194,10 @@ struct ExportsView: View {
     private var connections: [ServerConnection] { model.scopedConnections.filter(\.isOnline) }
     /// Servers that have cases (Frigate 0.18 and later).
     private var caseServers: [ServerConnection] { connections.filter { $0.client?.servesCases == true } }
+    /// Where you may make, rename and delete cases and rename, file and delete exports: as an
+    /// admin, as in Frigate.
+    private var adminCaseServers: [ServerConnection] { caseServers.filter(\.isAdmin) }
+    private func isAdmin(_ serverID: UUID) -> Bool { model.connection(for: serverID)?.isAdmin == true }
     /// Without what was just deleted, here or in the player.
     private var visible: [ExportEntry] {
         let all = entries.filter { !model.deletedExports.contains($0.id) }
@@ -331,16 +335,18 @@ struct ExportsView: View {
                 // A case is made, renamed or deleted on the server: the spinner takes the button's place.
                 HeaderIconLabel(systemName: "ellipsis", loading: true)
             } else if let c = currentCase {
-                Menu { caseMenu(c) } label: { HeaderIconLabel(systemName: "ellipsis") }
-                    .accessibilityLabel("More options")
-            } else if caseServers.count == 1, let id = caseServers.first?.server.id {
+                if isAdmin(c.serverID) {
+                    Menu { caseMenu(c) } label: { HeaderIconLabel(systemName: "ellipsis") }
+                        .accessibilityLabel("More options")
+                }
+            } else if adminCaseServers.count == 1, let id = adminCaseServers.first?.server.id {
                 Button { startNewCase(on: id) } label: { HeaderIconLabel(systemName: "folder.badge.plus") }
                     .buttonStyle(.plain)
                     .accessibilityLabel("New case")
-            } else if caseServers.count > 1 {
+            } else if adminCaseServers.count > 1 {
                 Menu {
                     Section("New case on") {
-                        ForEach(caseServers) { c in Button(c.server.name) { startNewCase(on: c.server.id) } }
+                        ForEach(adminCaseServers) { c in Button(c.server.name) { startNewCase(on: c.server.id) } }
                     }
                 } label: { HeaderIconLabel(systemName: "folder.badge.plus") }
                     .accessibilityLabel("New case")
@@ -352,6 +358,11 @@ struct ExportsView: View {
 
     @ViewBuilder
     private func exportMenu(_ entry: ExportEntry) -> some View {
+        if isAdmin(entry.serverID) { adminExportMenu(entry) }
+    }
+
+    @ViewBuilder
+    private func adminExportMenu(_ entry: ExportEntry) -> some View {
         Button { newName = entry.export.name; renaming = entry } label: { Label("Rename", systemImage: "pencil") }
         if model.connection(for: entry.serverID)?.client?.servesCases == true {
             Menu {
@@ -373,9 +384,11 @@ struct ExportsView: View {
 
     @ViewBuilder
     private func caseMenu(_ c: ExportCaseEntry) -> some View {
-        Button { caseName = c.exportCase.name; renamingCase = c } label: { Label("Rename case", systemImage: "pencil") }
-        Divider()
-        Button(role: .destructive) { deletingCase = c } label: { DestructiveMenuLabel(title: "Delete case") }
+        if isAdmin(c.serverID) {
+            Button { caseName = c.exportCase.name; renamingCase = c } label: { Label("Rename case", systemImage: "pencil") }
+            Divider()
+            Button(role: .destructive) { deletingCase = c } label: { DestructiveMenuLabel(title: "Delete case") }
+        }
     }
 
     // MARK: Actions
@@ -461,7 +474,7 @@ struct ExportsView: View {
     /// Whether the export being dragged can go in this case: same server, not already in it.
     private func accepts(_ c: ExportCaseEntry) -> Bool {
         guard let d = dragging else { return false }
-        return d.serverID == c.serverID && caseID(of: d) != c.exportCase.id
+        return d.serverID == c.serverID && isAdmin(c.serverID) && caseID(of: d) != c.exportCase.id
     }
 
     /// Lit while an export is dragged over the case; red with the reason when it cannot go in.
@@ -474,7 +487,8 @@ struct ExportsView: View {
                 .background(RoundedRectangle(cornerRadius: 10).fill(.black.opacity(ok ? 0 : 0.55)))
                 .overlay {
                     if !ok {
-                        Label(dragging?.serverID != c.serverID ? L("Other server") : L("Already in this case"),
+                        Label(dragging?.serverID != c.serverID ? L("Other server")
+                                : !isAdmin(c.serverID) ? L("Admins only") : L("Already in this case"),
                               systemImage: "nosign")
                             .font(.system(size: 13, weight: .semibold)).foregroundStyle(.white)
                     }
@@ -699,24 +713,31 @@ struct ExportPlayerView: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 actionButton(LocalizedStringKey(LocalSave.title), LocalSave.icon) { Task { await saveToPhotos() } }
-                actionButton("Rename", "pencil") { newName = name; renaming = entry }
-            }
-            Button { confirmDelete = true } label: {
-                HStack(spacing: 8) {
-                    if model.busyExports.contains(entry.id) { ProgressView().controlSize(.small) }
-                    Text("Delete export")
+                // Renaming and deleting are for admins, as in Frigate.
+                if conn?.isAdmin == true {
+                    actionButton("Rename", "pencil") { newName = name; renaming = entry }
                 }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.destructive)
-                .frame(maxWidth: .infinity).frame(height: 48)
-                .card(border: Theme.controlBorder, radius: 12)
             }
-            .buttonStyle(.plain)
-            .disabled(model.busyExports.contains(entry.id))
+            if conn?.isAdmin == true { deleteButton }
         }
         .padding(.horizontal, 16)
         .padding(.top, 18)
         .padding(.bottom, 24)
+    }
+
+    private var deleteButton: some View {
+        Button { confirmDelete = true } label: {
+            HStack(spacing: 8) {
+                if model.busyExports.contains(entry.id) { ProgressView().controlSize(.small) }
+                Text("Delete export")
+            }
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(Theme.destructive)
+            .frame(maxWidth: .infinity).frame(height: 48)
+            .card(border: Theme.controlBorder, radius: 12)
+        }
+        .buttonStyle(.plain)
+        .disabled(model.busyExports.contains(entry.id))
     }
 
     private func actionButton(_ title: LocalizedStringKey, _ icon: String, action: @escaping () -> Void) -> some View {

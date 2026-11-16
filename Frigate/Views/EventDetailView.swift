@@ -43,6 +43,7 @@ struct EventDetailView: View {
     private var conn: ServerConnection? { model.connection(for: route.serverID) }
     private var isReviewed: Bool { item.hasBeenReviewed || model.reviewedIDs.contains(item.id) }
     private var client: FrigateClient? { conn?.client }
+    private var isAdmin: Bool { conn?.isAdmin == true }
     /// Frigate's annotation offset for this camera, so detections line up with the recording.
     private var offset: Double { conn?.config?.cameras[item.camera]?.annotationOffset ?? 0 }
 
@@ -256,14 +257,16 @@ struct EventDetailView: View {
                     .font(.system(size: 19, weight: .medium)).frame(width: 44, height: 44)
                 }
                 .accessibilityLabel("Share clip")
-                Button { confirmDelete = true; keepOverlay() } label: {
-                    Group {
-                        if deleting { ProgressView().tint(.white) } else { Image(systemName: "trash").foregroundStyle(Theme.destructive) }
+                if isAdmin {
+                    Button { confirmDelete = true; keepOverlay() } label: {
+                        Group {
+                            if deleting { ProgressView().tint(.white) } else { Image(systemName: "trash").foregroundStyle(Theme.destructive) }
+                        }
+                        .font(.system(size: 18, weight: .medium)).frame(width: 44, height: 44)
                     }
-                    .font(.system(size: 18, weight: .medium)).frame(width: 44, height: 44)
+                    .disabled(deleting)
+                    .accessibilityLabel("Delete")
                 }
-                .disabled(deleting)
-                .accessibilityLabel("Delete")
             }
             .foregroundStyle(Theme.text)
             .padding(.horizontal, 8)
@@ -783,17 +786,20 @@ struct EventDetailView: View {
             .disabled(downloading || exporter.isWorking)
             }
             .stable()
-            Button { confirmDelete = true } label: {
-                HStack(spacing: 6) {
-                    if deleting { ProgressView().controlSize(.small) }
-                    Text("Delete")
+            // Deleting is for admins, as in Frigate.
+            if isAdmin {
+                Button { confirmDelete = true } label: {
+                    HStack(spacing: 6) {
+                        if deleting { ProgressView().controlSize(.small) }
+                        Text("Delete")
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.destructive)
+                    .frame(maxWidth: .infinity).frame(height: 50)
+                    .card(border: Theme.controlBorder, radius: 12)
                 }
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.destructive)
-                .frame(maxWidth: .infinity).frame(height: 50)
-                .card(border: Theme.controlBorder, radius: 12)
+                .disabled(deleting)
             }
-            .disabled(deleting)
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)
@@ -884,7 +890,8 @@ struct EventDetailView: View {
         let name = ClipExporter.exportName(camera: item.camera, displayName: conn?.config?.cameras[item.camera]?.displayName,
                                            start: activityStart, label: item.labels.first)
         // A sheet first: the name, and the case to file it in.
-        saveRequest = SaveToFrigateRequest(client: client, camera: item.camera, start: clipStart, end: clipEnd, name: name)
+        saveRequest = SaveToFrigateRequest(client: client, camera: item.camera, start: clipStart, end: clipEnd, name: name,
+                                           isAdmin: conn?.isAdmin ?? false)
     }
 
     private func delete() async {

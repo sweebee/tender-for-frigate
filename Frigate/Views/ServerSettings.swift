@@ -676,7 +676,8 @@ struct CameraSettingsView: View {
             }
         }
         .tint(Theme.online)
-        .disabled(pending)
+        // Switching is for admins, as in Frigate; viewers see the state.
+        .disabled(pending || !isAdmin)
         .padding(.horizontal, 14).padding(.vertical, 8)
     }
 }

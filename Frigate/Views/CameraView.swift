@@ -398,7 +398,7 @@ struct CameraView: View {
                 Text(cameraOn ? "The picture appears once Frigate has the stream." : "Frigate does not fetch its picture, detect or record.")
                     .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
-                if !cameraOn, let conn, camera.canSwitchOff {
+                if !cameraOn, let conn, conn.isAdmin, camera.canSwitchOff {
                     Button { conn.setCameraEnabled(camera, true) } label: {
                         Text("Switch on")
                             .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.onColor)

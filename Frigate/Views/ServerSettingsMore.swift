@@ -646,7 +646,7 @@ struct ZonesMasksView: View {
                         .disabled(!isAdmin)
                         if switching.contains(s.id) { ProgressView().controlSize(.small) }
                         Toggle("", isOn: Binding(get: { s.enabled }, set: { set(s, $0) })).labelsHidden().tint(Theme.online)
-                            .disabled(switching.contains(s.id))
+                            .disabled(switching.contains(s.id) || !isAdmin)
                     }
                     .padding(.horizontal, 14).padding(.vertical, 8)
                 }

@@ -599,7 +599,8 @@ struct CameraSwitches: View {
     var body: some View {
         let on = conn.isCameraEnabled(camera)
         Section("Frigate") {
-            if on {
+            // Switching is for admins, as in Frigate's camera menu; anyone may pause notifications.
+            if on && conn.isAdmin {
                 Toggle(isOn: Binding(get: { conn.isDetectEnabled(camera) }, set: { conn.setDetectEnabled(camera, $0) })) {
                     Label("Detection", systemImage: "person.crop.rectangle")
                 }
@@ -614,7 +615,7 @@ struct CameraSwitches: View {
             if on && conn.hasNotifications(camera) {
                 NotificationPauseMenu(conn: conn, camera: camera)
             }
-            if camera.canSwitchOff {
+            if conn.isAdmin && camera.canSwitchOff {
                 Button {
                     conn.setCameraEnabled(camera, !on)
                 } label: {

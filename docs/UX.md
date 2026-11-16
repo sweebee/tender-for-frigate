@@ -10,6 +10,9 @@ builds; when a new screen breaks one, it is a bug.
 - Features that do not work reliably are left out, not shipped half-working (as with 4× playback).
 - Hide what does not apply: no plate search without plates, no talk or PTZ on a camera that is
   offline, no user management when Frigate runs without authentication.
+- Roles as in Frigate: what its web UI shows only to admins (switching cameras and masks,
+  deleting reviews, renaming and deleting exports, cases) the app hides from viewers, or shows
+  disabled where they still need to see the state. Use `ServerConnection.isAdmin`.
 
 ## Waiting on the server
 

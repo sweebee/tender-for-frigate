@@ -81,6 +81,9 @@ struct SaveToFrigateRequest: Identifiable {
     /// The server's cameras. When given, the span can be changed and, on Frigate 0.18 and
     /// later, several cameras exported at once, as in Frigate's Export dialog.
     var cameras: [CameraConfig] = []
+    /// Cases are for admins, as in Frigate's Export dialog.
+    var isAdmin = true
+    var showsCases: Bool { isAdmin && client.servesCases }
 }
 
 /// Asks for the export's name and, on servers with cases, which case to file it in. From
@@ -158,7 +161,7 @@ struct SaveToFrigateSheet: View {
                 } footer: {
                     if multi { Text("Each export gets the camera's name after it.") }
                 }
-                if request.client.servesCases { caseSection }
+                if request.showsCases { caseSection }
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background)
@@ -175,7 +178,7 @@ struct SaveToFrigateSheet: View {
         }
         .presentationDetents(adjustable ? [.large] : [.medium, .large])
         .task {
-            guard request.client.servesCases else { return }
+            guard request.showsCases else { return }
             cases = await request.client.exportCases()
             loadingCases = false
         }

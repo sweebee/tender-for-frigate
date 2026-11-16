@@ -48,6 +48,11 @@ final class ServerConnection: Identifiable {
     var client: FrigateClient?
     var usingRemote = false
     var version: String?
+    /// The signed-in user's role; nil when Frigate runs without authentication.
+    var role: String?
+    /// As Frigate's web UI: without authentication everyone is an admin. Viewers watch and
+    /// mark reviewed, but switch, delete and change nothing.
+    var isAdmin: Bool { (role ?? "admin") == "admin" }
     var config: FrigateConfig? {
         didSet { FrigateFormat.serverTimeFormats[server.id] = config?.timeFormat }
     }
@@ -375,7 +380,10 @@ final class ServerConnection: Identifiable {
         version = a.version
         config = a.config
         configLoaded = Date()
-        go2rtcStreams = try? await a.client.go2rtcStreams()
+        async let streams = try? a.client.go2rtcStreams()
+        async let profileRole = a.client.role()
+        go2rtcStreams = await streams
+        role = await profileRole
         status = .online
         lastSeen = Date()
         await refresh()
