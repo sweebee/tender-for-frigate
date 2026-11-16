@@ -1,6 +1,5 @@
 package nl.wiebenieuwenhuis.tender.ui.setup
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,10 +11,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Lan
+import androidx.compose.material.icons.outlined.Lan
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +55,8 @@ import nl.wiebenieuwenhuis.tender.api.rawPaths
 import nl.wiebenieuwenhuis.tender.api.str
 import nl.wiebenieuwenhuis.tender.app.AppModel
 import nl.wiebenieuwenhuis.tender.ui.components.PasswordField
+import nl.wiebenieuwenhuis.tender.ui.settings.RowDivider
+import nl.wiebenieuwenhuis.tender.ui.settings.SettingsRow
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
 import nl.wiebenieuwenhuis.tender.ui.theme.Palette
 
@@ -203,7 +203,7 @@ class CameraAddressPlan internal constructor(
 /**
  * The camera's address as a settings row (admins, Frigate 0.17+), which opens [CameraAddressSheet].
  * Shows nothing while loading or when the camera has no address of its own. For the camera's
- * settings page; draw a divider after it yourself if `onShown` reports it shows.
+ * Configuration card: draws the divider after itself when it shows (the next row follows it).
  */
 @Composable
 fun CameraAddressRow(serverId: String, camera: String, modifier: Modifier = Modifier, onShown: (Boolean) -> Unit = {}) {
@@ -219,15 +219,9 @@ fun CameraAddressRow(serverId: String, camera: String, modifier: Modifier = Modi
         onShown(plan != null)
     }
     val p = plan ?: return
-    Row(
-        modifier.fillMaxWidth().clickable { editing = true }.padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(Icons.Filled.Lan, null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(12.dp))
-        Text(stringResource(R.string.setup_camera_address), Modifier.weight(1f))
-        Text(p.host, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(modifier.fillMaxWidth()) {
+        SettingsRow(Icons.Outlined.Lan, stringResource(R.string.setup_camera_address), p.host) { editing = true }
+        RowDivider()
     }
     if (editing) CameraAddressSheet(serverId, p, onDismiss = { editing = false }, onSaved = { reload++ })
 }

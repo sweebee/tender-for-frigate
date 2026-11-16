@@ -146,6 +146,7 @@
     <string name="settings_record">Record</string>
     <string name="settings_record_intro">For all cameras that have no recording settings of their own.</string>
     <string name="settings_recording_off">Recording off</string>
+    <string name="settings_recording_camera">Recording · %1$s</string>
     <string name="settings_remove_user">Remove user</string>
     <string name="settings_remove_user_question">Remove this user?</string>
     <string name="settings_rename_profile">Rename profile</string>
@@ -189,8 +190,6 @@
     <string name="settings_type_lpr">Dedicated LPR</string>
     <string name="settings_type_normal">Normal</string>
     <string name="settings_undo">Undo</string>
-    <string name="settings_update">Update</string>
-    <string name="settings_uptime">Online for</string>
     <string name="settings_uptime_days">%1$d d %2$d h</string>
     <string name="settings_uptime_hours">%1$d h %2$d min</string>
     <string name="settings_uptime_minutes">%1$d min</string>
@@ -198,7 +197,6 @@
     <string name="settings_username">Username</string>
     <string name="settings_users">Users</string>
     <string name="settings_users_footer">Passwords need at least 12 characters. The built-in admin cannot be removed or get another role.</string>
-    <string name="settings_version">Version</string>
     <string name="settings_version_available">%1$s available</string>
     <string name="settings_viewer_explained">A viewer can watch, but change nothing.</string>
     <string name="settings_viewer_notice">You are signed in as a viewer: settings can be seen but only an admin can change them.</string>

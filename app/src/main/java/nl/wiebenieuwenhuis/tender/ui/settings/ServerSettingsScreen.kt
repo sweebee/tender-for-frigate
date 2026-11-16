@@ -123,7 +123,7 @@ fun ServerSettingsScreen(route: ServerSettingsRoute) {
     val scope = rememberCoroutineScope()
 
     // Removed in the connection screen: nothing left to show here.
-    LaunchedEffect(conn == null) { if (conn == null) nav.popBackStack() }
+    LaunchedEffect(conn == null) { if (conn == null) nav.popBackStack(route, inclusive = true) }
 
     suspend fun load() {
         val c = conn ?: return

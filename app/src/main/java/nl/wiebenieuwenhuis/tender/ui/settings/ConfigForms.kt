@@ -166,9 +166,12 @@ object ServerSections {
     private val label: (String) -> String = { Format.labelName(it) }
     private val zoneName: (String) -> String = { Format.prettyName(it) }
 
-    private fun days(path: String, title: String, default: Double? = null) =
-        ConfigField(path, title, FieldKind.Number("d", 1.0, 0.0, 3650.0), defaultNumber = default)
-    private fun seconds(path: String, title: String) = ConfigField(path, title, FieldKind.Number("s", 1.0, 0.0, 3600.0))
+    // Frigate sets no upper limit on keeping days or post-capture seconds: only a large sane maximum here.
+    private fun days(path: String, title: String, default: Double? = null, max: Double = 36_500.0) =
+        ConfigField(path, title, FieldKind.Number("d", 1.0, 0.0, max), defaultNumber = default)
+    private fun seconds(path: String, title: String, max: Double = 86_400.0) = ConfigField(path, title, FieldKind.Number("s", 1.0, 0.0, max))
+    /** Frigate refuses more than 60 seconds before an alert or detection (MAX_PRE_CAPTURE). */
+    private const val MAX_PRE_CAPTURE = 60.0
 
     fun spec(section: String, camera: String?): FormSpec = when (section) {
         "record" -> FormSpec(L(R.string.settings_record), if (camera == null) L(R.string.settings_record_intro) else null) { _ ->
@@ -181,15 +184,15 @@ object ServerSections {
                     days("detections.retain.days", L(R.string.settings_detections)),
                 )),
                 ConfigGroup(L(R.string.settings_around_alert), listOf(
-                    seconds("alerts.pre_capture", L(R.string.settings_before)), seconds("alerts.post_capture", L(R.string.settings_after)))),
+                    seconds("alerts.pre_capture", L(R.string.settings_before), MAX_PRE_CAPTURE), seconds("alerts.post_capture", L(R.string.settings_after)))),
                 ConfigGroup(L(R.string.settings_around_detection), listOf(
-                    seconds("detections.pre_capture", L(R.string.settings_before)), seconds("detections.post_capture", L(R.string.settings_after)))),
+                    seconds("detections.pre_capture", L(R.string.settings_before), MAX_PRE_CAPTURE), seconds("detections.post_capture", L(R.string.settings_after)))),
             )
         }
         "snapshots" -> FormSpec(L(R.string.settings_snapshots), L(R.string.settings_snapshots_intro)) { _ ->
             listOf(
                 ConfigGroup(fields = listOf(ConfigField("enabled", L(R.string.settings_snapshots), FieldKind.Toggle))),
-                ConfigGroup(L(R.string.settings_keep), listOf(days("retain.default", L(R.string.settings_days), 10.0))),
+                ConfigGroup(L(R.string.settings_keep), listOf(days("retain.default", L(R.string.settings_days), 10.0, max = 365.0))),
                 ConfigGroup(L(R.string.settings_picture), listOf(
                     ConfigField("bounding_box", L(R.string.settings_bounding_box), FieldKind.Toggle),
                     ConfigField("crop", L(R.string.settings_crop), FieldKind.Toggle),
@@ -365,7 +368,13 @@ fun ConfigFormScreen(route: ConfigSectionRoute) {
         }
     }
 
-    val title = if (camera != null) "${spec.title} · ${conn?.camera(camera)?.displayName ?: Format.prettyName(camera)}" else spec.title
+    val cameraName = camera?.let { conn?.camera(it)?.displayName ?: Format.prettyName(it) }
+    val title = when {
+        cameraName == null -> spec.title
+        // As the iOS app: "Recording · Garden" for a camera's recording settings.
+        route.section == "record" -> stringResource(R.string.settings_recording_camera, cameraName)
+        else -> "${spec.title} · $cameraName"
+    }
     ScreenScaffold(
         title,
         bottomBar = {

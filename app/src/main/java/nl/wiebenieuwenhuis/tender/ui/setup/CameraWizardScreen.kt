@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,16 +29,19 @@ import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -77,7 +81,6 @@ import nl.wiebenieuwenhuis.tender.ui.LocalNav
 import nl.wiebenieuwenhuis.tender.ui.components.MessageDialog
 import nl.wiebenieuwenhuis.tender.ui.components.PasswordField
 import nl.wiebenieuwenhuis.tender.ui.components.RemoteImage
-import nl.wiebenieuwenhuis.tender.ui.components.ScreenScaffold
 import nl.wiebenieuwenhuis.tender.ui.components.SectionLabel
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
 import nl.wiebenieuwenhuis.tender.ui.components.readableWidth
@@ -323,12 +326,18 @@ fun CameraWizardScreen(route: CameraWizardRoute) {
     }
 
     val stepNumber = step.ordinal + 1
-    BackHandler(enabled = step != WizardStep.Connect && !saving && !searching) {
-        step = WizardStep.entries[step.ordinal - 1]
+    val busy = saving || searching
+    // System Back goes to the previous step; while Frigate is searching or saving it does nothing.
+    // On the first step it leaves the wizard, as the close button does.
+    BackHandler(enabled = busy || step != WizardStep.Connect) {
+        if (!busy) step = WizardStep.entries[step.ordinal - 1]
     }
 
-    ScreenScaffold(title = stringResource(R.string.setup_add_camera), subtitle = stringResource(R.string.setup_step_of_4, stepNumber),
-        onBack = { if (!saving) nav.popBackStack() }) { pad ->
+    WizardScaffold(
+        title = stringResource(R.string.setup_add_camera), subtitle = stringResource(R.string.setup_step_of_4, stepNumber),
+        // Cancels the wizard from any step; not while the camera is being added.
+        closeEnabled = !saving, onClose = { nav.popBackStack() },
+    ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
             Column(
                 Modifier.readableWidth().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -424,7 +433,7 @@ fun CameraWizardScreen(route: CameraWizardRoute) {
                             }
                         }
                         ButtonPair(
-                            secondary = stringResource(R.string.setup_back), onSecondary = { step = WizardStep.Connect },
+                            secondary = stringResource(R.string.setup_back), onSecondary = { step = WizardStep.Connect }, secondaryEnabled = !busy,
                             primary = stringResource(R.string.setup_next),
                             onPrimary = { if (chosen.isEmpty()) errorMessage = L(R.string.setup_tick_one) else { assignRoles(); step = WizardStep.Roles } },
                         )
@@ -463,7 +472,7 @@ fun CameraWizardScreen(route: CameraWizardRoute) {
                             FormCard { SwitchRow(stringResource(R.string.setup_ptz), usePTZ, { usePTZ = it }) }
                         }
                         ButtonPair(
-                            secondary = stringResource(R.string.setup_back), onSecondary = { step = WizardStep.Found },
+                            secondary = stringResource(R.string.setup_back), onSecondary = { step = WizardStep.Found }, secondaryEnabled = !busy,
                             primary = stringResource(R.string.setup_next),
                             onPrimary = {
                                 if (chosen.none { "detect" in it.roles }) errorMessage = L(R.string.setup_one_needs_detect) else step = WizardStep.Review
@@ -497,7 +506,7 @@ fun CameraWizardScreen(route: CameraWizardRoute) {
                         }
                         Note(stringResource(R.string.setup_wizard_add_note))
                         ButtonPair(
-                            secondary = stringResource(R.string.setup_back), onSecondary = { step = WizardStep.Roles }, secondaryEnabled = !saving,
+                            secondary = stringResource(R.string.setup_back), onSecondary = { step = WizardStep.Roles }, secondaryEnabled = !busy,
                             primary = stringResource(R.string.setup_add_camera), onPrimary = { save() }, primaryBusy = saving,
                         )
                     }
@@ -507,6 +516,34 @@ fun CameraWizardScreen(route: CameraWizardRoute) {
     }
 
     errorMessage?.let { MessageDialog(stringResource(R.string.setup_not_ready), it) { errorMessage = null } }
+}
+
+/** The wizard's top bar: a close button (×) that cancels the wizard, instead of the back arrow. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WizardScaffold(
+    title: String, subtitle: String, closeEnabled: Boolean, onClose: () -> Unit,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(subtitle, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onClose, enabled = closeEnabled) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel))
+                    }
+                },
+            )
+        },
+        content = content,
+    )
 }
 
 @Composable

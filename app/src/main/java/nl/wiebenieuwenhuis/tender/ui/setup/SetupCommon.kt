@@ -6,21 +6,27 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +37,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +52,7 @@ import androidx.compose.ui.window.DialogProperties
 import nl.wiebenieuwenhuis.tender.R
 import nl.wiebenieuwenhuis.tender.ui.components.ProgressButton
 import nl.wiebenieuwenhuis.tender.ui.components.SectionCard
+import nl.wiebenieuwenhuis.tender.ui.components.isWideLayout
 import nl.wiebenieuwenhuis.tender.ui.components.readableWidth
 
 /*
@@ -52,9 +60,11 @@ import nl.wiebenieuwenhuis.tender.ui.components.readableWidth
  */
 
 /**
- * A full-screen sheet with a form: Cancel (×) on the left, the title, and the button that
- * finishes it on the right (filled, with a spinner while it waits for Frigate).
+ * A sheet with a form: Cancel (×) on the left, the title, and the button that finishes it on the
+ * right (filled, with a spinner while it waits for Frigate). Full screen on a phone; on a wide
+ * window a centred card about 640 dp wide, as tall as its content.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun FormSheet(
     title: String,
@@ -66,41 +76,71 @@ internal fun FormSheet(
     dismissEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val wide = isWideLayout()
     Dialog(
         onDismissRequest = { if (dismissEnabled) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false, decorFitsSystemWindows = false),
     ) {
         BackHandler(enabled = !dismissEnabled) {}
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        navigationIcon = {
-                            IconButton(onClick = onDismiss, enabled = dismissEnabled) {
-                                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel))
-                            }
-                        },
-                        actions = {
-                            if (confirmText != null) {
-                                ProgressButton(confirmText, busy = confirmBusy, onClick = onConfirm, enabled = confirmEnabled,
-                                    modifier = Modifier.padding(end = 8.dp))
-                            }
-                        },
-                    )
+        val topBar = @Composable {
+            TopAppBar(
+                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    IconButton(onClick = onDismiss, enabled = dismissEnabled) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel))
+                    }
                 },
-            ) { pad ->
-                Box(Modifier.padding(pad).fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
-                    Column(
-                        Modifier.readableWidth().verticalScroll(rememberScrollState()).padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        content = content,
-                    )
+                actions = {
+                    if (confirmText != null) {
+                        ProgressButton(confirmText, busy = confirmBusy, onClick = onConfirm, enabled = confirmEnabled,
+                            modifier = Modifier.padding(end = 8.dp))
+                    }
+                },
+                // In a card the bar does not sit under the status bar.
+                windowInsets = if (wide) WindowInsets(0) else TopAppBarDefaults.windowInsets,
+                colors = if (wide) TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
+                    else TopAppBarDefaults.topAppBarColors(),
+            )
+        }
+        if (wide) {
+            BoxWithConstraints(
+                Modifier.fillMaxSize().safeDrawingPadding().imePadding().padding(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Surface(
+                    Modifier.widthIn(max = WideSheetWidth).fillMaxWidth().heightIn(max = maxHeight),
+                    shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    tonalElevation = 6.dp, shadowElevation = 6.dp,
+                ) {
+                    Column {
+                        topBar()
+                        Column(
+                            // As tall as the content; scrolls once the window is not tall enough.
+                            Modifier.weight(1f, fill = false).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            content = content,
+                        )
+                    }
+                }
+            }
+        } else {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+                Scaffold(topBar = topBar) { pad ->
+                    Box(Modifier.padding(pad).fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
+                        Column(
+                            Modifier.readableWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            content = content,
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+/** The width of a form sheet on a wide window. */
+private val WideSheetWidth = 640.dp
 
 /** A small explanation under a card. */
 @Composable

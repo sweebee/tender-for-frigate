@@ -118,6 +118,8 @@ fun ZonesMasksScreen(route: ZonesMasksRoute) {
     val conn = AppModel.connection(route.serverId)
     var shapes by remember { mutableStateOf<List<MaskShape>>(emptyList()) }
     var loaded by remember { mutableStateOf(false) }
+    /** The config names its masks (motion.mask absent or a map); a list of coordinates has no names to add to. */
+    var namedMasks by remember { mutableStateOf(true) }
     /** Shapes switched on or off and not yet confirmed by Frigate. */
     val switching = remember { mutableStateSetOf<String>() }
     val isAdmin = conn?.isAdmin ?: true
@@ -129,6 +131,8 @@ fun ZonesMasksScreen(route: ZonesMasksRoute) {
         val w = cam["detect"]["width"].dbl() ?: 1.0
         val h = cam["detect"]["height"].dbl() ?: 1.0
         val out = mutableListOf<MaskShape>()
+        val motionMask = cam["motion"]["mask"]
+        namedMasks = motionMask == null || motionMask is JsonObject
         fun add(node: JsonElement?, kind: ShapeKind, label: String? = null) {
             for ((name, item) in (node.obj() ?: return).entries.sortedBy { it.key }) {
                 if (item !is JsonObject) continue
@@ -188,8 +192,9 @@ fun ZonesMasksScreen(route: ZonesMasksRoute) {
                 var addMenu by remember { mutableStateOf(false) }
                 BusyIconButton(Icons.Outlined.Add, stringResource(R.string.settings_new_zone), false) { addMenu = true }
                 DropdownMenu(addMenu, { addMenu = false }) {
-                    listOf("zone" to R.string.settings_new_zone_item, "motion_mask" to R.string.settings_new_motion_mask,
-                        "object_mask" to R.string.settings_new_object_mask).forEach { (k, t) ->
+                    (listOf("zone" to R.string.settings_new_zone_item) +
+                        (if (namedMasks) listOf("motion_mask" to R.string.settings_new_motion_mask, "object_mask" to R.string.settings_new_object_mask) else emptyList())
+                    ).forEach { (k, t) ->
                         DropdownMenuItem(text = { Text(stringResource(t)) }, onClick = {
                             addMenu = false; nav.navigate(ZoneEditorRoute(route.serverId, camera, kind = k))
                         })
@@ -444,16 +449,9 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
     ScreenScaffold(stringResource(R.string.settings_system_status), subtitle = conn?.server?.name) { inner ->
         SettingsPage(inner, onRefresh = { conn?.refresh(); loadLogs() }) {
             val stats = conn?.stats
-            if (conn != null) {
-                SectionLabel(stringResource(R.string.settings_version))
-                SectionCard {
-                    InfoRow("Frigate", conn.version?.split("-")?.first() ?: "–")
-                    stats?.uptime?.let { RowDivider(); InfoRow(stringResource(R.string.settings_uptime), SettingsFormat.uptime(it), mono = true) }
-                    updateAvailable(conn, stats)?.let { RowDivider(); InfoRow(stringResource(R.string.settings_update), stringResource(R.string.settings_version_available, it)) }
-                }
-            }
+            // The version and uptime are on the server page's status card; this page starts with the cameras.
             if (conn != null && stats != null) {
-                SectionLabel(stringResource(R.string.settings_cameras), Modifier.padding(top = 10.dp))
+                SectionLabel(stringResource(R.string.settings_cameras))
                 SectionCard {
                     val names = conn.cameras.map { it.name }.filter { stats.cameras[it] != null }
                     names.forEachIndexed { i, name ->
