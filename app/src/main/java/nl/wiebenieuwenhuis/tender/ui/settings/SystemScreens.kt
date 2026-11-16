@@ -1,5 +1,7 @@
 package nl.wiebenieuwenhuis.tender.ui.settings
 
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -182,8 +184,17 @@ fun ZonesMasksScreen(route: ZonesMasksRoute) {
     ScreenScaffold(
         stringResource(R.string.settings_zones_masks), subtitle = cam?.displayName,
         actions = {
-            if (isAdmin && loaded) BusyIconButton(Icons.Outlined.Add, stringResource(R.string.settings_new_zone), false) {
-                nav.navigate(ZoneEditorRoute(route.serverId, camera))
+            if (isAdmin && loaded) Box {
+                var addMenu by remember { mutableStateOf(false) }
+                BusyIconButton(Icons.Outlined.Add, stringResource(R.string.settings_new_zone), false) { addMenu = true }
+                DropdownMenu(addMenu, { addMenu = false }) {
+                    listOf("zone" to R.string.settings_new_zone_item, "motion_mask" to R.string.settings_new_motion_mask,
+                        "object_mask" to R.string.settings_new_object_mask).forEach { (k, t) ->
+                        DropdownMenuItem(text = { Text(stringResource(t)) }, onClick = {
+                            addMenu = false; nav.navigate(ZoneEditorRoute(route.serverId, camera, kind = k))
+                        })
+                    }
+                }
             }
         },
     ) { inner ->

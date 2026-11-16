@@ -170,6 +170,7 @@ fun CameraSettingsScreen(route: CameraSettingsRoute) {
                 SectionCard {
                     // Frigate 0.17+ gives admins the real stream addresses (api/config/raw_paths).
                     if (isAdmin && Format.versionAtLeast(conn.version, 0, 17)) {
+                        nl.wiebenieuwenhuis.tender.ui.setup.CameraAddressRow(route.serverId, camera)
                         SettingsRow(Icons.Outlined.SettingsInputAntenna, stringResource(R.string.settings_streams)) {
                             nav.navigate(CameraStreamsRoute(route.serverId, camera))
                         }

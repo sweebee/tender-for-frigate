@@ -214,4 +214,7 @@
         <item quantity="one">1 dag</item>
         <item quantity="other">%1$d dagen</item>
     </plurals>
+    <string name="settings_new_zone_item">Zone</string>
+    <string name="settings_new_motion_mask">Bewegingsmasker</string>
+    <string name="settings_new_object_mask">Objectmasker</string>
 </resources>

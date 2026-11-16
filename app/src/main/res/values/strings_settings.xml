@@ -214,4 +214,7 @@
         <item quantity="one">1 day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
+    <string name="settings_new_zone_item">Zone</string>
+    <string name="settings_new_motion_mask">Motion mask</string>
+    <string name="settings_new_object_mask">Object mask</string>
 </resources>
