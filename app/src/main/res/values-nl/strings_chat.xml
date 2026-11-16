@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_new">Nieuwe chat</string>
+    <string name="chat_unavailable">Chat is niet beschikbaar</string>
+    <string name="chat_unavailable_message">Stel in Frigate een GenAI-provider in met de rol chat om vragen over je camera\'s te stellen.</string>
+    <string name="chat_ask">Vraag aan</string>
+    <string name="chat_asking">Vragen gaan naar %1$s, de server met chat.</string>
+    <string name="chat_intro_title">Vraag iets over je camera\'s</string>
+    <string name="chat_intro_message">De AI-assistent van Frigate bekijkt je gebeurtenissen, camera\'s en opnames om te antwoorden.</string>
+    <string name="chat_suggest_events">Toon recente gebeurtenissen</string>
+    <string name="chat_suggest_status">Toon de status van mijn camera\'s</string>
+    <string name="chat_suggest_away">Wat is er gebeurd terwijl ik weg was?</string>
+    <string name="chat_thinking">Denkt na…</string>
+    <string name="chat_placeholder">Stel een vraag…</string>
+    <string name="chat_stop">Stop</string>
+    <string name="chat_send">Verstuur</string>
+    <string name="chat_used">Gebruikte %1$s</string>
+    <string name="chat_something_wrong">Er ging iets mis</string>
+</resources>
