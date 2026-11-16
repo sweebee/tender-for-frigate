@@ -146,7 +146,7 @@ fun PlaybackScreen(route: PlaybackRoute) {
     val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val tallEnough = sizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
     /** Tablet: video with a horizontal timeline under it, events beside. */
-    val wide = sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) && tallEnough
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout() && tallEnough
     /** Phone held sideways: full-screen video with an overlay, like an NVR app. */
     val landscape = !wide && !tallEnough
 

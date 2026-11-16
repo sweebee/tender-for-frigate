@@ -208,7 +208,7 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
     val ps = remember { PlayerState() }
     val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val tallEnough = sizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
-    val wide = tallEnough && sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+    val wide = tallEnough && nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
     // A phone on its side: the video fills the screen.
     val landscape = !tallEnough
 

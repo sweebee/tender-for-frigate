@@ -181,7 +181,7 @@ fun CameraDebugScreen(route: CameraDebugRoute) {
             if (wait > 0) delay(wait)
         }
     }
-    val wide = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
     ScreenScaffold(stringResource(R.string.debug), subtitle = camera?.displayName ?: Format.prettyName(route.camera)) { pad ->
         @Composable fun Picture(m: Modifier) {
             Box(m.aspectRatio(camera?.aspectRatio ?: (16f / 9f)).clip(RoundedCornerShape(12.dp)).background(Color.Black), contentAlignment = Alignment.Center) {

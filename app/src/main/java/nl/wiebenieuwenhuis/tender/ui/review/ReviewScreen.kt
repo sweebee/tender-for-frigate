@@ -108,7 +108,7 @@ fun ReviewScreen() {
     val vm: ReviewModel = viewModel()
     val nav = LocalNav.current
     val scope = rememberCoroutineScope()
-    val wide = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
     var pickingDay by remember { mutableStateOf(false) }
     var confirmBulkDelete by remember { mutableStateOf(false) }
     var refreshing by remember { mutableStateOf(false) }

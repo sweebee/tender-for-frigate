@@ -92,7 +92,7 @@ fun MotionReviewPane(
 ) {
     val nav = LocalNav.current
     val scope = rememberCoroutineScope()
-    val wide = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
     val connections = AppModel.scopedConnections.filter { it.isOnline }
     val cams = connections.flatMap { c ->
         c.cameras.filter { cameraFilter.isEmpty() || it.name in cameraFilter }.map { MotionCam(c, it) }

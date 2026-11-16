@@ -110,7 +110,7 @@ fun LiveScreen() {
     var busyGroup by remember { mutableStateOf<String?>(null) }
     var groupError by remember { mutableStateOf<String?>(null) }
     var refreshing by remember { mutableStateOf(false) }
-    val wide = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
     var wideColumns by remember { mutableIntStateOf(Prefs.prefs.getInt("liveWideColumns", 3).takeIf { it in ColumnChoices } ?: 3) }
     val large = AppModel.largeTiles
     val columns = if (wide) wideColumns else if (large) 1 else 2

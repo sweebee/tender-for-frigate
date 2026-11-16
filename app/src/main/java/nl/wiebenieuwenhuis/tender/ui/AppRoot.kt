@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -130,9 +131,21 @@ fun AppRoot(activity: MainActivity) {
     }
     val nav = rememberNavController()
     val sizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val wide = sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
     val entry by nav.currentBackStackEntryAsState()
     val list = sections(wide)
+    // The section the user is in: the last top-level section shown. Screens pushed inside it
+    // (a camera, an event, Settings from More) keep it highlighted, as the iOS tab bar does.
+    var section by remember { mutableStateOf<Any>(LiveTab) }
+    LaunchedEffect(entry, list) {
+        val d = entry?.destination ?: return@LaunchedEffect
+        list.firstOrNull { d.hasRoute(it.route::class) }?.let { section = it.route }
+    }
+    // As iOS hides its tab bar on these: video and detail screens get the whole screen.
+    val hideBar = entry?.destination?.let { d ->
+        listOf(CameraRoute::class, CameraDebugRoute::class, PlaybackRoute::class, EventRoute::class,
+            ObjectRoute::class, ExportPlayerRoute::class).any { d.hasRoute(it) }
+    } == true
 
     LaunchedEffect(activity.pendingUri) {
         val uri = activity.pendingUri ?: return@LaunchedEffect
@@ -145,13 +158,13 @@ fun AppRoot(activity: MainActivity) {
         // Settings at the bottom; a phone gets the tab bar. The NavHost stays in one place so
         // going full screen does not rebuild the screen.
         Row(Modifier.fillMaxSize()) {
-        if (wide && !AppChrome.immersive) SectionRail(list, nav, entry)
+        if (wide && !AppChrome.immersive) SectionRail(list, nav, section)
         NavigationSuiteScaffold(
             modifier = Modifier.weight(1f),
-            layoutType = if (wide || AppChrome.immersive) NavigationSuiteType.None else NavigationSuiteType.NavigationBar,
+            layoutType = if (wide || AppChrome.immersive || hideBar) NavigationSuiteType.None else NavigationSuiteType.NavigationBar,
             navigationSuiteItems = {
                 for (s in list) {
-                    val selected = entry?.destination?.hierarchy?.any { it.hasRoute(s.route::class) } == true
+                    val selected = section == s.route
                     item(
                         selected = selected,
                         onClick = { selectTab(nav, s.route, selected) },
@@ -209,7 +222,8 @@ fun AppRoot(activity: MainActivity) {
 /** Opens a section; tapping the open one again goes back to its top. */
 fun selectTab(nav: NavHostController, route: Any, alreadySelected: Boolean = false) {
     if (alreadySelected) {
-        nav.popBackStack(route, inclusive = false)
+        // Back to the section's start; when it is not on the stack (opened by a link), open it.
+        if (!nav.popBackStack(route, inclusive = false)) nav.navigate(route) { launchSingleTop = true }
         return
     }
     nav.navigate(route) {
@@ -228,12 +242,12 @@ private fun SectionIcon(s: Section) {
 
 /** The wide layout's rail: icons only, the name as a tooltip, Settings at the bottom. */
 @Composable
-private fun SectionRail(list: List<Section>, nav: NavHostController, entry: androidx.navigation.NavBackStackEntry?) {
+private fun SectionRail(list: List<Section>, nav: NavHostController, section: Any) {
     NavigationRail(Modifier.fillMaxHeight()) {
         Spacer(Modifier.height(8.dp))
         for (s in list) {
             if (s.route == SettingsTab) Spacer(Modifier.weight(1f))
-            val selected = entry?.destination?.hierarchy?.any { it.hasRoute(s.route::class) } == true
+            val selected = section == s.route
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Right),
                 tooltip = { PlainTooltip { Text(stringResource(s.title)) } },
