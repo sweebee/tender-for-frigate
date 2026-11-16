@@ -280,8 +280,13 @@ struct ClassificationModelView: View {
     @State private var current: ClassificationModel?
     @State private var dataset = ClassificationDataset()
     @State private var attempts: [ClassificationAttempt] = []
-    /// nil: the recent images; else a class.
+    enum Tab: Hashable { case recent, training }
+    @State private var tab: Tab = .recent
+    /// The class whose training images show; nil on the Recent tab.
     @State private var library: String?
+    /// Recent tab: nil shows all; else only the images the model gave this class, or `unsure`.
+    @State private var recentFilter: String?
+    private static let unsure = "\u{0}unsure"
     @State private var loaded = false
     @State private var role: String?
     @State private var assigning: AssignTarget?
@@ -338,6 +343,9 @@ struct ClassificationModelView: View {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 160)
                 } else {
                     trainCard
+                    SegmentedBar(options: [Tab.recent, .training], selection: Binding(get: { tab }, set: { show($0) })) {
+                        $0 == .recent ? L("Recent") : L("Training images")
+                    }
                     chips
                     if let notice {
                         Label(notice, systemImage: "checkmark.circle.fill").font(.system(size: 13)).foregroundStyle(Theme.online)
@@ -495,30 +503,66 @@ struct ClassificationModelView: View {
 
     private func className(_ c: String) -> String { c == "none" ? L("None") : c }
 
+    private func show(_ new: Tab) {
+        guard new != tab else { return }
+        tab = new
+        selection = []
+        library = new == .training ? dataset.classNames.first : nil
+    }
+
+    /// Whether the model was not sure enough to give the object or image a class.
+    private func isUnsure(_ a: ClassificationAttempt) -> Bool { a.score < m.threshold }
+
+    private func matches(_ group: [ClassificationAttempt], _ filter: String?) -> Bool {
+        guard let filter, let best = group.first else { return true }
+        return filter == Self.unsure ? isUnsure(best) : best.label == filter
+    }
+
+    /// The recent groups the chips leave in view.
+    private var shownGroups: [[ClassificationAttempt]] { groups.filter { matches($0, recentFilter) } }
+
+    /// The classes the recent images got: the model's classes first, then any other result.
+    private var recentLabels: [String] {
+        let seen = groups.compactMap { $0.first?.label }
+        var labels = dataset.classNames.filter { seen.contains($0) }
+        for l in seen where !labels.contains(l) { labels.append(l) }
+        if let f = recentFilter, f != Self.unsure, !labels.contains(f) { labels.append(f) }
+        return labels
+    }
+
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                chip(nil, L("Recent"), attempts.count)
-                ForEach(dataset.classNames, id: \.self) { c in
-                    chip(c, className(c), dataset.categories[c]?.count ?? 0)
-                        .contextMenu {
-                            if isAdmin && c != "none" {
-                                Button { newName = c; renaming = c } label: { Label("Rename", systemImage: "pencil") }
-                                if dataset.categories.count > 2 {
-                                    Button(role: .destructive) { deletingClass = c } label: { DestructiveMenuLabel(title: "Delete") }
+                if tab == .recent {
+                    chip(recentFilter == nil, L("All"), groups.count) { recentFilter = nil }
+                    ForEach(recentLabels, id: \.self) { c in
+                        chip(recentFilter == c, c == "unknown" ? L("Unknown") : className(c), groups.filter { matches($0, c) }.count) { recentFilter = c }
+                    }
+                    let unsure = groups.filter { matches($0, Self.unsure) }.count
+                    if unsure > 0 || recentFilter == Self.unsure {
+                        chip(recentFilter == Self.unsure, L("Unsure"), unsure) { recentFilter = Self.unsure }
+                    }
+                } else {
+                    ForEach(dataset.classNames, id: \.self) { c in
+                        chip(library == c, className(c), dataset.categories[c]?.count ?? 0, busy: busyClass == c) { library = c }
+                            .contextMenu {
+                                if isAdmin && c != "none" {
+                                    Button { newName = c; renaming = c } label: { Label("Rename", systemImage: "pencil") }
+                                    if dataset.categories.count > 2 {
+                                        Button(role: .destructive) { deletingClass = c } label: { DestructiveMenuLabel(title: "Delete") }
+                                    }
                                 }
                             }
-                        }
+                    }
                 }
             }
         }
     }
 
-    private func chip(_ value: String?, _ title: String, _ count: Int) -> some View {
-        let on = library == value
-        return Button { library = value; selection = [] } label: {
+    private func chip(_ on: Bool, _ title: String, _ count: Int, busy: Bool = false, pick: @escaping () -> Void) -> some View {
+        Button { pick(); selection = [] } label: {
             HStack(spacing: 5) {
-                if let value, busyClass == value { ProgressView().controlSize(.mini).tint(on ? Theme.onColor : Theme.text) }
+                if busy { ProgressView().controlSize(.mini).tint(on ? Theme.onColor : Theme.text) }
                 Text(title).lineLimit(1)
                 Text("\(count)").foregroundStyle(on ? Theme.onColor.opacity(0.7) : Theme.textSecondary)
             }
@@ -534,7 +578,9 @@ struct ClassificationModelView: View {
     @ViewBuilder
     private var grid: some View {
         let columns = [GridItem(.adaptive(minimum: 104), spacing: 6)]
-        if let cls = library {
+        if tab == .training && library == nil {
+            empty(L("No classes yet."))
+        } else if let cls = library {
             let files = (dataset.categories[cls] ?? []).sorted()
             if files.isEmpty {
                 empty(L("No images in this class yet. Put recent images in it."))
@@ -550,9 +596,11 @@ struct ClassificationModelView: View {
         } else if groups.isEmpty {
             empty(m.isState ? L("Frigate keeps the images it classifies here, to put them in the right class.")
                             : L("Frigate keeps the objects it classifies here, to put them in the right class."))
+        } else if shownGroups.isEmpty {
+            empty(L("No recent images with this result."))
         } else {
             LazyVGrid(columns: columns, spacing: 6) {
-                ForEach(groups, id: \.first!.id) { group in
+                ForEach(shownGroups, id: \.first!.id) { group in
                     let best = group[0]
                     tile(url: client?.attemptImageURL(m.name, best.file), key: best.file, caption: best.label, score: best.score,
                          count: group.count, files: group.map(\.file)) {
@@ -690,7 +738,7 @@ struct ClassificationModelView: View {
     }
 
     private func selectAll() {
-        if let cls = library { selection = Set(dataset.categories[cls] ?? []) } else { selection = Set(attempts.map(\.file)) }
+        if let cls = library { selection = Set(dataset.categories[cls] ?? []) } else { selection = Set(shownGroups.flatMap { $0.map(\.file) }) }
     }
 
     // MARK: Actions
@@ -703,7 +751,7 @@ struct ClassificationModelView: View {
         dataset = (try? await set) ?? ClassificationDataset()
         attempts = (try? await recent) ?? []
         role = await r ?? "admin"
-        if let lib = library, dataset.categories[lib] == nil { library = nil }
+        if tab == .training, library.map({ dataset.categories[$0] == nil }) ?? true { library = dataset.classNames.first }
         loaded = true
     }
 
@@ -766,7 +814,7 @@ struct ClassificationModelView: View {
         defer { busyClass = nil }
         do {
             try await client.deleteDatasetImages(m.name, category: c, files: dataset.categories[c] ?? [])
-            if library == c { library = nil }
+            if library == c { library = dataset.classNames.first { $0 != c } }
             await load()
         } catch { errorMessage = error.localizedDescription }
     }

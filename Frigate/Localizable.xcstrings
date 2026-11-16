@@ -8968,6 +8968,46 @@
           }
         }
       }
+    },
+    "Training images": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trainingsbeelden"
+          }
+        }
+      }
+    },
+    "Unsure": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twijfel"
+          }
+        }
+      }
+    },
+    "No classes yet.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog geen klassen."
+          }
+        }
+      }
+    },
+    "No recent images with this result.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen recente beelden met deze uitkomst."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
