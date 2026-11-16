@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds Frigate/Resources/LucideIcons.json from Frigate's web UI (react-icons' Lucide set), so the
+"""Builds LucideIcons.json for the iOS and Android apps from Frigate's web UI (react-icons' Lucide set), so the
 app draws camera group icons exactly as Frigate does. Each icon becomes one SVG path on a 24x24
 grid, drawn as a 2-point stroke. Usage: scripts/lucide-icons.py [path to frigate/web]
 Lucide is ISC licensed (https://lucide.dev/license); react-icons is MIT."""
@@ -64,6 +64,11 @@ for m in re.finditer(r'export function (Lu\w+) \(props\) \{\n  return GenIcon\((
     walk(data)
     icons[name] = ''.join(parts)
 
-out = os.path.join(os.path.dirname(__file__), '..', 'Frigate', 'Resources', 'LucideIcons.json')
-json.dump(dict(sorted(icons.items())), open(out, 'w'), separators=(',', ':'))
-print(f'{len(icons)} icons -> {out} ({os.path.getsize(out) // 1024} KB)')
+# The same file for both apps.
+here = os.path.dirname(__file__)
+for out in (os.path.join(here, '..', 'ios', 'Frigate', 'Resources', 'LucideIcons.json'),
+            os.path.join(here, '..', 'android', 'app', 'src', 'main', 'assets', 'LucideIcons.json')):
+    if not os.path.isdir(os.path.dirname(out)):
+        continue
+    json.dump(dict(sorted(icons.items())), open(out, 'w'), separators=(',', ':'))
+    print(f'{len(icons)} icons -> {os.path.normpath(out)} ({os.path.getsize(out) // 1024} KB)')
