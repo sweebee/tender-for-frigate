@@ -28,6 +28,9 @@ struct ExploreFilter: Equatable {
 struct ExploreView: View {
     @Environment(AppModel.self) private var model
     @State private var filter = ExploreFilter()
+    /// One grid of everything, newest first, instead of rows per label: Frigate's "Unfiltered grid" default view.
+    @AppStorage("exploreGrid") private var gridByDefault = false
+    private var showsGrid: Bool { gridByDefault || filter.showsGrid }
     @State private var rows: [LabelRow] = []
     @State private var grid: [ExploreEntry] = []
     @State private var loading = false
@@ -54,7 +57,7 @@ struct ExploreView: View {
     private var connections: [ServerConnection] { model.scopedConnections.filter(\.isOnline) }
 
     private var loadKey: String {
-        "\(filter)|\(connections.map(\.id))"
+        "\(filter)|\(gridByDefault)|\(connections.map(\.id))"
     }
 
     var body: some View {
@@ -73,7 +76,7 @@ struct ExploreView: View {
                 }
                 // A new filter shows other (often shorter) content. A fresh scroll view starts at
                 // the top; the old one stayed scrolled past the new content, a black screen.
-                .id("\(filter)")
+                .id("\(filter)|\(gridByDefault)")
                 .refreshable { await reload() }
                 .scrollDismissesKeyboard(.immediately)
             }
@@ -90,7 +93,16 @@ struct ExploreView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 14) {
-            LargeTitle(text: L("Explore")).padding(.horizontal, 16)
+            HStack {
+                LargeTitle(text: L("Explore"))
+                Spacer()
+                Button { gridByDefault.toggle() } label: {
+                    HeaderIconLabel(systemName: gridByDefault ? "rectangle.grid.1x2" : "square.grid.3x3")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(gridByDefault ? "Per label" : "All in a grid")
+            }
+            .padding(.horizontal, 16)
             // Only when a server recognizes plates now (Frigate's license plate recognition) and
             // has found some; plates left from before it was turned off do not count.
             if !knownPlates.isEmpty && connections.contains(where: { $0.config?.recognizesPlates == true }) { plateSearch }
@@ -202,6 +214,17 @@ struct ExploreView: View {
                             : L("\(filter.cameras.count) cameras")),
                          outlined: !filter.cameras.isEmpty, trailingChevron: true)
                 }
+                // Right after Cameras, so the way back to the default view needs no scrolling.
+                if filter.isActive {
+                    Button { filter = ExploreFilter() } label: {
+                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Theme.textSecondary)
+                            .frame(width: 34, height: 34)
+                            .background(Theme.card, in: Circle())
+                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
+                    }
+                    .accessibilityLabel("Clear filters")
+                }
                 Menu {
                     option(L("All labels"), filter.labels.isEmpty) { filter.labels = [] }
                     ForEach(labelOptions, id: \.self) { l in
@@ -251,16 +274,6 @@ struct ExploreView: View {
                 } label: {
                     Chip(title: filter.day.map(FrigateFormat.dayTitle) ?? L("All dates"), outlined: filter.day != nil, trailingChevron: true)
                 }
-                if filter.isActive {
-                    Button { filter = ExploreFilter() } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Theme.textSecondary)
-                            .frame(width: 34, height: 34)
-                            .background(Theme.card, in: Circle())
-                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
-                    }
-                    .accessibilityLabel("Clear filters")
-                }
             }
             .padding(.horizontal, 16)
         }
@@ -282,7 +295,7 @@ struct ExploreView: View {
 
     @ViewBuilder
     private var content: some View {
-        let empty = filter.showsGrid ? grid.isEmpty : rows.isEmpty
+        let empty = showsGrid ? grid.isEmpty : rows.isEmpty
         if connections.isEmpty {
             EmptyStateView(systemImage: "wifi.slash", title: L("No servers online"), message: L("Tracked objects appear when a server is reachable."))
         } else if loading && empty {
@@ -291,7 +304,7 @@ struct ExploreView: View {
             EmptyStateView(systemImage: "exclamationmark.triangle", title: L("Could not load objects"), message: loadError)
         } else if empty {
             EmptyStateView(systemImage: "magnifyingglass", title: L("Nothing found"), message: L("No tracked objects match these filters."))
-        } else if filter.showsGrid {
+        } else if showsGrid {
             gridView
         } else {
             ForEach(rows) { row in labelRow(row) }
@@ -420,7 +433,7 @@ struct ExploreView: View {
         loading = true
         loadError = nil
         do {
-            if filter.showsGrid {
+            if showsGrid {
                 let range = dayRange
                 let result = try await search(labels: filter.labels.isEmpty ? nil : Array(filter.labels),
                                               before: range.before, after: range.after, limit: pageSize)
@@ -509,11 +522,15 @@ struct ObjectTile: View {
     @Environment(AppModel.self) private var model
 
     /// "15 nov, 13:14" in the user's language.
-    private static let when: DateFormatter = {
-        let f = DateFormatter()
-        f.setLocalizedDateFormatFromTemplate("dMMMHHmm")
-        return f
-    }()
+    private static func when(_ date: Date) -> String {
+        if formatter.twelveHour != FrigateFormat.uses12Hour {
+            let f = DateFormatter()
+            f.setLocalizedDateFormatFromTemplate("dMMM\(FrigateFormat.hourTemplate)mm")
+            formatter = (f, FrigateFormat.uses12Hour)
+        }
+        return formatter.f.string(from: date)
+    }
+    private static var formatter: (f: DateFormatter, twelveHour: Bool?) = (DateFormatter(), nil)
 
     var body: some View {
         let conn = model.connection(for: entry.serverID)
@@ -548,7 +565,7 @@ struct ObjectTile: View {
                     // The time as well, as Frigate shows it: "5 min ago" alone is hard to find back.
                     VStack(alignment: .trailing, spacing: 0) {
                         RelativeTimeText(date: Date(timeIntervalSince1970: event.startTime))
-                        Text(Self.when.string(from: Date(timeIntervalSince1970: event.startTime)))
+                        Text(Self.when(Date(timeIntervalSince1970: event.startTime)))
                             .font(.system(size: 10, weight: .medium).monospacedDigit()).foregroundStyle(.white.opacity(0.8))
                     }
                 }

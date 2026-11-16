@@ -172,7 +172,7 @@ struct LiveView: View {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(cams, id: \.name) { cam in
                         NavigationLink(value: CameraRoute(serverID: conn.server.id, camera: cam.name)) {
-                            CameraTile(conn: conn, camera: cam)
+                            CameraTile(conn: conn, camera: cam, wholePicture: largeTiles && sizeClass != .regular)
                         }
                         .buttonStyle(.plain)
                         .contextMenu { tileMenu(conn, cam) }
@@ -186,6 +186,8 @@ struct LiveView: View {
 struct CameraTile: View {
     let conn: ServerConnection
     let camera: CameraConfig
+    /// The camera's own shape instead of 16:10, for one tile per row.
+    var wholePicture = false
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
     @State private var autoLiveOn = false
@@ -221,7 +223,9 @@ struct CameraTile: View {
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topLeading) {
                 Color.clear
-                    .aspectRatio(16 / 10, contentMode: .fit)
+                    // One camera per row shows the whole picture at the camera's own shape; side by
+                    // side, tiles share one shape so the rows line up.
+                    .aspectRatio(wholePicture ? camera.aspectRatio : 16 / 10, contentMode: .fit)
                     .overlay {
                         if !on {
                             // Switched off in Frigate: no picture to show, and not a fault like Offline.

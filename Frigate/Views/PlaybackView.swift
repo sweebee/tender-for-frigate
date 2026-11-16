@@ -141,6 +141,8 @@ struct PlaybackView: View {
     @State private var deleteError: String?
     /// Moment to start at once the recordings are loaded (only on the first load).
     @State private var pendingStartTime: Double?
+    /// The playhead's time when another camera was picked: that camera starts at the same moment.
+    @State private var switchTime: Double?
 
     init(route: PlaybackRoute) {
         self.route = route
@@ -548,6 +550,7 @@ struct PlaybackView: View {
             Menu {
                 ForEach(conn?.cameras ?? [], id: \.name) { cam in
                     Button {
+                        if cam.name != camera && !loading && !map.isEmpty { switchTime = wallTime }
                         camera = cam.name
                     } label: {
                         if cam.name == camera { Label(cam.displayName, systemImage: "checkmark") } else { Text(cam.displayName) }
@@ -754,6 +757,8 @@ struct PlaybackView: View {
     private func load() async {
         guard let client else { loading = false; return }
         loading = true
+        let keepTime = switchTime
+        switchTime = nil
         player.stop()
         map = RecordingMap()
         let start = dayStart, end = dayEnd
@@ -774,8 +779,11 @@ struct PlaybackView: View {
         loading = false
         guard let last = map.spans.last else { return }
 
-        // Start playing right away: at the requested review item, else the latest event, else near the end.
-        if let t = pendingStartTime, t >= start, t < end {
+        // Start playing right away: at the time watched on the other camera (or the recording
+        // closest to it), at the requested review item, else the latest event, else near the end.
+        if let t = keepTime, t >= start, t < end {
+            jump(toWall: snapToRecording(t, within: .infinity), autoplay: true, earlier: 1)
+        } else if let t = pendingStartTime, t >= start, t < end {
             pendingStartTime = nil
             seek(toWall: t - 3 + annotationOffset, autoplay: true, skipGap: true)
         } else if let id = pendingReviewID, let item = reviews.first(where: { $0.id == id }) {
@@ -1113,7 +1121,8 @@ struct PlaybackTimeline: View {
 
     // MARK: Event strip
 
-    private var gutter: CGFloat { compact ? 60 : 64 }
+    // "10:15 AM" needs more room than "10:15".
+    private var gutter: CGFloat { (compact ? 60 : 64) + (FrigateFormat.uses12Hour ? 16 : 0) }
     /// The strip of event blocks just right of the time labels; motion bars start after it.
     private let stripWidth: CGFloat = 18
     private var barsStart: CGFloat { compact ? gutter + 2 : gutter + stripWidth + 6 }

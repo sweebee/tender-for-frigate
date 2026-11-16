@@ -9008,6 +9008,26 @@
           }
         }
       }
+    },
+    "Per label": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per label"
+          }
+        }
+      }
+    },
+    "All in a grid": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles in een raster"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

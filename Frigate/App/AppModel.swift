@@ -22,7 +22,9 @@ final class ServerConnection: Identifiable {
     var client: FrigateClient?
     var usingRemote = false
     var version: String?
-    var config: FrigateConfig?
+    var config: FrigateConfig? {
+        didSet { FrigateFormat.serverTimeFormats[server.id] = config?.timeFormat }
+    }
     /// go2rtc stream names, to offer only streams that exist and skip straight to snapshots
     /// for cameras without a restream. Nil until loaded.
     var go2rtcStreams: Set<String>?
@@ -597,6 +599,10 @@ final class AppModel {
         }
         for s in servers { connections[s.id] = ServerConnection(server: s) }
         if case .server(let id) = scope, !servers.contains(where: { $0.id == id }) { scope = .all }
+        // Switching the device between 12- and 24-hour time redraws every time shown.
+        NotificationCenter.default.addObserver(forName: NSLocale.currentLocaleDidChangeNotification, object: nil, queue: .main) { _ in
+            FrigateFormat.refreshClock()
+        }
     }
 
     private func saveServers() {

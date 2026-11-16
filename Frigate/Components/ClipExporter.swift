@@ -92,7 +92,7 @@ extension ClipExporter {
     static func exportName(camera: String, displayName: String?, start: Double, label: String? = nil) -> String {
         let date = Date(timeIntervalSince1970: start)
         let f = DateFormatter()
-        f.setLocalizedDateFormatFromTemplate("d MMM HH:mm")
+        f.setLocalizedDateFormatFromTemplate("d MMM \(FrigateFormat.hourTemplate):mm")
         let cam = displayName ?? FrigateFormat.prettyName(camera)
         if let label { return "\(FrigateFormat.labelName(label).capitalizedFirst) · \(cam), \(f.string(from: date))" }
         return "\(cam), \(f.string(from: date))"

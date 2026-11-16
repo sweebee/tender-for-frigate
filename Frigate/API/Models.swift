@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Decodes and discards any JSON value.
 struct AnyJSON: Decodable {}
@@ -15,14 +16,17 @@ struct FrigateConfig: Decodable {
     var recognizesPlates = false
     /// License plate recognition is on for the whole server (Frigate offers camera types then).
     var platesOnServer = false
+    /// Frigate's ui.time_format: "browser", "12hour" or "24hour".
+    var timeFormat: String?
 
     enum CodingKeys: String, CodingKey {
-        case cameras, genai, lpr
+        case cameras, genai, lpr, ui
         case cameraGroups = "camera_groups"
     }
 
     /// `genai` is a map of named providers, each with `roles`; older versions use one flat object.
     private struct GenAIProvider: Decodable { var roles: [String]? }
+    private struct UISettings: Decodable { var time_format: String? }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -33,6 +37,7 @@ struct FrigateConfig: Decodable {
         }
         let global = (try? c.decodeIfPresent(CameraConfig.Toggle.self, forKey: .lpr))??.enabled == true
         platesOnServer = global
+        timeFormat = (try? c.decodeIfPresent(UISettings.self, forKey: .ui))??.time_format
         recognizesPlates = cameras.values.contains { $0.enabled != false && ($0.lpr?.enabled ?? global) }
     }
 
@@ -455,6 +460,13 @@ struct RecordingSegment: Decodable, Hashable {
 
 // MARK: - Formatting
 
+/// The clock the app shows times in; observable so a new setting redraws every time on screen.
+@Observable final class ClockStyle {
+    static let shared = ClockStyle()
+    var twelveHour = FrigateFormat.wantsTwelveHour
+    private init() {}
+}
+
 enum FrigateFormat {
     static func prettyName(_ raw: String) -> String {
         let s = raw.replacingOccurrences(of: "_", with: " ")
@@ -469,12 +481,46 @@ enum FrigateFormat {
         return name.prefix(1).uppercased() + name.dropFirst()
     }
 
-    /// Created once: timelines format labels on every frame, and a new formatter is slow.
-    private static let hm: DateFormatter = { let f = DateFormatter(); f.dateFormat = "HH:mm"; return f }()
-    private static let hms: DateFormatter = { let f = DateFormatter(); f.dateFormat = "HH:mm:ss"; return f }()
+    /// Each server's ui.time_format. "12hour" or "24hour" wins, as in Frigate's web app; its
+    /// default "browser" means the device's own choice.
+    static var serverTimeFormats: [UUID: String] = [:] { didSet { if serverTimeFormats != oldValue { refreshClock() } } }
+    /// The device's own choice (Settings > General > Date & Time), Frigate's "browser" format.
+    static var deviceUses12Hour: Bool {
+        DateFormatter.dateFormat(fromTemplate: "j", options: 0, locale: .current)?.contains("a") ?? false
+    }
+    /// 3:05 PM instead of 15:05. Observed: views that show a time redraw when it changes.
+    static var uses12Hour: Bool { ClockStyle.shared.twelveHour }
+
+    fileprivate static var wantsTwelveHour: Bool {
+        let server = serverTimeFormats.values.sorted().first { $0 == "12hour" || $0 == "24hour" }
+        return server.map { $0 == "12hour" } ?? deviceUses12Hour
+    }
+
+    /// Also called when the device's own 12/24-hour choice changes.
+    static func refreshClock() {
+        let wanted = wantsTwelveHour
+        guard wanted != uses12Hour else { return }
+        ClockStyle.shared.twelveHour = wanted
+        hm = clock(seconds: false)
+        hms = clock(seconds: true)
+    }
+
+    /// The hour in a date template: "h" for the 12-hour clock, "HH" otherwise.
+    static var hourTemplate: String { uses12Hour ? "h" : "HH" }
+
+    private static func clock(seconds: Bool) -> DateFormatter {
+        let f = DateFormatter()
+        f.dateFormat = uses12Hour ? (seconds ? "h:mm:ss a" : "h:mm a") : (seconds ? "HH:mm:ss" : "HH:mm")
+        return f
+    }
+
+    /// Kept: timelines format labels on every frame, and a new formatter is slow.
+    private static var hm: DateFormatter = clock(seconds: false)
+    private static var hms: DateFormatter = clock(seconds: true)
 
     static func time(_ date: Date, seconds: Bool = false) -> String {
-        (seconds ? hms : hm).string(from: date)
+        _ = uses12Hour  // A view showing this time follows the setting.
+        return (seconds ? hms : hm).string(from: date)
     }
 
     /// "1.9 s" under a minute, otherwise "m:ss".
