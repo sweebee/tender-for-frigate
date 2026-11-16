@@ -16,6 +16,21 @@ import androidx.compose.material.icons.outlined.MovieFilter
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -126,23 +141,21 @@ fun AppRoot(activity: MainActivity) {
     }
 
     CompositionLocalProvider(LocalNav provides nav) {
+        // A wide window gets an icon-only rail as the iOS app on iPad (names as tooltips), with
+        // Settings at the bottom; a phone gets the tab bar. The NavHost stays in one place so
+        // going full screen does not rebuild the screen.
+        Row(Modifier.fillMaxSize()) {
+        if (wide && !AppChrome.immersive) SectionRail(list, nav, entry)
         NavigationSuiteScaffold(
-            layoutType = when {
-                AppChrome.immersive -> NavigationSuiteType.None
-                wide -> NavigationSuiteType.NavigationRail
-                else -> NavigationSuiteType.NavigationBar
-            },
+            modifier = Modifier.weight(1f),
+            layoutType = if (wide || AppChrome.immersive) NavigationSuiteType.None else NavigationSuiteType.NavigationBar,
             navigationSuiteItems = {
                 for (s in list) {
                     val selected = entry?.destination?.hierarchy?.any { it.hasRoute(s.route::class) } == true
                     item(
                         selected = selected,
                         onClick = { selectTab(nav, s.route, selected) },
-                        icon = {
-                            val n = s.badge()
-                            if (n > 0) BadgedBox(badge = { Badge { Text(if (n > 99) "99+" else n.toString()) } }) { Icon(s.icon, null) }
-                            else Icon(s.icon, null)
-                        },
+                        icon = { SectionIcon(s) },
                         label = { Text(stringResource(s.title), maxLines = 1, softWrap = false) },
                     )
                 }
@@ -189,6 +202,7 @@ fun AppRoot(activity: MainActivity) {
                 setupDestinations()
             }
         }
+        }
     }
 }
 
@@ -202,5 +216,33 @@ fun selectTab(nav: NavHostController, route: Any, alreadySelected: Boolean = fal
         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+@Composable
+private fun SectionIcon(s: Section) {
+    val n = s.badge()
+    if (n > 0) BadgedBox(badge = { Badge { Text(if (n > 99) "99+" else n.toString()) } }) { Icon(s.icon, stringResource(s.title)) }
+    else Icon(s.icon, stringResource(s.title))
+}
+
+/** The wide layout's rail: icons only, the name as a tooltip, Settings at the bottom. */
+@Composable
+private fun SectionRail(list: List<Section>, nav: NavHostController, entry: androidx.navigation.NavBackStackEntry?) {
+    NavigationRail(Modifier.fillMaxHeight()) {
+        Spacer(Modifier.height(8.dp))
+        for (s in list) {
+            if (s.route == SettingsTab) Spacer(Modifier.weight(1f))
+            val selected = entry?.destination?.hierarchy?.any { it.hasRoute(s.route::class) } == true
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Right),
+                tooltip = { PlainTooltip { Text(stringResource(s.title)) } },
+                state = rememberTooltipState(),
+            ) {
+                NavigationRailItem(selected = selected, onClick = { selectTab(nav, s.route, selected) }, icon = { SectionIcon(s) },
+                    label = null, alwaysShowLabel = false, modifier = Modifier.padding(vertical = 4.dp))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
     }
 }
