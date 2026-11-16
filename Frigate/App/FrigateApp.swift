@@ -87,6 +87,7 @@ struct RootView: View {
                     let route: MoreRoute? = switch tab {
                     case .exports: .exports
                     case .classification: .classification
+                    case .faces: .faces
                     case .chat: .chat
                     case .settings: .settings
                     default: nil

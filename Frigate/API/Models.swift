@@ -18,15 +18,26 @@ struct FrigateConfig: Decodable {
     var platesOnServer = false
     /// Frigate's ui.time_format: "browser", "12hour" or "24hour".
     var timeFormat: String?
+    /// Semantic search is on: Explore can search by text and find similar objects.
+    var semanticSearch = false
+    /// Face recognition is on: the face library applies.
+    var faceRecognition = false
+    /// Face scores at or above this are a match (Frigate's face_recognition.recognition_threshold).
+    var faceRecognitionThreshold = 0.9
+    /// Face scores below this are unknown (face_recognition.unknown_score).
+    var faceUnknownScore = 0.8
 
     enum CodingKeys: String, CodingKey {
         case cameras, genai, lpr, ui
         case cameraGroups = "camera_groups"
+        case semanticSearch = "semantic_search"
+        case faceRecognition = "face_recognition"
     }
 
     /// `genai` is a map of named providers, each with `roles`; older versions use one flat object.
     private struct GenAIProvider: Decodable { var roles: [String]? }
     private struct UISettings: Decodable { var time_format: String? }
+    private struct FaceSettings: Decodable { var enabled: Bool?; var recognition_threshold: Double?; var unknown_score: Double? }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -38,6 +49,12 @@ struct FrigateConfig: Decodable {
         let global = (try? c.decodeIfPresent(CameraConfig.Toggle.self, forKey: .lpr))??.enabled == true
         platesOnServer = global
         timeFormat = (try? c.decodeIfPresent(UISettings.self, forKey: .ui))??.time_format
+        semanticSearch = (try? c.decodeIfPresent(CameraConfig.Toggle.self, forKey: .semanticSearch))??.enabled == true
+        if let face = (try? c.decodeIfPresent(FaceSettings.self, forKey: .faceRecognition)) ?? nil {
+            faceRecognition = face.enabled == true
+            faceRecognitionThreshold = face.recognition_threshold ?? 0.9
+            faceUnknownScore = face.unknown_score ?? 0.8
+        }
         recognizesPlates = cameras.values.contains { $0.enabled != false && ($0.lpr?.enabled ?? global) }
     }
 
@@ -85,6 +102,14 @@ struct CameraConfig: Decodable {
     var type: String?
     /// The names in `live.streams` in Frigate's order: the first is the stream live view opens with.
     var liveOrder: [String]?
+    var objects: Objects?
+
+    /// Only what the app reads: whether GenAI describes this camera's objects.
+    struct Objects: Decodable {
+        var genai: Toggle?
+    }
+    /// GenAI writes descriptions of this camera's tracked objects (Frigate's objects.genai).
+    var describesObjects: Bool { objects?.genai?.enabled == true }
 
     struct Detect: Decodable {
         var enabled: Bool?; var width: Int?; var height: Int?
@@ -113,7 +138,7 @@ struct CameraConfig: Decodable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr, notifications, type
+        case name, enabled, detect, record, audio, live, ui, zones, onvif, ffmpeg, lpr, notifications, type, objects
         case friendlyName = "friendly_name"
         case enabledInConfig = "enabled_in_config"
     }
@@ -351,6 +376,9 @@ struct FrigateEvent: Decodable, Identifiable, Hashable {
     var hasSnapshot: Bool?
     var topScore: Double?
     var data: EventData?
+    /// From a semantic search: how close it came, and whether by its picture or its description.
+    var searchDistance: Double?
+    var searchSource: String?
 
     struct EventData: Decodable, Hashable {
         var score: Double?
@@ -358,8 +386,10 @@ struct FrigateEvent: Decodable, Identifiable, Hashable {
         var box: [Double]?
         /// Plate read by Frigate's license plate recognition.
         var recognizedLicensePlate: String?
+        /// Written by GenAI or by hand.
+        var description: String?
         enum CodingKeys: String, CodingKey {
-            case score, box
+            case score, box, description
             case topScore = "top_score"
             case recognizedLicensePlate = "recognized_license_plate"
         }
@@ -384,6 +414,8 @@ struct FrigateEvent: Decodable, Identifiable, Hashable {
         case hasClip = "has_clip"
         case hasSnapshot = "has_snapshot"
         case topScore = "top_score"
+        case searchDistance = "search_distance"
+        case searchSource = "search_source"
     }
 
     var bestScore: Double? { data?.topScore ?? topScore ?? data?.score }

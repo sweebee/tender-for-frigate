@@ -9028,6 +9028,686 @@
           }
         }
       }
+    },
+    "%lld faces": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld gezichten"
+          }
+        }
+      }
+    },
+    "1 face": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 gezicht"
+          }
+        }
+      }
+    },
+    "Add Face": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezicht toevoegen"
+          }
+        }
+      }
+    },
+    "Area": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebied"
+          }
+        }
+      }
+    },
+    "Bounding boxes": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objectkaders"
+          }
+        }
+      }
+    },
+    "Clear similarity search": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelijkenis zoeken wissen"
+          }
+        }
+      }
+    },
+    "Debug": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foutopsporing"
+          }
+        }
+      }
+    },
+    "Debugging": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foutopsporing"
+          }
+        }
+      }
+    },
+    "Delete %lld faces": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder %lld gezichten"
+          }
+        }
+      }
+    },
+    "Delete %lld faces?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld gezichten verwijderen?"
+          }
+        }
+      }
+    },
+    "Delete 1 face?": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 gezicht verwijderen?"
+          }
+        }
+      }
+    },
+    "Delete face": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijder gezicht"
+          }
+        }
+      }
+    },
+    "Description": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschrijving"
+          }
+        }
+      }
+    },
+    "Description of the tracked object": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschrijving van het gevolgde object"
+          }
+        }
+      }
+    },
+    "Face Library": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezichtenbibliotheek"
+          }
+        }
+      }
+    },
+    "Face recognition is off on your servers.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezichtsherkenning staat uit op je servers."
+          }
+        }
+      }
+    },
+    "Files": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestanden"
+          }
+        }
+      }
+    },
+    "Find similar": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vind vergelijkbare"
+          }
+        }
+      }
+    },
+    "Frigate did not recognize this face.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate herkende dit gezicht niet."
+          }
+        }
+      }
+    },
+    "Frigate will not request a description from your Generative AI provider until the tracked object's lifecycle has ended.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frigate vraagt pas om een beschrijving van je GenAI-provider als de levenscyclus van het gevolgde object is afgelopen."
+          }
+        }
+      }
+    },
+    "Matched description at %lld%%": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschrijving komt %lld%% overeen"
+          }
+        }
+      }
+    },
+    "Matched thumbnail at %lld%%": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beeld komt %lld%% overeen"
+          }
+        }
+      }
+    },
+    "Motion boxes": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewegingskaders"
+          }
+        }
+      }
+    },
+    "New face": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw gezicht"
+          }
+        }
+      }
+    },
+    "No faces available": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen gezichten beschikbaar"
+          }
+        }
+      }
+    },
+    "No objects": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen objecten"
+          }
+        }
+      }
+    },
+    "No picture": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen beeld"
+          }
+        }
+      }
+    },
+    "Object List": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objectenlijst"
+          }
+        }
+      }
+    },
+    "Overlay a timestamp on the image": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon een tijdstempel op het beeld"
+          }
+        }
+      }
+    },
+    "Paths": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paden"
+          }
+        }
+      }
+    },
+    "Photo Library": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotobibliotheek"
+          }
+        }
+      }
+    },
+    "Ratio": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verhouding"
+          }
+        }
+      }
+    },
+    "Recent Recognitions": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recente herkenningen"
+          }
+        }
+      }
+    },
+    "Reclassify Face as:": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herclassificeer gezicht als:"
+          }
+        }
+      }
+    },
+    "Recognize the people Frigate sees": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herken de mensen die Frigate ziet"
+          }
+        }
+      }
+    },
+    "Regenerate": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenereren"
+          }
+        }
+      }
+    },
+    "Regenerate from Snapshot": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenereren vanuit snapshot"
+          }
+        }
+      }
+    },
+    "Regenerate from Thumbnails": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regenereren vanuit miniaturen"
+          }
+        }
+      }
+    },
+    "Regions": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regio's"
+          }
+        }
+      }
+    },
+    "Rename Face": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezicht hernoemen"
+          }
+        }
+      }
+    },
+    "Reprocess Face": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezicht opnieuw verwerken"
+          }
+        }
+      }
+    },
+    "Score": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Score"
+          }
+        }
+      }
+    },
+    "Search…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek…"
+          }
+        }
+      }
+    },
+    "Show a box of the region of interest sent to the object detector": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon een kader rond het gebied dat naar de objectdetector gaat"
+          }
+        }
+      }
+    },
+    "Show an outline of any defined zones": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon de omtrek van de zones"
+          }
+        }
+      }
+    },
+    "Show bounding boxes around tracked objects": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon kaders rond gevolgde objecten"
+          }
+        }
+      }
+    },
+    "Show boxes around areas where motion is detected": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon kaders rond gebieden met beweging"
+          }
+        }
+      }
+    },
+    "Show motion mask polygons": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon de bewegingsmaskers"
+          }
+        }
+      }
+    },
+    "Show significant points of the tracked object's path": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toon de belangrijkste punten van het pad van een object"
+          }
+        }
+      }
+    },
+    "Similar to %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lijkt op %@"
+          }
+        }
+      }
+    },
+    "Stationary": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stilstaand"
+          }
+        }
+      }
+    },
+    "Successfully reclassified face.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezicht verplaatst."
+          }
+        }
+      }
+    },
+    "Successfully trained face.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gezicht getraind."
+          }
+        }
+      }
+    },
+    "Successfully uploaded image.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afbeelding geüpload."
+          }
+        }
+      }
+    },
+    "The tries for this object; the ones ticked are used.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De pogingen voor dit object; de aangevinkte worden gebruikt."
+          }
+        }
+      }
+    },
+    "There are no recent face recognition attempts": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er zijn geen recente pogingen tot gezichtsherkenning"
+          }
+        }
+      }
+    },
+    "There is already a face with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een gezicht met deze naam."
+          }
+        }
+      }
+    },
+    "This action cannot be undone.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit kan niet ongedaan worden gemaakt."
+          }
+        }
+      }
+    },
+    "This file is not a picture.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit bestand is geen afbeelding."
+          }
+        }
+      }
+    },
+    "This will permanently delete all associated faces.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle bijbehorende gezichten worden definitief verwijderd."
+          }
+        }
+      }
+    },
+    "Thumbnail": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beeld"
+          }
+        }
+      }
+    },
+    "Thumbnail and description": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beeld en beschrijving"
+          }
+        }
+      }
+    },
+    "Timestamp": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tijdstempel"
+          }
+        }
+      }
+    },
+    "Train Face as:": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Train gezicht als:"
+          }
+        }
+      }
+    },
+    "Upload Image": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afbeelding uploaden"
+          }
+        }
+      }
+    },
+    "Waiting for the new description…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachten op de nieuwe beschrijving…"
+          }
+        }
+      }
+    },
+    "You must add at least one face to the library for face recognition to function.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voeg ten minste één gezicht toe aan de bibliotheek, anders werkt gezichtsherkenning niet."
+          }
+        }
+      }
+    },
+    "Find similar tracked objects": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vind vergelijkbare gevolgde objecten"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

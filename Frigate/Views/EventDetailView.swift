@@ -131,6 +131,7 @@ struct EventDetailView: View {
                 } details: {
                     info
                     tiles
+                    describe
                     objects
                 } extra: {
                     lifecycle
@@ -144,6 +145,7 @@ struct EventDetailView: View {
                     scrubber
                     info
                     tiles
+                    describe
                     objects
                     lifecycle
                 }
@@ -519,6 +521,12 @@ struct EventDetailView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
+    }
+
+    /// Opened on one object: its description and Find similar, as Frigate's tracked object details.
+    @ViewBuilder
+    private var describe: some View {
+        if let focus { ObjectDescriptionSection(serverID: route.serverID, event: focus) }
     }
 
     // MARK: Objects

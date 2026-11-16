@@ -28,6 +28,7 @@ struct CameraView: View {
     /// is not opened again); only the things around it step aside.
     @State private var filling = false
     @State private var showPTZ = false
+    @State private var showDebug = false
     /// PTZ pads drawn on the video in landscape (a sheet would cover the picture).
     @State private var landscapePTZ = false
     @State private var snapshotBusy = false
@@ -88,6 +89,7 @@ struct CameraView: View {
             }
         }
         .sheet(item: $share) { ShareSheet(items: $0.items) }
+        .navigationDestination(isPresented: $showDebug) { CameraDebugView(serverID: route.serverID, camera: route.camera) }
         .overlay(alignment: .top) { ExportToast(state: toast) }
         .sheet(isPresented: $showPTZ) {
             if let client = conn?.client { PTZSheet(client: client, camera: route.camera)
@@ -309,6 +311,10 @@ struct CameraView: View {
                 }
                 Divider()
                 Button { player.reloadToken += 1 } label: { Label("Reload stream", systemImage: "arrow.clockwise") }
+                // Frigate's Debug view: what detection sees, with its boxes, zones and motion.
+                if cameraOn {
+                    Button { showDebug = true } label: { Label("Debug", systemImage: "ladybug") }
+                }
                 if let conn, let camera {
                     CameraSwitches(conn: conn, camera: camera)
                 }

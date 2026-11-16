@@ -492,6 +492,48 @@ final class FrigateClient: @unchecked Sendable {
         return try await get([FrigateEvent].self, "api/events", query: q)
     }
 
+    /// Where a semantic search looks: the objects' pictures, their descriptions, or both.
+    enum SearchSource: String, CaseIterable { case thumbnail, description }
+
+    /// Frigate's semantic search (/api/events/search), as Explore runs it: by text (`query`), or
+    /// for objects that look like the one with `similarTo`. Best match first; each result carries
+    /// its `searchDistance`. Needs semantic_search to be on.
+    func semanticSearch(query: String? = nil, similarTo: String? = nil, sources: Set<SearchSource> = [.thumbnail, .description],
+                        cameras: [String]? = nil, labels: [String]? = nil, zones: [String]? = nil, subLabels: [String]? = nil,
+                        after: Date? = nil, before: Date? = nil, limit: Int = 100) async throws -> [FrigateEvent] {
+        var q: [String: String?] = ["limit": String(limit), "include_thumbnails": "0", "timezone": TimeZone.current.identifier]
+        if let similarTo {
+            q["event_id"] = similarTo
+            q["search_type"] = "similarity"
+        } else {
+            q["query"] = query
+            q["search_type"] = SearchSource.allCases.filter { sources.contains($0) }.map(\.rawValue).joined(separator: ",")
+        }
+        let cameras = ScreenshotMode.scope(cameras)
+        if let cameras, !cameras.isEmpty { q["cameras"] = cameras.joined(separator: ",") }
+        if let labels, !labels.isEmpty { q["labels"] = labels.joined(separator: ",") }
+        if let zones, !zones.isEmpty { q["zones"] = zones.joined(separator: ",") }
+        if let subLabels, !subLabels.isEmpty { q["sub_labels"] = subLabels.joined(separator: ",") }
+        if let after { q["after"] = String(after.timeIntervalSince1970) }
+        if let before { q["before"] = String(before.timeIntervalSince1970) }
+        return try await get([FrigateEvent].self, "api/events/search", query: q)
+    }
+
+    /// Replaces a tracked object's description (admin only).
+    func setDescription(eventID: String, _ text: String) async throws {
+        try await post("api/events/\(eventID)/description", json: ["description": text])
+    }
+
+    /// Asks GenAI for a new description, from the snapshot or from the thumbnails it collected
+    /// (admin only). The new text arrives later, as Frigate's web UI says.
+    func regenerateDescription(eventID: String, fromSnapshot: Bool) async throws {
+        try await send("PUT", "api/events/\(eventID)/description/regenerate",
+                       query: ["source": fromSnapshot ? "snapshot" : "thumbnails"], json: nil)
+    }
+
+    /// One tracked object, fresh (e.g. its description).
+    func event(id: String) async throws -> FrigateEvent { try await get(FrigateEvent.self, "api/events/\(id)") }
+
     func trackedLabels() async throws -> [String] { try await get([String].self, "api/labels") }
     func subLabels() async throws -> [String] { try await get([String].self, "api/sub_labels") }
     /// Plates Frigate's license plate recognition has read.

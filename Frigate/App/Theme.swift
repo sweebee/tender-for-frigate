@@ -206,6 +206,8 @@ struct Chip: View {
     var outlined: Bool = false
     var systemImage: String? = nil
     var trailingChevron: Bool = false
+    /// The chip takes something away when tapped (a filter, a search).
+    var trailingXmark: Bool = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -213,6 +215,9 @@ struct Chip: View {
             Text(title).lineLimit(1)
             if trailingChevron {
                 Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textSecondary)
+            }
+            if trailingXmark {
+                Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
             }
         }
         .font(.system(size: 14, weight: selected ? .semibold : .medium))
@@ -271,7 +276,9 @@ struct ScreenTitle: View {
                 // Default button style: the arrow takes the accent color, like on other screens.
                 Button { dismiss() } label: { BackButtonLabel() }
                     .accessibilityLabel("Back")
+                // A long title (a Dutch one) gets smaller instead of breaking over two lines.
                 Text(text).font(.system(size: 28, weight: .bold)).kerning(-0.4).foregroundStyle(Theme.text)
+                    .lineLimit(1).minimumScaleFactor(0.6)
             }
             .padding(.bottom, sizeClass == .regular ? 6 : 0)
         } else {
@@ -287,6 +294,7 @@ struct LargeTitle: View {
             .font(.system(size: 34, weight: .bold))
             .kerning(-0.5)
             .foregroundStyle(Theme.text)
+            .lineLimit(1).minimumScaleFactor(0.6)
     }
 }
 

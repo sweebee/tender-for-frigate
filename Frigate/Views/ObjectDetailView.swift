@@ -27,6 +27,7 @@ struct ObjectDetailView: View {
                 } details: {
                     info
                     tiles
+                    ObjectDescriptionSection(serverID: route.serverID, event: event)
                 } extra: {
                     lifecycle
                 } actions: {
@@ -38,6 +39,7 @@ struct ObjectDetailView: View {
                         image
                         info
                         tiles
+                        ObjectDescriptionSection(serverID: route.serverID, event: event)
                         lifecycle
                     }
                     .padding(.bottom, 16)

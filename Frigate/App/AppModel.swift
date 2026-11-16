@@ -6,6 +6,31 @@ import SwiftUI
 struct CameraActivity: Equatable {
     var motion = false
     var tracking: [String] = []
+    /// Every object Frigate tracks on the camera now, parked ones too (its debug object list).
+    var objects: [LiveObject] = []
+}
+
+/// An object Frigate tracks right now, from its camera_activity message.
+struct LiveObject: Equatable, Identifiable {
+    var id: String
+    var label: String
+    var subLabel: String?
+    var score: Double?
+    var ratio: Double?
+    var area: Double?
+    var stationary: Bool
+
+    init?(_ d: [String: Any]) {
+        guard let label = d["label"] as? String else { return nil }
+        id = d["id"] as? String ?? UUID().uuidString
+        // A sub label confirmed by a model shows as "<label>-verified".
+        self.label = label.replacingOccurrences(of: "-verified", with: "")
+        subLabel = d["sub_label"] as? String
+        score = (d["score"] as? NSNumber)?.doubleValue
+        ratio = (d["ratio"] as? NSNumber)?.doubleValue
+        area = (d["area"] as? NSNumber)?.doubleValue
+        stationary = d["stationary"] as? Bool ?? false
+    }
 }
 
 /// Live state of one configured server.
@@ -420,7 +445,8 @@ final class ServerConnection: Identifiable {
                 let objects = info["objects"] as? [[String: Any]] ?? []
                 // Moving objects only: a parked car is tracked but not "active".
                 let moving = objects.filter { ($0["stationary"] as? Bool) != true }.compactMap { $0["label"] as? String }
-                next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving)
+                next[cam] = CameraActivity(motion: info["motion"] as? Bool ?? false, tracking: moving,
+                                           objects: objects.compactMap(LiveObject.init))
             }
             activity = next
         } else if topic == "model_state", let payload = (msg["payload"] as? String)?.data(using: .utf8),
@@ -506,8 +532,11 @@ final class ServerConnection: Identifiable {
 
 @Observable @MainActor
 final class AppModel {
+    /// "Find similar" on an object's screen: Explore picks it up and shows that search.
+    var exploreSimilar: ExploreEntry?
+
     /// `exports` is a section of its own only on iPad and Mac; on the phone it is a row in Explore.
-    enum Tab: Hashable { case live, review, explore, exports, classification, chat, settings, more }
+    enum Tab: Hashable { case live, review, explore, exports, classification, faces, chat, settings, more }
     enum Scope: Hashable, Codable {
         case all
         case server(UUID)
@@ -526,6 +555,7 @@ final class AppModel {
     var explorePath = NavigationPath()
     var exportsPath = NavigationPath()
     var classificationPath = NavigationPath()
+    var facesPath = NavigationPath()
     /// Exports deleted in this session (`ExportEntry.id`); lists leave them out, even when a
     /// load that was already under way still returns them.
     var deletedExports: Set<String> = []
@@ -647,6 +677,10 @@ final class AppModel {
     /// Servers whose Classification page the app shows (Frigate 0.17+).
     var classificationConnections: [ServerConnection] { scopedConnections.filter(\.supportsClassification) }
 
+    /// Servers with face recognition on: the Face Library applies to them.
+    var faceConnections: [ServerConnection] {
+        scopedConnections.filter { $0.isOnline && $0.config?.faceRecognition == true }
+    }
     var chatConnections: [ServerConnection] {
         scopedConnections.filter { $0.isOnline && $0.config?.supportsChat == true }
     }

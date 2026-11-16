@@ -765,7 +765,7 @@ struct ExportPlayerView: View {
 
 // MARK: - More (phone)
 
-enum MoreRoute: Hashable { case exports, classification, chat, settings }
+enum MoreRoute: Hashable { case exports, classification, faces, chat, settings }
 
 /// The phone's fourth tab: what does not get a tab of its own. iPad and Mac show these in the rail.
 struct MoreView: View {
@@ -784,6 +784,9 @@ struct MoreView: View {
                     if !model.classificationConnections.isEmpty {
                         row(.classification, "square.on.circle", L("Classification"), L("Teach Frigate what it sees"))
                     }
+                    if !model.faceConnections.isEmpty {
+                        row(.faces, "person.crop.square", L("Face Library"), L("Recognize the people Frigate sees"))
+                    }
                     if !model.chatConnections.isEmpty {
                         row(.chat, "bubble.left.and.text.bubble.right", L("Chat"), L("Ask Frigate about your cameras"))
                     }
@@ -799,6 +802,7 @@ struct MoreView: View {
                 switch route {
                 case .exports: ExportsView()
                 case .classification: ClassificationView()
+                case .faces: FaceLibraryView()
                 case .chat: ChatView(embedded: true)
                 case .settings: ServersView(embedded: true)
                 }

@@ -17,10 +17,17 @@ struct ExploreFilter: Equatable {
     var sort: FrigateClient.EventSort = .newest
     /// Part of a recognized license plate.
     var plate: String = ""
+    /// Semantic search: text to look for, and where (the pictures, the descriptions or both).
+    var query: String = ""
+    var sources: Set<FrigateClient.SearchSource> = [.thumbnail, .description]
+    /// Semantic search for objects that look like this one (Frigate's "Find similar").
+    var similar: ExploreEntry? = nil
 
     var isActive: Bool { self != ExploreFilter() }
+    /// A semantic search: results come best match first, from the servers that have it on.
+    var isSearch: Bool { !query.isEmpty || similar != nil }
     /// Rows per label until a label is picked or the order changes; then one grid.
-    var showsGrid: Bool { !labels.isEmpty || sort != .newest || !plate.isEmpty }
+    var showsGrid: Bool { !labels.isEmpty || sort != .newest || !plate.isEmpty || isSearch }
     /// Only the label rows' shortcut endpoint can be used.
     var isPlain: Bool { plate.isEmpty && cameras.isEmpty && zones.isEmpty && subLabels.isEmpty && day == nil && ScreenshotMode.cameras == nil }
 }
@@ -41,6 +48,8 @@ struct ExploreView: View {
     @State private var knownPlates: [String] = []
     @State private var plateQuery = ""
     @FocusState private var plateFocused: Bool
+    @State private var searchText = ""
+    @FocusState private var searchFocused: Bool
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var rowWidth: CGFloat = 0
     @State private var showDayPicker = false
@@ -86,6 +95,14 @@ struct ExploreView: View {
             .task(id: loadKey) { await reload() }
             .task(id: connections.map(\.id)) { await loadOptions() }
             .sheet(isPresented: $showDayPicker) { DayPickerSheet(day: $filter.day) }
+            // "Find similar" on an object's screen: back to Explore's grid with that search.
+            .onChange(of: model.exploreSimilar, initial: true) { _, entry in
+                guard let entry else { return }
+                model.exploreSimilar = nil
+                searchText = ""
+                filter = ExploreFilter(similar: entry)
+                model.explorePath = NavigationPath()
+            }
         }
     }
 
@@ -105,10 +122,49 @@ struct ExploreView: View {
             .padding(.horizontal, 16)
             // Only when a server recognizes plates now (Frigate's license plate recognition) and
             // has found some; plates left from before it was turned off do not count.
+            if searchConnections.isEmpty == false && filter.similar == nil { semanticSearchField }
             if !knownPlates.isEmpty && connections.contains(where: { $0.config?.recognizesPlates == true }) { plateSearch }
             filters
         }
         .padding(.top, 8)
+    }
+
+    /// Servers with semantic search on: they can search by text and find similar objects.
+    private var searchConnections: [ServerConnection] { connections.filter { $0.config?.semanticSearch == true } }
+
+    /// Frigate's search box: searches the pictures and descriptions of tracked objects when
+    /// Return is pressed, as Frigate's Explore page does.
+    private var semanticSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
+            TextField("", text: $searchText, prompt: Text("Search…").foregroundStyle(Theme.textSecondary))
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .focused($searchFocused)
+                .onSubmit { filter.query = searchText.trimmingCharacters(in: .whitespaces) }
+            if !searchText.isEmpty {
+                Button { searchText = ""; filter.query = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .font(.system(size: 16))
+        .padding(.horizontal, 12)
+        .frame(height: 40)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(searchFocused ? Theme.accent : Theme.controlBorder, lineWidth: 1))
+        .padding(.horizontal, 16)
+        // "Clear filters" also clears the search text.
+        .onChange(of: filter.query) { _, q in if q.isEmpty && !searchFocused { searchText = "" } }
+    }
+
+    private var sourcesTitle: String {
+        if filter.sources.count == 1, let only = filter.sources.first {
+            return only == .thumbnail ? L("Thumbnail") : L("Description")
+        }
+        return L("Thumbnail and description")
     }
 
     private var plateSuggestions: [String] {
@@ -198,6 +254,21 @@ struct ExploreView: View {
     private var filters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                if let similar = filter.similar {
+                    // Frigate's "Similarity search active", with a way out.
+                    Button { filter.similar = nil } label: {
+                        Chip(title: L("Similar to \(FrigateFormat.labelName(similar.event.label))"),
+                             outlined: true, systemImage: "square.on.square", trailingXmark: true)
+                    }
+                    .accessibilityLabel("Clear similarity search")
+                } else if !filter.query.isEmpty {
+                    Menu {
+                        option(L("Thumbnail"), filter.sources.contains(.thumbnail)) { toggleSource(.thumbnail) }
+                        option(L("Description"), filter.sources.contains(.description)) { toggleSource(.description) }
+                    } label: {
+                        Chip(title: sourcesTitle, outlined: filter.sources.count == 1, trailingChevron: true)
+                    }
+                }
                 Menu {
                     option(L("All cameras"), filter.cameras.isEmpty) { filter.cameras = [] }
                     // With several servers, cameras are grouped under their server's name.
@@ -280,6 +351,15 @@ struct ExploreView: View {
         .buttonStyle(.plain)
     }
 
+    /// One of the two stays on: searching nowhere finds nothing.
+    private func toggleSource(_ source: FrigateClient.SearchSource) {
+        if filter.sources.contains(source) {
+            if filter.sources.count > 1 { filter.sources.remove(source) }
+        } else {
+            filter.sources.insert(source)
+        }
+    }
+
     private func toggle(_ set: inout Set<String>, _ value: String) {
         if set.contains(value) { set.remove(value) } else { set.insert(value) }
     }
@@ -356,7 +436,7 @@ struct ExploreView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
                 ForEach(grid) { entry in
                     NavigationLink(value: ObjectRoute(serverID: entry.serverID, event: entry.event)) {
-                        ObjectTile(entry: entry, showLabel: true)
+                        ObjectTile(entry: entry, showLabel: true, match: filter.isSearch ? match(entry.event) : nil)
                             .aspectRatio(1, contentMode: .fit)
                     }
                     .buttonStyle(.plain)
@@ -368,6 +448,15 @@ struct ExploreView: View {
             if loading && !grid.isEmpty { ProgressView().frame(height: 44) }
         }
         .padding(.horizontal, 16)
+    }
+
+    /// How well a search result matched, as Frigate shows it: a percentage, by picture or by description.
+    private func match(_ e: FrigateEvent) -> ObjectTile.Match? {
+        guard let d = e.searchDistance else { return nil }
+        // Frigate: similarity distances are cosine distances; text distances are normalised z-scores.
+        let confidence = filter.similar != nil ? 1 - d : 1 / (1 + exp(d))
+        return ObjectTile.Match(byDescription: e.searchSource == "description",
+                                percent: Int((max(0, min(1, confidence)) * 100).rounded()))
     }
 
     // MARK: Loading
@@ -421,6 +510,36 @@ struct ExploreView: View {
         }
     }
 
+    /// Semantic search on the servers that have it on (similar objects: on the object's own
+    /// server), with the other filters, best match first.
+    private func semanticResults() async throws -> [ExploreEntry] {
+        let f = filter
+        let range = dayRange
+        let labels = f.labels.isEmpty ? nil : Array(f.labels)
+        let zones = f.zones.isEmpty ? nil : Array(f.zones)
+        let subs = f.subLabels.isEmpty ? nil : Array(f.subLabels)
+        let servers = targets().filter { t in
+            if let similar = f.similar { return t.conn.server.id == similar.serverID }
+            return t.conn.config?.semanticSearch == true
+        }
+        let all = try await withThrowingTaskGroup(of: [ExploreEntry].self) { group in
+            for t in servers {
+                let id = t.conn.server.id
+                let client = t.client, cams = t.cameras
+                group.addTask {
+                    try await client.semanticSearch(query: f.similar == nil ? f.query : nil, similarTo: f.similar?.event.id,
+                                                    sources: f.sources, cameras: cams, labels: labels, zones: zones, subLabels: subs,
+                                                    after: range.after, before: range.before)
+                        .map { ExploreEntry(serverID: id, event: $0) }
+                }
+            }
+            var all: [ExploreEntry] = []
+            for try await part in group { all += part }
+            return all
+        }
+        return all.sorted { (match($0.event)?.percent ?? 0) > (match($1.event)?.percent ?? 0) }
+    }
+
     private func sorted(_ list: [ExploreEntry]) -> [ExploreEntry] {
         switch filter.sort {
         case .newest: return list.sorted { $0.event.startTime > $1.event.startTime }
@@ -433,7 +552,11 @@ struct ExploreView: View {
         loading = true
         loadError = nil
         do {
-            if showsGrid {
+            if filter.isSearch {
+                grid = try await semanticResults()
+                // Frigate's search returns its best matches at once; there are no further pages.
+                canLoadMore = false
+            } else if showsGrid {
                 let range = dayRange
                 let result = try await search(labels: filter.labels.isEmpty ? nil : Array(filter.labels),
                                               before: range.before, after: range.after, limit: pageSize)
@@ -519,7 +642,11 @@ struct ExploreView: View {
 struct ObjectTile: View {
     let entry: ExploreEntry
     var showLabel: Bool
+    /// A search result: how well it matched, and whether by its picture or its description.
+    var match: Match? = nil
     @Environment(AppModel.self) private var model
+
+    struct Match { var byDescription: Bool; var percent: Int }
 
     /// "15 nov, 13:14" in the user's language.
     private static func when(_ date: Date) -> String {
@@ -551,6 +678,20 @@ struct ObjectTile: View {
                         }
                     }
                     .padding(6)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if let match {
+                    HStack(spacing: 3) {
+                        Image(systemName: match.byDescription ? "text.alignleft" : "photo")
+                            .font(.system(size: 9, weight: .bold))
+                        Text("\(match.percent)%").font(.system(size: 10, weight: .bold).monospacedDigit())
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 5))
+                    .padding(6)
+                    .accessibilityLabel(match.byDescription ? L("Matched description at \(match.percent)%") : L("Matched thumbnail at \(match.percent)%"))
                 }
             }
             .overlay(alignment: .bottom) {

@@ -20,6 +20,7 @@ struct SidebarRoot: View {
                 case .explore: ExploreView()
                 case .exports: ExportsSection()
                 case .classification: ClassificationSection()
+                case .faces: FaceLibrarySection()
                 case .chat: ChatView()
                 case .settings, .more: ServersView()
                 }
@@ -58,6 +59,9 @@ struct SidebarRoot: View {
             if !model.classificationConnections.isEmpty {
                 item(.classification, "Classification", "square.on.circle")
             }
+            if !model.faceConnections.isEmpty {
+                item(.faces, "Face Library", "person.crop.square")
+            }
             if !model.chatConnections.isEmpty {
                 item(.chat, "Chat", "bubble.left.and.text.bubble.right")
             }
@@ -94,6 +98,7 @@ struct SidebarRoot: View {
             case .explore: if model.tab == .explore { model.explorePath = NavigationPath() }
             case .exports: if model.tab == .exports { model.exportsPath = NavigationPath() }
             case .classification: if model.tab == .classification { model.classificationPath = NavigationPath() }
+            case .faces: if model.tab == .faces { model.facesPath = NavigationPath() }
             default: break
             }
             model.tab = tab
