@@ -1,7 +1,8 @@
 # UX rules
 
-Rules for every screen in Tender, on iPhone, iPad and Mac. They come from feedback on earlier
-builds; when a new screen breaks one, it is a bug.
+Rules for every screen in Tender, on iPhone, iPad and Mac, and in the Android app (adapted to
+Material 3 where the platform differs). They come from feedback on earlier builds; when a new
+screen breaks one, it is a bug.
 
 ## Follow Frigate
 

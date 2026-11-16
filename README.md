@@ -3,6 +3,7 @@
 # Tender for Frigate
 
 Native iPhone, iPad and Mac client for [Frigate NVR](https://frigate.video), built from the mockups in `design/`.
+The iOS app is in `ios/`; an Android port (Kotlin, Jetpack Compose) is in [`android/`](android/README.md).
 Tender is an independent app, compatible with Frigate NVR; it is not affiliated with or endorsed by the Frigate project.
 Requires iOS 17 and Xcode 26 or newer. No third-party dependencies.
 
@@ -53,7 +54,7 @@ review grid and timeline. The Mac version is a native Mac Catalyst app.
 ## Run
 
 ```bash
-open Frigate.xcodeproj
+open ios/Frigate.xcodeproj
 ```
 
 Pick an iPhone simulator and run. On first launch the app scans the local network for Frigate
@@ -132,12 +133,12 @@ could link to `frigate://event/<id>` and open the event in Tender.
 ## TestFlight
 
 ```bash
-scripts/testflight.sh             # internal testers
-scripts/testflight.sh --external  # also the external group, submitted for beta review
+ios/scripts/testflight.sh             # internal testers
+ios/scripts/testflight.sh --external  # also the external group, submitted for beta review
 ```
 
 Archives with a timestamp build number, signs with the "Frigate App Store" profile and uploads.
-With `--external`, `scripts/distribute.py` waits for processing, sets "What to Test" from the
+With `--external`, `ios/scripts/distribute.py` waits for processing, sets "What to Test" from the
 commits since the previous external build and submits the build to the group "Testers".
 App Store Connect: "Tender for Frigate" (bundle ID `nl.wiebenieuwenhuis.frigate`, team EBTM3728EJ);
 the internal group "Intern" gets every build automatically.

@@ -1,7 +1,7 @@
 # Tender for Frigate (Android)
 
 Native Android client for [Frigate NVR](https://frigate.video): a port of the iOS app
-[Tender for Frigate](https://github.com/sweebee/tender-for-frigate) to Kotlin, Jetpack Compose and
+in [`../ios`](../ios) to Kotlin, Jetpack Compose and
 Material 3. It is always dark, as the iOS app, with the wallpaper's colours where Android offers them,
 in English and Dutch.
 Tender is an independent app; it is not affiliated with or endorsed by the Frigate project.
@@ -17,6 +17,8 @@ Tender is an independent app; it is not affiliated with or endorsed by the Friga
 - An emulator or device on Android 9 (API 28) or newer
 
 ## Build and run
+
+From this folder (`android/`):
 
 ```bash
 ./gradlew :app:assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
@@ -83,5 +85,5 @@ See [docs/PORTING.md](docs/PORTING.md) for the structure and the conventions use
 
 ## License
 
-Copyright (C) 2026 Wiebe Nieuwenhuis. GNU General Public License v3.0, as the iOS app.
+Copyright (C) 2026 Wiebe Nieuwenhuis. [GNU General Public License v3.0](../LICENSE), as the iOS app.
 Frigate is a trademark of Frigate, Inc.

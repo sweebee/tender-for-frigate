@@ -1,7 +1,7 @@
 # Porting notes (iOS → Android)
 
-Tender for Android is a port of the iOS app in `../frigate_ios` (read-only reference). Follow
-`../frigate_ios/docs/UX.md` for the UX rules, adapted to Material 3, and Frigate's web UI in
+Tender for Android is a port of the iOS app in `../ios`, in the same repo. Follow
+`../docs/UX.md` for the UX rules, adapted to Material 3, and Frigate's web UI in
 `../frigate` for names, flows and API use.
 
 ## Layout
