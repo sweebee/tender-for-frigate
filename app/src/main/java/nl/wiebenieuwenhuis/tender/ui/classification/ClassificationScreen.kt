@@ -77,8 +77,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -87,7 +85,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import nl.wiebenieuwenhuis.tender.R
 import nl.wiebenieuwenhuis.tender.api.ClassificationAttempt
 import nl.wiebenieuwenhuis.tender.api.ClassificationDataset
@@ -133,9 +130,6 @@ import nl.wiebenieuwenhuis.tender.ui.theme.Palette
 // the state of a fixed area. Per model the images Frigate saved recently can be put into a
 // class, after which the model is trained again. Calls as Frigate's own page does.
 
-/** Creating a model: the wizard, for one server. */
-@Serializable data class ClassificationWizardRoute(val serverId: String, val state: Boolean)
-
 /** Models per server, kept while the app runs so the screens show at once when they come back. */
 internal object ClassificationStore {
     val models = mutableStateMapOf<String, List<ClassificationModel>>()
@@ -150,9 +144,9 @@ internal object ClassificationStore {
             ?: AppModel.connection(serverId)?.config?.raw?.let { ClassificationModel.all(it, serverId) }?.firstOrNull { it.name == name }
 }
 
-fun NavGraphBuilder.classificationDestinations() {
-    composable<ClassificationWizardRoute> { ClassificationWizard(it.toRoute()) }
-}
+/** Classification pushes no screens of its own: the new-model wizard is a sheet over the list. */
+@Suppress("UnusedReceiverParameter")
+fun NavGraphBuilder.classificationDestinations() {}
 
 /** A grid item spanning the whole width (headers, chips, messages). */
 internal fun LazyGridScope.full(key: String, content: @Composable () -> Unit) {
@@ -218,7 +212,16 @@ fun ClassificationScreen(showsBack: Boolean = true) {
 
     LaunchedEffect(connections.map { it.id }) { load() }
 
-    fun create(conn: ServerConnection) { nav.navigate(ClassificationWizardRoute(conn.id, showStates)) }
+    // The new-model wizard, over the list: for which server, and whether it starts as a state model.
+    var wizardServer by rememberSaveable { mutableStateOf<String?>(null) }
+    var wizardState by rememberSaveable { mutableStateOf(false) }
+    fun create(conn: ServerConnection) { wizardState = showStates; wizardServer = conn.id }
+    wizardServer?.let { id ->
+        ClassificationWizard(id, wizardState) { made ->
+            wizardServer = null
+            if (made) scope.launch { load() }
+        }
+    }
 
     fun delete(m: ClassificationModel) {
         val client = AppModel.connection(m.serverId)?.client ?: return
