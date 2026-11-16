@@ -985,7 +985,10 @@ struct DeleteCameraSheet: View {
     @State private var deleting = false
     @State private var errorMessage: String?
 
-    var body: some View {
+    // In a sheet the Mac does not take the app-wide switch style (it drew checkboxes).
+    var body: some View { sheetContent.toggleStyle(RowSwitchStyle()) }
+
+    @ViewBuilder private var sheetContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             Label(L("Delete \(title)?"), systemImage: "exclamationmark.triangle.fill")
                 .font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.destructive)

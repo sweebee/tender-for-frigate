@@ -48,7 +48,10 @@ struct CameraWizardView: View {
     private var client: FrigateClient? { conn?.client }
     private var chosen: [Stream] { streams.filter { $0.use && $0.probe != nil } }
 
-    var body: some View {
+    // In a sheet the Mac does not take the app-wide switch style (it drew checkboxes).
+    var body: some View { sheetContent.toggleStyle(RowSwitchStyle()) }
+
+    @ViewBuilder private var sheetContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 Text(L("Step \(stepNumber) of 4")).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.textSecondary)

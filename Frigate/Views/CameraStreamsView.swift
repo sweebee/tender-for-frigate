@@ -589,7 +589,10 @@ struct StreamEditSheet: View {
             && addresses.allSatisfy { StreamAddress.host($0) != nil || $0.hasPrefix("ffmpeg:") || stream.locked }
     }
 
-    var body: some View {
+    // In a sheet the Mac does not take the app-wide switch style (it drew checkboxes).
+    var body: some View { sheetContent.toggleStyle(RowSwitchStyle()) }
+
+    @ViewBuilder private var sheetContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 VStack(spacing: 0) {

@@ -41,6 +41,9 @@ builds; when a new screen breaks one, it is a bug.
 - The field being typed in shows an accent edge and label (`FocusRow`).
 - On/off settings are switches, never radio buttons or checkboxes, with the label on the left
   and the switch on the right (`RowSwitchStyle`).
+  In a sheet the Mac does not inherit the app-wide style and draws checkboxes: give the sheet
+  `.toggleStyle(RowSwitchStyle())` itself. Rows, fields and cards in a sheet fill its width
+  (`.frame(maxWidth: .infinity)`); on the Mac they otherwise shrink to their content.
 - A choice from a short list is a row with an up/down chevron that opens a menu. On the Mac
   the menu holds plain buttons with a checkmark; a `Picker` inside a `Menu` becomes a submenu
   there.

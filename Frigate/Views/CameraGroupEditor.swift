@@ -54,8 +54,11 @@ struct CameraGroupEditor: View {
                     TextField("", text: $name, prompt: Text("Name").foregroundStyle(Theme.textSecondary))
                         .focused($nameFocused)
                         .autocorrectionDisabled()
+                        .focusEffectDisabled()
                         .font(.system(size: 16))
                         .padding(.horizontal, 14).frame(height: 46)
+                        // On the Mac a field in a column is only as wide as its text (none yet) otherwise.
+                        .frame(maxWidth: .infinity)
                         .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(nameFocused ? Theme.accent : Theme.cardBorder, lineWidth: 1))
                     if let nameProblem {
@@ -126,7 +129,10 @@ struct CameraGroupEditor: View {
                                          })) {
                         Text(cam.displayName).font(.system(size: 15))
                     }
+                    // Explicitly: in a sheet the Mac drew the app-wide style as checkboxes.
+                    .toggleStyle(RowSwitchStyle())
                     .padding(.horizontal, 14).frame(minHeight: 48)
+                    .frame(maxWidth: .infinity)
                     .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Theme.cardBorder).frame(height: 1) } }
                 }
             }

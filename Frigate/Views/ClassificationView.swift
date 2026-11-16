@@ -1023,7 +1023,10 @@ struct ClassificationEditSheet: View {
     private var conn: ServerConnection? { app.connection(for: initial.serverID) }
     private var newer: Bool { conn?.version.map { $0.compare("0.18", options: .numeric) != .orderedAscending } ?? false }
 
-    var body: some View {
+    // In a sheet the Mac does not take the app-wide switch style (it drew checkboxes).
+    var body: some View { sheetContent.toggleStyle(RowSwitchStyle()) }
+
+    @ViewBuilder private var sheetContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 if newer {

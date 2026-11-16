@@ -39,7 +39,10 @@ struct ClassificationWizard: View {
     private var cleanClasses: [String] { classes.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } }
     private var cleanName: String { name.trimmingCharacters(in: .whitespaces) }
 
-    var body: some View {
+    // In a sheet the Mac does not take the app-wide switch style (it drew checkboxes).
+    var body: some View { sheetContent.toggleStyle(RowSwitchStyle()) }
+
+    @ViewBuilder private var sheetContent: some View {
         Group {
             switch step {
             case .define: define
