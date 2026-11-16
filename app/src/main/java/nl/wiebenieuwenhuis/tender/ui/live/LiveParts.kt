@@ -266,25 +266,29 @@ fun RecentAlertsStrip() {
             delay(30_000)
         }
     }
+    val actions = remember { nl.wiebenieuwenhuis.tender.ui.review.ReviewActions(scope) }
+    actions.onDeleted = { e -> entries.removeAll { it.item.id == e.item.id } }
     val shown = entries.filter { AppModel.reviewedIds[it.item.id] != true }
     if (shown.isEmpty()) return
-    LazyRow(Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(shown, key = { it.serverId + it.item.id }) { e ->
-            AlertPreviewTile(e.serverId, e.item, Modifier.clickable {
-                // Opens the recordings at the alert and marks it reviewed, as Frigate's dashboard does.
-                ItemCache.put(e.item)
-                nav.navigate(PlaybackRoute(e.serverId, e.item.camera, startOfDay(e.item.startTime), e.item.id))
-                val conn = AppModel.connection(e.serverId) ?: return@clickable
-                val client = conn.client ?: return@clickable
-                if (e.item.hasBeenReviewed) return@clickable
-                scope.launch {
-                    if (runCatching { client.markViewed(listOf(e.item.id)) }.isFailure) return@launch
-                    conn.noteReviewed(listOf(e.item))
-                    delay(600)
-                    AppModel.reviewedIds[e.item.id] = true
-                    conn.refresh()
-                }
-            })
+    nl.wiebenieuwenhuis.tender.ui.review.ReviewActionsHost(actions, Modifier.fillMaxWidth().height(84.dp)) {
+        LazyRow(Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(shown, key = { it.serverId + it.item.id }) { e ->
+                ReviewMenuBox(e.serverId, e.item, actions, onClick = {
+                    // Opens the recordings at the alert and marks it reviewed, as Frigate's dashboard does.
+                    ItemCache.put(e.item)
+                    nav.navigate(PlaybackRoute(e.serverId, e.item.camera, startOfDay(e.item.startTime), e.item.id))
+                    val conn = AppModel.connection(e.serverId) ?: return@ReviewMenuBox
+                    val client = conn.client ?: return@ReviewMenuBox
+                    if (e.item.hasBeenReviewed) return@ReviewMenuBox
+                    scope.launch {
+                        if (runCatching { client.markViewed(listOf(e.item.id)) }.isFailure) return@launch
+                        conn.noteReviewed(listOf(e.item))
+                        delay(600)
+                        AppModel.reviewedIds[e.item.id] = true
+                        conn.refresh()
+                    }
+                }) { AlertPreviewTile(e.serverId, e.item) }
+            }
         }
     }
 }

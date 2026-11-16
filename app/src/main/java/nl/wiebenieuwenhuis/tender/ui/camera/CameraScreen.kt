@@ -211,6 +211,8 @@ fun CameraScreen(route: CameraRoute) {
     var micDenied by remember { mutableStateOf(false) }
     var switchingOn by remember { mutableStateOf(false) }
     val reviews = remember { mutableStateListOf<ReviewItem>() }
+    val reviewActions = remember { nl.wiebenieuwenhuis.tender.ui.review.ReviewActions(scope) }
+    reviewActions.onDeleted = { e -> reviews.removeAll { it.id == e.item.id } }
     var loadingReviews by remember { mutableStateOf(true) }
     // The overlay (landscape, tablet): shown, and restarted by every touch.
     var overlayVisible by remember { mutableStateOf(true) }
@@ -393,6 +395,7 @@ fun CameraScreen(route: CameraRoute) {
 
     val audioEnabled = player.hasAudio || player.activeMode != "mjpeg"
 
+    nl.wiebenieuwenhuis.tender.ui.review.ReviewActionsHost(reviewActions, Modifier.fillMaxSize()) {
     if (landscapeLayout) {
         // Full screen: video, and an overlay that hides on tap or after 4 s.
         Box(Modifier.fillMaxSize().background(Color.Black)) {
@@ -476,7 +479,7 @@ fun CameraScreen(route: CameraRoute) {
                         }
                     }
                     TodayHeader(route) { }
-                    TodayRow(client, route, reviews, loadingReviews)
+                    TodayRow(client, route, reviews, loadingReviews, reviewActions)
                 }
             }
         }
@@ -508,13 +511,14 @@ fun CameraScreen(route: CameraRoute) {
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        items(reviews, key = { it.id }) { r -> EventTile(client, route.serverId, r, Modifier.fillMaxWidth()) }
+                        items(reviews, key = { it.id }) { r -> EventTile(client, route.serverId, r, reviewActions, Modifier.fillMaxWidth()) }
                     }
                 }
             }
         }
     }
 
+    }
     error?.let { MessageDialog(stringResource(R.string.something_went_wrong), it) { error = null } }
     if (micDenied) AlertDialog(
         onDismissRequest = { micDenied = false },
@@ -628,28 +632,30 @@ private fun TodayHeader(route: CameraRoute, modifier: Modifier = Modifier, unuse
 
 /** Tablet: today's events as one row under the video. */
 @Composable
-private fun TodayRow(client: FrigateClient, route: CameraRoute, reviews: List<ReviewItem>, loading: Boolean) {
+private fun TodayRow(client: FrigateClient, route: CameraRoute, reviews: List<ReviewItem>, loading: Boolean, actions: nl.wiebenieuwenhuis.tender.ui.review.ReviewActions) {
     when {
         loading && reviews.isEmpty() -> Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
         reviews.isEmpty() -> Text(stringResource(R.string.no_activity_today), Modifier.fillMaxWidth().padding(vertical = 20.dp),
             textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
         else -> LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(reviews, key = { it.id }) { r -> EventTile(client, route.serverId, r, Modifier.width(168.dp)) }
+            items(reviews, key = { it.id }) { r -> EventTile(client, route.serverId, r, actions, Modifier.width(168.dp)) }
         }
     }
 }
 
 @Composable
-private fun EventTile(client: FrigateClient, serverId: String, r: ReviewItem, modifier: Modifier) {
+private fun EventTile(client: FrigateClient, serverId: String, r: ReviewItem, actions: nl.wiebenieuwenhuis.tender.ui.review.ReviewActions, modifier: Modifier) {
     val nav = LocalNav.current
-    Column(modifier.clickable { ItemCache.put(r); nav.navigate(EventRoute(serverId, r.id)) }, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp)).background(Color.Black)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))) {
-            RemoteImage(client.thumbnailUrl(r), Modifier.fillMaxSize())
-            Row(Modifier.padding(6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) { r.labels.take(3).forEach { LabelIcon(it, size = 18.dp) } }
-            r.endTime?.let { end -> OverlayChip(Format.duration(maxOf(0.0, end - r.startTime)), Modifier.align(Alignment.BottomEnd).padding(6.dp)) }
+    nl.wiebenieuwenhuis.tender.ui.live.ReviewMenuBox(serverId, r, actions, onClick = { ItemCache.put(r); nav.navigate(EventRoute(serverId, r.id)) }, modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp)).background(Color.Black)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))) {
+                RemoteImage(client.thumbnailUrl(r), Modifier.fillMaxSize())
+                Row(Modifier.padding(6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) { r.labels.take(3).forEach { LabelIcon(it, size = 18.dp) } }
+                r.endTime?.let { end -> OverlayChip(Format.duration(maxOf(0.0, end - r.startTime)), Modifier.align(Alignment.BottomEnd).padding(6.dp)) }
+            }
+            Text(Format.time(r.startTime), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(Format.time(r.startTime), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

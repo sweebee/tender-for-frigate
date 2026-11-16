@@ -146,7 +146,6 @@ internal object ClassificationStore {
 
 /** Classification pushes no screens of its own: the new-model wizard is a sheet over the list. */
 @Suppress("UnusedReceiverParameter")
-fun NavGraphBuilder.classificationDestinations() {}
 
 /** A grid item spanning the whole width (headers, chips, messages). */
 internal fun LazyGridScope.full(key: String, content: @Composable () -> Unit) {

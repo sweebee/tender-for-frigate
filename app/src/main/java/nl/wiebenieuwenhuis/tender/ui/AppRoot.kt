@@ -66,7 +66,6 @@ import nl.wiebenieuwenhuis.tender.ui.camera.CameraScreen
 import nl.wiebenieuwenhuis.tender.ui.chat.ChatScreen
 import nl.wiebenieuwenhuis.tender.ui.classification.ClassificationModelScreen
 import nl.wiebenieuwenhuis.tender.ui.classification.ClassificationScreen
-import nl.wiebenieuwenhuis.tender.ui.classification.classificationDestinations
 import nl.wiebenieuwenhuis.tender.ui.explore.ExploreScreen
 import nl.wiebenieuwenhuis.tender.ui.explore.ObjectScreen
 import nl.wiebenieuwenhuis.tender.ui.explore.exploreDestinations
@@ -210,7 +209,6 @@ fun AppRoot(activity: MainActivity) {
                 exploreDestinations()
                 exportsDestinations()
                 facesDestinations()
-                classificationDestinations()
                 settingsDestinations()
                 setupDestinations()
             }
