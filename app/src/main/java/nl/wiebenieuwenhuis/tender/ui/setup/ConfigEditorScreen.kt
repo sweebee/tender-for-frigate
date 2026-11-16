@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,6 +48,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,6 +89,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.window.core.layout.WindowSizeClass
 import nl.wiebenieuwenhuis.tender.R
 import nl.wiebenieuwenhuis.tender.api.FrigateException
 import nl.wiebenieuwenhuis.tender.api.L
@@ -313,15 +316,30 @@ private fun SaveBar(
                 Text(stringResource(R.string.setup_changed), style = MaterialTheme.typography.titleSmall)
                 Text(stringResource(R.string.setup_config_changed_note), style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onUndo, enabled = changed && saving == null, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.setup_undo), maxLines = 1)
-                }
-                OutlinedProgressButton(stringResource(R.string.setup_save_only), busy = saving == SaveKind.Only,
-                    onClick = { onSave(SaveKind.Only) }, enabled = changed && saving == null, modifier = Modifier.weight(1f))
+            val canAct = changed && saving == null
+            @Composable fun RowScope.Undo() = OutlinedButton(onClick = onUndo, enabled = canAct, modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.setup_undo), maxLines = 1)
             }
-            nl.wiebenieuwenhuis.tender.ui.components.ProgressButton(stringResource(R.string.setup_save_and_restart), busy = saving == SaveKind.Restart,
-                onClick = { onSave(SaveKind.Restart) }, enabled = changed && saving == null, modifier = Modifier.fillMaxWidth())
+            @Composable fun RowScope.SaveOnly() = OutlinedProgressButton(stringResource(R.string.setup_save_only), busy = saving == SaveKind.Only,
+                onClick = { onSave(SaveKind.Only) }, enabled = canAct, modifier = Modifier.weight(1f))
+            @Composable fun SaveRestart(modifier: Modifier) = nl.wiebenieuwenhuis.tender.ui.components.ProgressButton(
+                stringResource(R.string.setup_save_and_restart), busy = saving == SaveKind.Restart,
+                onClick = { onSave(SaveKind.Restart) }, enabled = canAct, modifier = modifier)
+            // Wide windows: the three side by side, equally wide; narrow ones: Save and restart on its own row.
+            val wide = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+            if (wide) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Undo()
+                    SaveOnly()
+                    SaveRestart(Modifier.weight(1f))
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Undo()
+                    SaveOnly()
+                }
+                SaveRestart(Modifier.fillMaxWidth())
+            }
         }
     }
 }

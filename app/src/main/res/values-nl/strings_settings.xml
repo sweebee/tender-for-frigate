@@ -146,6 +146,7 @@
     <string name="settings_record">Opnemen</string>
     <string name="settings_record_intro">Voor alle camera\'s zonder eigen opname-instellingen.</string>
     <string name="settings_recording_off">Opname uit</string>
+    <string name="settings_recording_camera">Opnemen · %1$s</string>
     <string name="settings_remove_user">Verwijder gebruiker</string>
     <string name="settings_remove_user_question">Deze gebruiker verwijderen?</string>
     <string name="settings_rename_profile">Profiel hernoemen</string>
@@ -189,8 +190,6 @@
     <string name="settings_type_lpr">Kentekencamera (LPR)</string>
     <string name="settings_type_normal">Normaal</string>
     <string name="settings_undo">Ongedaan maken</string>
-    <string name="settings_update">Update</string>
-    <string name="settings_uptime">Online</string>
     <string name="settings_uptime_days">%1$d d %2$d u</string>
     <string name="settings_uptime_hours">%1$d u %2$d min</string>
     <string name="settings_uptime_minutes">%1$d min</string>
@@ -198,7 +197,6 @@
     <string name="settings_username">Gebruikersnaam</string>
     <string name="settings_users">Gebruikers</string>
     <string name="settings_users_footer">Wachtwoorden hebben minstens 12 tekens nodig. De ingebouwde admin kan niet verwijderd worden of een andere rol krijgen.</string>
-    <string name="settings_version">Versie</string>
     <string name="settings_version_available">%1$s beschikbaar</string>
     <string name="settings_viewer_explained">Een kijker kan kijken, maar niets wijzigen.</string>
     <string name="settings_viewer_notice">Je bent ingelogd als kijker: je ziet de instellingen, maar alleen een beheerder kan ze wijzigen.</string>

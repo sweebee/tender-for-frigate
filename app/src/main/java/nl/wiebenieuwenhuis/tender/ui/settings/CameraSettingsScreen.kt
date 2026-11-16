@@ -60,6 +60,7 @@ import nl.wiebenieuwenhuis.tender.ui.components.ScreenScaffold
 import nl.wiebenieuwenhuis.tender.ui.components.SectionCard
 import nl.wiebenieuwenhuis.tender.ui.components.SectionLabel
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
+import nl.wiebenieuwenhuis.tender.ui.setup.CameraAddressRow
 import nl.wiebenieuwenhuis.tender.ui.theme.Palette
 
 /** One camera's switches (as in its menus), its configuration sections, and disabling or deleting it. */
@@ -170,7 +171,8 @@ fun CameraSettingsScreen(route: CameraSettingsRoute) {
                 SectionCard {
                     // Frigate 0.17+ gives admins the real stream addresses (api/config/raw_paths).
                     if (isAdmin && Format.versionAtLeast(conn.version, 0, 17)) {
-                        nl.wiebenieuwenhuis.tender.ui.setup.CameraAddressRow(route.serverId, camera)
+                        // Draws its divider after itself when it shows.
+                        CameraAddressRow(route.serverId, camera)
                         SettingsRow(Icons.Outlined.SettingsInputAntenna, stringResource(R.string.settings_streams)) {
                             nav.navigate(CameraStreamsRoute(route.serverId, camera))
                         }
