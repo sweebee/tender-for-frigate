@@ -1,21 +1,5 @@
 import SwiftUI
 
-/// Icons for camera groups. Frigate stores a Lucide icon name (its web UI's icon set); the app
-/// offers a handful of those, each drawn with a matching SF Symbol.
-enum GroupIcon {
-    static let choices: [(lucide: String, symbol: String)] = [
-        ("LuHouse", "house"), ("LuCar", "car"), ("LuDoorOpen", "door.left.hand.open"), ("LuTreePine", "tree"),
-        ("LuCctv", "web.camera"), ("LuBuilding", "building.2"), ("LuShield", "shield"), ("LuPackage", "shippingbox"),
-        ("LuSun", "sun.max"), ("LuDog", "dog"), ("LuBike", "bicycle"), ("LuWarehouse", "building"),
-    ]
-
-    /// The SF Symbol for a Frigate icon name, when the app knows it.
-    static func symbol(_ lucide: String?) -> String? {
-        guard let lucide else { return nil }
-        return choices.first { $0.lucide == lucide }?.symbol
-    }
-}
-
 /// What the editor works on: a new group, or an existing one by name. A group with one name is
 /// one group in the app, whichever servers have it.
 struct CameraGroupTarget: Identifiable {
@@ -78,22 +62,20 @@ struct CameraGroupEditor: View {
                         Text(nameProblem).font(.system(size: 12)).foregroundStyle(Theme.destructive).padding(.horizontal, 4)
                     }
                     SectionLabel(text: L("Icon")).padding(.top, 10)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 8)], spacing: 8) {
-                        ForEach(iconChoices, id: \.lucide) { choice in
-                            let on = icon == choice.lucide
-                            Button { icon = choice.lucide } label: {
-                                Image(systemName: choice.symbol)
-                                    .font(.system(size: 18, weight: .medium))
-                                    .foregroundStyle(on ? Theme.accent : Theme.text)
-                                    .frame(width: 46, height: 46)
-                                    .background(on ? Theme.accent.opacity(0.16) : Theme.card, in: RoundedRectangle(cornerRadius: 10))
-                                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(on ? Theme.accent : Theme.cardBorder, lineWidth: 1))
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(choice.lucide.dropFirst(2))
-                            .accessibilityAddTraits(on ? .isSelected : [])
+                    NavigationLink { LucideIconPicker(selection: $icon) } label: {
+                        HStack(spacing: 12) {
+                            LucideIcon(name: icon, size: 22).foregroundStyle(Theme.accent)
+                                .frame(width: 40, height: 40)
+                                .background(Theme.accent.opacity(0.16), in: RoundedRectangle(cornerRadius: 10))
+                            Text(LucideIcons.words(icon).capitalizedFirst).font(.system(size: 15)).foregroundStyle(Theme.text)
+                            Spacer()
+                            Text("Change").font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
+                            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textSecondary)
                         }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .card(radius: 12)
                     }
+                    .buttonStyle(.plain)
                     ForEach(conns) { conn in serverSection(conn) }
                 }
                 .padding(16)
@@ -152,13 +134,6 @@ struct CameraGroupEditor: View {
         }
     }
 
-    /// The offered icons, plus the group's own when it is one the app does not draw: it stays.
-    private var iconChoices: [(lucide: String, symbol: String)] {
-        var list = GroupIcon.choices
-        if GroupIcon.symbol(icon) == nil { list.insert((icon, "questionmark.square.dashed"), at: 0) }
-        return list
-    }
-
     private func fill() {
         guard let old = target.name else { nameFocused = true; return }
         name = old
@@ -204,5 +179,66 @@ struct CameraGroupEditor: View {
         }
         onDone(newName)
         closePresented(dismiss)
+    }
+}
+
+/// All of Frigate's group icons, searchable by name as in Frigate's icon picker.
+struct LucideIconPicker: View {
+    @Binding var selection: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+    @FocusState private var focused: Bool
+
+    private var shown: [String] {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return LucideIcons.names }
+        let compact = q.replacingOccurrences(of: " ", with: "")
+        return LucideIcons.names.filter { $0.lowercased().contains(compact) || LucideIcons.words($0).contains(q) }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
+                    TextField("", text: $query, prompt: Text("Search icons").foregroundStyle(Theme.textSecondary))
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
+                        .focused($focused)
+                    if !query.isEmpty {
+                        Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary) }
+                            .buttonStyle(.plain).accessibilityLabel("Clear search")
+                    }
+                }
+                .font(.system(size: 16))
+                .padding(.horizontal, 12).frame(height: 40)
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(focused ? Theme.accent : Theme.controlBorder, lineWidth: 1))
+                let list = shown
+                if list.isEmpty {
+                    Text("No icons found").font(.system(size: 14)).foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 100)
+                }
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 46), spacing: 8)], spacing: 8) {
+                    ForEach(list, id: \.self) { name in
+                        let on = selection == name
+                        Button { selection = name; dismiss() } label: {
+                            LucideIcon(name: name, size: 22)
+                                .foregroundStyle(on ? Theme.accent : Theme.text)
+                                .frame(width: 46, height: 46)
+                                .background(on ? Theme.accent.opacity(0.16) : Theme.card, in: RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(on ? Theme.accent : Theme.cardBorder, lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(on ? .isSelected : [])
+                    }
+                }
+            }
+            .padding(16)
+            .readableWidth(560)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .screenBackground()
+        .navigationTitle(L("Icon"))
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

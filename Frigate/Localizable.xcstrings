@@ -9918,6 +9918,36 @@
           }
         }
       }
+    },
+    "Search icons": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoek iconen"
+          }
+        }
+      }
+    },
+    "No icons found": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen iconen gevonden"
+          }
+        }
+      }
+    },
+    "Change": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wijzig"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

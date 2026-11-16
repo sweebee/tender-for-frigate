@@ -208,10 +208,13 @@ struct Chip: View {
     var trailingChevron: Bool = false
     /// The chip takes something away when tapped (a filter, a search).
     var trailingXmark: Bool = false
+    /// A Lucide icon (a camera group's, as Frigate names it) in place of `systemImage`.
+    var lucide: String? = nil
 
     var body: some View {
         HStack(spacing: 6) {
-            if let systemImage { Image(systemName: systemImage).font(.system(size: 12, weight: .semibold)) }
+            if let lucide { LucideIcon(name: lucide, size: 15) }
+            else if let systemImage { Image(systemName: systemImage).font(.system(size: 12, weight: .semibold)) }
             Text(title).lineLimit(1)
             if trailingChevron {
                 Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.textSecondary)

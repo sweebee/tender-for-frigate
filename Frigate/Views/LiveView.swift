@@ -151,15 +151,14 @@ struct LiveView: View {
                 Button { group = nil } label: { Chip(title: L("All"), selected: group == nil) }
                 let active = activeCount
                 Button { group = Self.nowActive } label: {
-                    Chip(title: active > 0 ? "\(L("Now active")) \(active)" : L("Now active"),
-                         selected: group == Self.nowActive, systemImage: "dot.radiowaves.left.and.right")
+                    Chip(title: L("Now active"), selected: group == Self.nowActive, systemImage: "figure.walk.motion")
                 }
                 .accessibilityLabel(L("Now active") + (active > 0 ? ", \(active)" : ""))
                 ForEach(groupNames, id: \.self) { name in
                     Button { group = name } label: {
                         HStack(spacing: 6) {
                             if busyGroup == name { ProgressView().controlSize(.mini) }
-                            Chip(title: FrigateFormat.prettyName(name), selected: group == name, systemImage: groupSymbol(name))
+                            Chip(title: FrigateFormat.prettyName(name), selected: group == name, lucide: groupIcon(name))
                         }
                     }
                     .contextMenu { groupMenu(name) }
@@ -202,10 +201,10 @@ struct LiveView: View {
             .padding(1)
     }
 
-    /// The icon Frigate has for a group, when the app can draw it.
-    private func groupSymbol(_ name: String) -> String? {
+    /// The icon Frigate has for a group (a Lucide name, as its web UI shows it).
+    private func groupIcon(_ name: String) -> String? {
         for conn in model.scopedConnections {
-            if let g = conn.config?.cameraGroups?[name] { return GroupIcon.symbol(g.icon) }
+            if let g = conn.config?.cameraGroups?[name], let icon = g.icon { return icon }
         }
         return nil
     }
@@ -269,7 +268,7 @@ struct LiveView: View {
             serverGrid(conn)
         } else if conns.isEmpty {
             if group == Self.nowActive {
-                EmptyStateView(systemImage: "dot.radiowaves.left.and.right", title: L("Nothing is moving right now"),
+                EmptyStateView(systemImage: "figure.walk.motion", title: L("Nothing is moving right now"),
                                message: L("Cameras show here while Frigate tracks a moving object."))
             } else {
                 EmptyStateView(systemImage: "video.slash", title: L("No cameras"), message: L("This group has no cameras."))
