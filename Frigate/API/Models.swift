@@ -281,11 +281,40 @@ struct ReviewItem: Decodable, Identifiable, Hashable {
         var zones: [String]?
         var audio: [String]?
         var thumbTime: Double?
+        /// GenAI's review summary (Frigate 0.17+ with GenAI review on).
+        var metadata: GenAISummary?
         enum CodingKeys: String, CodingKey {
-            case detections, objects, zones, audio
+            case detections, objects, zones, audio, metadata
             case subLabels = "sub_labels"
             case thumbTime = "thumb_time"
         }
+    }
+
+    /// What GenAI made of a review item, as Frigate's "AI Analysis" shows it.
+    struct GenAISummary: Decodable, Hashable {
+        var title: String?
+        var scene: String?
+        var confidence: Double?
+        /// 0 normal, 1 needs review, 2 security concern.
+        var threatLevel: Int?
+        var otherConcerns: [String]?
+        enum CodingKeys: String, CodingKey {
+            case title, scene, confidence
+            case threatLevel = "potential_threat_level"
+            case otherConcerns = "other_concerns"
+        }
+
+        init(from decoder: Decoder) throws {
+            // Lenient: a field of an unexpected type must not hide the whole review item.
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            title = (try? c.decodeIfPresent(String.self, forKey: .title)) ?? nil
+            scene = (try? c.decodeIfPresent(String.self, forKey: .scene)) ?? nil
+            confidence = (try? c.decodeIfPresent(Double.self, forKey: .confidence)) ?? nil
+            threatLevel = (try? c.decodeIfPresent(Int.self, forKey: .threatLevel)) ?? nil
+            otherConcerns = (try? c.decodeIfPresent([String].self, forKey: .otherConcerns)) ?? nil
+        }
+
+        var trimmedTitle: String? { title.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : $0 } }
     }
 
     enum CodingKeys: String, CodingKey {

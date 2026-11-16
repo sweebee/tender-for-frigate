@@ -492,15 +492,28 @@ struct ReviewRow: View {
                         .background(item.inProgress ? Theme.recording : .black.opacity(0.7), in: RoundedRectangle(cornerRadius: 4))
                         .padding(4)
                 }
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 5) {
-                    ForEach(item.labels.prefix(4), id: \.self) { LabelIcon(label: $0) }
+            if let title = item.data.metadata?.trimmedTitle {
+                // GenAI's summary first, as on Frigate's review cards; the camera and time under it.
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.system(size: 14, weight: .semibold)).lineLimit(2)
+                    if !item.hasBeenReviewed, let level = item.data.metadata?.threatLevel { ThreatChip(level: level) }
+                    HStack(spacing: 5) {
+                        ForEach(item.labels.prefix(3), id: \.self) { LabelIcon(label: $0) }
+                        if showServer { ServerBadge(initial: conn.server.initial, tint: conn.server.tint) }
+                        Text("\(camName) · \(meta(item))").font(.system(size: 12)).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                    }
                 }
-                HStack(spacing: 6) {
-                    if showServer { ServerBadge(initial: conn.server.initial, tint: conn.server.tint) }
-                    Text(camName).font(.system(size: 15, weight: .semibold)).lineLimit(1)
+            } else {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(spacing: 5) {
+                        ForEach(item.labels.prefix(4), id: \.self) { LabelIcon(label: $0) }
+                    }
+                    HStack(spacing: 6) {
+                        if showServer { ServerBadge(initial: conn.server.initial, tint: conn.server.tint) }
+                        Text(camName).font(.system(size: 15, weight: .semibold)).lineLimit(1)
+                    }
+                    Text(meta(item)).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).lineLimit(1)
                 }
-                Text(meta(item)).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).lineLimit(1)
             }
             Spacer(minLength: 0)
             if !item.hasBeenReviewed {
@@ -515,7 +528,7 @@ struct ReviewRow: View {
 
     private func meta(_ item: ReviewItem) -> String {
         var parts: [String] = []
-        if showServer { parts.append(conn.server.name) }
+        if showServer && item.data.metadata?.trimmedTitle == nil { parts.append(conn.server.name) }
         parts.append(FrigateFormat.time(item.start))
         let zones = (item.data.zones ?? []).map(FrigateFormat.prettyName)
         if !zones.isEmpty { parts.append(zones.joined(separator: ", ").lowercased()) }
@@ -553,6 +566,24 @@ enum ReviewRange: Hashable, CustomStringConvertible {
         switch self {
         case .last24Hours: return L("Last 24 hours")
         case .day(let d): return FrigateFormat.dayTitle(d)
+        }
+    }
+}
+
+/// GenAI's verdict on a review item, as Frigate marks it: "Needs review" or "Security concern".
+/// Level 0 (normal) shows nothing.
+struct ThreatChip: View {
+    let level: Int
+    var body: some View {
+        if level > 0 {
+            let concern = level >= 2
+            Label(concern ? L("Security concern") : L("Needs review"),
+                  systemImage: concern ? "exclamationmark.triangle.fill" : "person.fill.questionmark")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(concern ? Theme.destructive : Theme.warning)
+                .lineLimit(1).fixedSize()
+                .padding(.horizontal, 7).padding(.vertical, 2)
+                .background((concern ? Theme.destructive : Theme.warning).opacity(0.16), in: Capsule())
         }
     }
 }

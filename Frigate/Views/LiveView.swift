@@ -3,6 +3,13 @@ import SwiftUI
 struct LiveView: View {
     @Environment(AppModel.self) private var model
     @State private var group: String? = nil
+    /// Signed-in role per server; nil (no authentication) counts as admin.
+    @State private var roles: [UUID: String] = [:]
+    @State private var editingGroup: CameraGroupTarget?
+    @State private var deletingGroup: CameraGroupTarget?
+    /// The group being deleted on the server: its chip shows a spinner.
+    @State private var busyGroup: String?
+    @State private var groupError: String?
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// Bigger tiles: one column on iPhone, fewer and wider tiles on iPad.
@@ -31,7 +38,7 @@ struct LiveView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     header
                     if model.showRecentAlerts { RecentAlertsStrip() }
-                    if !groupNames.isEmpty { groupChips }
+                    if !groupNames.isEmpty || !groupAdmins.isEmpty { groupChips }
                     content
                 }
                 .padding(.horizontal, 16)
@@ -41,6 +48,29 @@ struct LiveView: View {
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
             .appDestinations()
+            // Again when a server comes online: at launch they are still connecting.
+            .task(id: model.scopedConnections.map { "\($0.id)|\($0.isOnline)" }) {
+                for conn in model.scopedConnections where conn.isOnline && roles[conn.server.id] == nil {
+                    if let client = conn.client { roles[conn.server.id] = await client.role() ?? "admin" }
+                }
+            }
+            .sheet(item: $editingGroup) { target in
+                CameraGroupEditor(target: target) { newName in
+                    // A renamed group stays the one shown.
+                    if let old = target.name, group == old { group = newName }
+                }
+                .environment(model)
+            }
+            .alert(L("Delete \(deletingGroup.map { FrigateFormat.prettyName($0.name ?? "") } ?? "")?"),
+                   isPresented: Binding(get: { deletingGroup != nil }, set: { if !$0 { deletingGroup = nil } })) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) { if let t = deletingGroup { Task { await deleteGroup(t) } } }
+            } message: { Text("The group is removed from Frigate; its cameras stay.") }
+            // The group shown was removed (here or in Frigate): show all cameras again.
+            .onChange(of: groupNames) { _, names in if let g = group, !names.contains(g) { group = nil } }
+            .alert("Not saved", isPresented: Binding(get: { groupError != nil }, set: { if !$0 { groupError = nil } })) {
+                Button("OK", role: .cancel) {}
+            } message: { Text(groupError ?? "") }
             .task {
                 // Keep object badges, status and counts fresh while the tab is visible.
                 while !Task.isCancelled {
@@ -89,18 +119,85 @@ struct LiveView: View {
         return names
     }
 
+    /// Servers where this user may change camera groups (admins, as in Frigate).
+    private var groupAdmins: [ServerConnection] {
+        model.scopedConnections.filter { $0.isOnline && $0.config != nil && (roles[$0.server.id] ?? "") == "admin" }
+    }
+
     private var groupChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 Button { group = nil } label: { Chip(title: L("All"), selected: group == nil) }
                 ForEach(groupNames, id: \.self) { name in
-                    Button { group = name } label: { Chip(title: FrigateFormat.prettyName(name), selected: group == name) }
+                    Button { group = name } label: {
+                        HStack(spacing: 6) {
+                            if busyGroup == name { ProgressView().controlSize(.mini) }
+                            Chip(title: FrigateFormat.prettyName(name), selected: group == name, systemImage: groupSymbol(name))
+                        }
+                    }
+                    .contextMenu { groupMenu(name) }
+                }
+                let admins = groupAdmins
+                if admins.count == 1, let conn = admins.first {
+                    Button { editingGroup = CameraGroupTarget(serverID: conn.server.id, name: nil) } label: { addChip }
+                        .accessibilityLabel("New group")
+                } else if admins.count > 1 {
+                    // Groups belong to one server: pick which.
+                    Menu {
+                        ForEach(admins) { conn in
+                            Button(conn.server.name) { editingGroup = CameraGroupTarget(serverID: conn.server.id, name: nil) }
+                        }
+                    } label: { addChip }
+                    .accessibilityLabel("New group")
                 }
             }
             .padding(.horizontal, 16)
         }
         .padding(.horizontal, -16)
         .buttonStyle(.plain)
+    }
+
+    private var addChip: some View {
+        Image(systemName: "plus").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.accent)
+            .frame(width: 34, height: 34)
+            .background(Theme.card, in: Circle())
+            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
+            .padding(1)
+    }
+
+    /// The icon Frigate has for a group, when the app can draw it.
+    private func groupSymbol(_ name: String) -> String? {
+        for conn in model.scopedConnections {
+            if let g = conn.config?.cameraGroups?[name] { return GroupIcon.symbol(g.icon) }
+        }
+        return nil
+    }
+
+    /// Edit and Delete for a group on each server (where this user is admin) that has it.
+    @ViewBuilder
+    private func groupMenu(_ name: String) -> some View {
+        let servers = groupAdmins.filter { $0.config?.cameraGroups?[name] != nil }
+        ForEach(servers) { conn in
+            let target = CameraGroupTarget(serverID: conn.server.id, name: name)
+            Button { editingGroup = target } label: {
+                Label(servers.count > 1 ? L("Edit on \(conn.server.name)") : L("Edit"), systemImage: "pencil")
+            }
+            Button(role: .destructive) { deletingGroup = target } label: {
+                DestructiveMenuLabel(title: servers.count > 1 ? "Delete on \(conn.server.name)" : "Delete")
+            }
+        }
+    }
+
+    private func deleteGroup(_ target: CameraGroupTarget) async {
+        guard let name = target.name, let conn = model.connection(for: target.serverID), let client = conn.client else { return }
+        busyGroup = name
+        defer { busyGroup = nil }
+        do {
+            try await client.setConfig(["camera_groups": [name: ""]], requiresRestart: false, updateTopic: nil)
+            await conn.refresh(reloadConfig: true)
+        } catch {
+            groupError = error.localizedDescription
+        }
     }
 
     private func cameras(for conn: ServerConnection) -> [CameraConfig] {

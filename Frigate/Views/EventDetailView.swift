@@ -131,6 +131,7 @@ struct EventDetailView: View {
                 } details: {
                     info
                     tiles
+                    analysis
                     describe
                     objects
                 } extra: {
@@ -145,6 +146,7 @@ struct EventDetailView: View {
                     scrubber
                     info
                     tiles
+                    analysis
                     describe
                     objects
                     lifecycle
@@ -466,6 +468,7 @@ struct EventDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 ForEach(shownLabels, id: \.self) { LabelTag(label: $0, size: 12) }
+                if !isReviewed, let level = item.data.metadata?.threatLevel { ThreatChip(level: level) }
                 Text(item.severity == .alert ? L("Alert") : L("Detection"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.textTertiary)
@@ -521,6 +524,42 @@ struct EventDetailView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 16)
+    }
+
+    /// GenAI's summary of the review item, as Frigate's "AI Analysis".
+    @ViewBuilder
+    private var analysis: some View {
+        if let ai = item.data.metadata, ai.trimmedTitle != nil || !(ai.scene ?? "").isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(text: L("AI Analysis"))
+                VStack(alignment: .leading, spacing: 10) {
+                    if let title = ai.trimmedTitle { analysisField(L("Title"), title) }
+                    if let scene = ai.scene, !scene.isEmpty { analysisField(L("Description"), scene) }
+                    if let c = ai.confidence { analysisField(L("Score"), "\(Int((c * 100).rounded()))%") }
+                    analysisField(L("Concerns"), concerns(ai))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14).padding(.vertical, 12)
+                .card(radius: 12)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+        }
+    }
+
+    /// The threat level and any other concerns, one per line, as Frigate lists them.
+    private func concerns(_ ai: ReviewItem.GenAISummary) -> String {
+        var list: [String] = []
+        if let level = ai.threatLevel, level > 0 { list.append(level >= 2 ? L("Security concern") : L("Needs review")) }
+        list += ai.otherConcerns ?? []
+        return list.isEmpty ? L("None") : list.map { "• \($0)" }.joined(separator: "\n")
+    }
+
+    private func analysisField(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
+            Text(value).font(.system(size: 14)).foregroundStyle(Theme.text).textSelection(.enabled)
+        }
     }
 
     /// Opened on one object: its description and Find similar, as Frigate's tracked object details.

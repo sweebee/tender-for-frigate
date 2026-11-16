@@ -140,11 +140,14 @@ struct ReviewTile: View {
             }
             .overlay(alignment: .bottom) {
                 LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: 56)
+                    .frame(height: item.data.metadata?.trimmedTitle == nil ? 56 : 80)
             }
             .overlay(alignment: .topLeading) {
                 HStack(spacing: 4) {
                     ForEach(item.labels.prefix(4), id: \.self) { LabelIcon(label: $0, size: VideoChip.height) }
+                    if !item.hasBeenReviewed, let level = item.data.metadata?.threatLevel {
+                        ThreatChip(level: level).background(.black.opacity(0.5), in: Capsule())
+                    }
                 }
                 .padding(8)
             }
@@ -157,6 +160,11 @@ struct ReviewTile: View {
                 }
             }
             .overlay(alignment: .bottomLeading) {
+                VStack(alignment: .leading, spacing: 3) {
+                // GenAI's summary above the camera and time, as on Frigate's review cards.
+                if let title = item.data.metadata?.trimmedTitle {
+                    Text(title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                }
                 HStack(spacing: 6) {
                     if showServer { ServerBadge(initial: conn.server.initial, tint: conn.server.tint) }
                     Text(camName).font(.system(size: 14, weight: .semibold)).lineLimit(1)
@@ -166,6 +174,7 @@ struct ReviewTile: View {
                         .font(.system(size: 11, weight: .semibold).monospacedDigit())
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(item.inProgress ? Theme.recording : .black.opacity(0.6), in: RoundedRectangle(cornerRadius: 4))
+                }
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10).padding(.bottom, 8)

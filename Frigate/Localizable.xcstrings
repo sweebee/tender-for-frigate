@@ -9718,6 +9718,156 @@
           }
         }
       }
+    },
+    "Security concern": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beveiligingsprobleem"
+          }
+        }
+      }
+    },
+    "Needs review": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beoordelen nodig"
+          }
+        }
+      }
+    },
+    "AI Analysis": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI-analyse"
+          }
+        }
+      }
+    },
+    "Title": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel"
+          }
+        }
+      }
+    },
+    "Concerns": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zorgen"
+          }
+        }
+      }
+    },
+    "Icon": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icoon"
+          }
+        }
+      }
+    },
+    "New group": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe groep"
+          }
+        }
+      }
+    },
+    "Edit group": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groep bewerken"
+          }
+        }
+      }
+    },
+    "On %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Op %@"
+          }
+        }
+      }
+    },
+    "The name cannot contain a period.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De naam mag geen punt bevatten."
+          }
+        }
+      }
+    },
+    "This name is reserved.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze naam is gereserveerd."
+          }
+        }
+      }
+    },
+    "There is already a group with this name.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er is al een groep met deze naam."
+          }
+        }
+      }
+    },
+    "Edit on %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewerken op %@"
+          }
+        }
+      }
+    },
+    "Delete on %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijderen op %@"
+          }
+        }
+      }
+    },
+    "The group is removed from Frigate; its cameras stay.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De groep wordt uit Frigate verwijderd; de camera's blijven."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
