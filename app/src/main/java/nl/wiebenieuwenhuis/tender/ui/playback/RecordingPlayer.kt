@@ -331,7 +331,10 @@ fun OverlayButton(
     }
 }
 
-/** A round button over video with a text (the speed) that opens a menu of choices. */
+/**
+ * A round button over video with a text (the speed) that opens a menu of choices. `onOpen` and
+ * `onClose` bracket the open menu, so the controls around it can stay while it is open.
+ */
 @Composable
 fun <T> OverlayMenuButton(
     title: String,
@@ -341,27 +344,31 @@ fun <T> OverlayMenuButton(
     optionTitle: (T) -> String,
     size: Dp = 44.dp,
     onOpen: () -> Unit = {},
+    onClose: () -> Unit = {},
     onSelect: (T) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
+    fun close() { if (open) { open = false; onClose() } }
+    // Gone while open (the controls faded out after all): the menu counts as closed.
+    DisposableEffect(Unit) { onDispose { if (open) { open = false; onClose() } } }
     Box {
         Box(
             Modifier
                 .size(size)
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.6f))
-                .clickable(role = Role.Button) { open = true; onOpen() }
+                .clickable(role = Role.Button) { if (!open) { open = true; onOpen() } }
                 .semantics { contentDescription = description },
             contentAlignment = Alignment.Center,
         ) {
             Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = if (size > 50.dp) 16.sp else 13.sp, maxLines = 1)
         }
-        DropdownMenu(open, onDismissRequest = { open = false }) {
+        DropdownMenu(open, onDismissRequest = ::close) {
             for (o in options) {
                 DropdownMenuItem(
                     text = { Text(optionTitle(o)) },
                     leadingIcon = { if (o == selected) Icon(Icons.Filled.Check, null) else Box(Modifier.size(24.dp)) },
-                    onClick = { open = false; onSelect(o) },
+                    onClick = { close(); onSelect(o) },
                 )
             }
         }
@@ -371,6 +378,7 @@ fun <T> OverlayMenuButton(
 /**
  * The playback controls drawn over a recording: back 10 s, play/pause, forward 10 s and the
  * speed. `togglePlay`: the playback screen also jumps over gaps. `onUse`: keeps the controls up.
+ * `onMenuOpen`/`onMenuClose`: the speed menu opens and closes (the controls stay while it is open).
  */
 @Composable
 fun PlaybackOverlayControls(
@@ -379,21 +387,44 @@ fun PlaybackOverlayControls(
     large: Boolean = false,
     togglePlay: (() -> Unit)? = null,
     onUse: () -> Unit = {},
+    onMenuOpen: () -> Unit = {},
+    onMenuClose: () -> Unit = {},
+) {
+    VideoOverlayControls(
+        playing = player.wantsToPlay, rate = player.rate,
+        onSkip = { player.skip(it) }, onTogglePlay = togglePlay ?: player::toggle, onRate = { player.changeRate(it) },
+        modifier = modifier, large = large, onUse = onUse, onMenuOpen = onMenuOpen, onMenuClose = onMenuClose,
+    )
+}
+
+/** [PlaybackOverlayControls] for any player: the same buttons, with the player's state and calls passed in. */
+@Composable
+fun VideoOverlayControls(
+    playing: Boolean,
+    rate: Float,
+    onSkip: (Double) -> Unit,
+    onTogglePlay: () -> Unit,
+    onRate: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    large: Boolean = false,
+    onUse: () -> Unit = {},
+    onMenuOpen: () -> Unit = {},
+    onMenuClose: () -> Unit = {},
 ) {
     val size = if (large) 56.dp else 44.dp
     Row(modifier.padding(if (large) 16.dp else 10.dp), horizontalArrangement = Arrangement.spacedBy(if (large) 16.dp else 10.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        OverlayButton(Icons.Filled.Replay10, stringResource(R.string.playback_back_10), size) { player.skip(-10.0); onUse() }
+        OverlayButton(Icons.Filled.Replay10, stringResource(R.string.playback_back_10), size) { onSkip(-10.0); onUse() }
         OverlayButton(
-            if (player.wantsToPlay) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-            stringResource(if (player.wantsToPlay) R.string.playback_pause else R.string.playback_play),
+            if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+            stringResource(if (playing) R.string.playback_pause else R.string.playback_play),
             if (large) 64.dp else 44.dp,
-        ) { (togglePlay ?: player::toggle)(); onUse() }
-        OverlayButton(Icons.Filled.Forward10, stringResource(R.string.playback_forward_10), size) { player.skip(10.0); onUse() }
+        ) { onTogglePlay(); onUse() }
+        OverlayButton(Icons.Filled.Forward10, stringResource(R.string.playback_forward_10), size) { onSkip(10.0); onUse() }
         OverlayMenuButton(
-            RecordingPlayer.rateTitle(player.rate), stringResource(R.string.playback_speed), RecordingPlayer.rates, player.rate,
-            RecordingPlayer::rateTitle, size, onOpen = onUse,
-        ) { player.changeRate(it); onUse() }
+            RecordingPlayer.rateTitle(rate), stringResource(R.string.playback_speed), RecordingPlayer.rates, rate,
+            RecordingPlayer::rateTitle, size, onOpen = { onMenuOpen(); onUse() }, onClose = { onMenuClose(); onUse() },
+        ) { onRate(it); onUse() }
     }
 }
 

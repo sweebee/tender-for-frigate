@@ -69,7 +69,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.layout
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.window.core.layout.WindowSizeClass
@@ -103,6 +107,7 @@ private sealed class ReviewLine {
 }
 
 /** The Review tab: alerts and detections (and Motion), as Frigate's Review page. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ReviewScreen() {
     val vm: ReviewModel = viewModel()
@@ -139,12 +144,20 @@ fun ReviewScreen() {
     val hasUnreviewed = shown.any { !it.item.isReviewed }
     val selectedCount = vm.selectedEntries.size
 
+    // The title bar slides away with the list and comes back when scrolling up; the kinds and
+    // filters are the list's first item, so they scroll away with it (as on iOS).
+    val barState = rememberTopAppBarState()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(barState)
+    val scrolls = !vm.selecting && vm.kind != ReviewKind.Motion
+    LaunchedEffect(scrolls) { if (!scrolls) barState.heightOffset = 0f }
+
     // The progress pill of the long-press actions floats over the whole screen, as on the item screen.
     ReviewActionsHost(vm.actions, Modifier.fillMaxSize()) {
     ScreenScaffold(
         title = if (vm.selecting) pluralStringResource(R.plurals.review_n_selected, selectedCount, selectedCount) else stringResource(R.string.review_title),
         showsBack = vm.selecting,
         onBack = { vm.endSelecting() },
+        scrollBehavior = if (scrolls) scrollBehavior else null,
         actions = {
             if (vm.kind != ReviewKind.Motion) {
                 if (vm.selecting) {
@@ -177,41 +190,42 @@ fun ReviewScreen() {
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            Column(Modifier.fillMaxSize()) {
-                Header(vm, wide, onPickDay = { pickingDay = true })
-                if (vm.kind == ReviewKind.Motion) {
-                    // Motion fills the screen below the header: previews and a timeline.
+            if (vm.kind == ReviewKind.Motion) {
+                // Motion fills the screen below the header: previews and a timeline.
+                Column(Modifier.fillMaxSize()) {
+                    Header(vm, wide, onPickDay = { pickingDay = true })
                     MotionReviewPane(Modifier.weight(1f).fillMaxWidth(), cameraFilter = vm.cameraFilter.toSet(),
                         start = vm.range.bounds.first, end = vm.range.bounds.second)
-                } else {
-                    PullToRefreshBox(
-                        isRefreshing = refreshing,
-                        onRefresh = { scope.launch { refreshing = true; try { vm.reload(silent = true) } finally { refreshing = false } } },
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                    ) {
-                        ReviewList(vm, shown, wide,
-                            onOpen = { entry ->
-                                if (vm.selecting) vm.toggle(entry) else {
-                                    // As in Frigate's web app: the camera's recordings from just before the item,
-                                    // which then counts as reviewed. The item's own screen is in the long-press menu.
-                                    val item = entry.item
-                                    nav.navigate(PlaybackRoute(entry.serverId, item.camera, startOfDay(item.startTime), reviewId = item.id))
-                                    if (!item.isReviewed) vm.markReviewed(listOf(entry))
-                                }
-                            },
-                            onDetails = { entry ->
-                                ItemCache.put(entry.item)
-                                nav.navigate(EventRoute(entry.serverId, entry.item.id))
-                            },
-                        )
-                    }
+                }
+            } else {
+                PullToRefreshBox(
+                    isRefreshing = refreshing,
+                    onRefresh = { scope.launch { refreshing = true; try { vm.reload(silent = true) } finally { refreshing = false } } },
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    ReviewList(vm, shown, wide,
+                        header = { Header(vm, wide, onPickDay = { pickingDay = true }) },
+                        onOpen = { entry ->
+                            if (vm.selecting) vm.toggle(entry) else {
+                                // As in Frigate's web app: the camera's recordings from just before the item,
+                                // which then counts as reviewed. The item's own screen is in the long-press menu.
+                                val item = entry.item
+                                nav.navigate(PlaybackRoute(entry.serverId, item.camera, startOfDay(item.startTime), reviewId = item.id))
+                                if (!item.isReviewed) vm.markReviewed(listOf(entry))
+                            }
+                        },
+                        onDetails = { entry ->
+                            ItemCache.put(entry.item)
+                            nav.navigate(EventRoute(entry.serverId, entry.item.id))
+                        },
+                    )
                 }
             }
         }
     }
     }
 
-    if (pickingDay) DayPicker(onPick = { vm.range = ReviewRange.Day(it); pickingDay = false }, onDismiss = { pickingDay = false })
+    if (pickingDay) DayPicker((vm.range as? ReviewRange.Day)?.start, onPick = { vm.range = ReviewRange.Day(it); pickingDay = false }, onDismiss = { pickingDay = false })
     if (confirmBulkDelete) {
         val n = vm.selectedEntries.size
         ConfirmDialog(
@@ -241,7 +255,6 @@ private fun Header(vm: ReviewModel, wide: Boolean, onPickDay: () -> Unit) {
             }
         } else {
             KindBar(vm, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-            // Motion takes its cameras and time from its own view.
             Filters(vm, onPickDay, Modifier.fillMaxWidth(), padded = true)
         }
     }
@@ -292,12 +305,12 @@ private fun MenuChip(title: String, active: Boolean, enabled: Boolean = true, me
     }
 }
 
-/** A menu item with a check mark when on. */
+/** A menu item with a check mark in front when on. */
 @Composable
 private fun CheckItem(title: String, on: Boolean, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(title, maxLines = 1) },
-        trailingIcon = { if (on) Icon(Icons.Filled.Check, null) else Spacer(Modifier.size(24.dp)) },
+        leadingIcon = { if (on) Icon(Icons.Filled.Check, null) else Spacer(Modifier.size(24.dp)) },
         onClick = onClick,
     )
 }
@@ -334,47 +347,42 @@ private fun Filters(vm: ReviewModel, onPickDay: () -> Unit, modifier: Modifier, 
             }
         }
 
-        val labels = (vm.entries.flatMap { it.item.labels } + vm.labelFilter).distinct().sortedBy { Format.labelName(it) }
-        MenuChip(
-            if (vm.labelFilter.isEmpty()) stringResource(R.string.review_labels) else vm.labelFilter.map { Format.labelName(it) }.sorted().joinToString(", "),
-            vm.labelFilter.isNotEmpty(), enabled = labels.isNotEmpty(),
-        ) { close ->
-            CheckItem(stringResource(R.string.review_all_labels), vm.labelFilter.isEmpty()) { vm.labelFilter = emptySet(); close() }
-            for (l in labels) CheckItem(Format.labelName(l), l in vm.labelFilter) {
-                vm.labelFilter = if (l in vm.labelFilter) vm.labelFilter - l else vm.labelFilter + l
-            }
-        }
-
-        // Zones configured on the cameras in view, plus any seen in the loaded items.
-        val zonesByServer = conns.map { it to it.zones(vm.cameraFilter) }.filter { it.second.isNotEmpty() }
-        val seen = (vm.entries.flatMap { it.item.zones } + vm.zoneFilter).distinct()
-        if (zonesByServer.isNotEmpty() || seen.isNotEmpty()) {
+        // Motion has no review items to filter: only its cameras and period.
+        if (vm.kind != ReviewKind.Motion) {
+            val labels = (vm.entries.flatMap { it.item.labels } + vm.labelFilter).distinct().sortedBy { Format.labelName(it) }
             MenuChip(
-                if (vm.zoneFilter.isEmpty()) stringResource(R.string.review_zones) else vm.zoneFilter.map { Format.prettyName(it) }.sorted().joinToString(", "),
-                vm.zoneFilter.isNotEmpty(),
+                if (vm.labelFilter.isEmpty()) stringResource(R.string.review_labels) else vm.labelFilter.map { Format.labelName(it) }.sorted().joinToString(", "),
+                vm.labelFilter.isNotEmpty(),
             ) { close ->
-                CheckItem(stringResource(R.string.review_all_zones), vm.zoneFilter.isEmpty()) { vm.zoneFilter = emptySet(); close() }
-                val listed = mutableSetOf<String>()
-                for ((conn, zones) in zonesByServer) {
-                    if (several) { HorizontalDivider(); MenuHeading(conn.server.name) }
-                    for (z in zones) {
-                        listed += z
-                        CheckItem(Format.prettyName(z), z in vm.zoneFilter) { vm.zoneFilter = if (z in vm.zoneFilter) vm.zoneFilter - z else vm.zoneFilter + z }
+                CheckItem(stringResource(R.string.review_all_labels), vm.labelFilter.isEmpty()) { vm.labelFilter = emptySet(); close() }
+                for (l in labels) CheckItem(Format.labelName(l), l in vm.labelFilter) {
+                    vm.labelFilter = if (l in vm.labelFilter) vm.labelFilter - l else vm.labelFilter + l
+                }
+            }
+
+            // The zones configured on the cameras in view, under their server's name with several servers.
+            val zonesByServer = conns.map { it to it.zones(vm.cameraFilter) }.filter { it.second.isNotEmpty() }
+            if (zonesByServer.isNotEmpty()) {
+                MenuChip(
+                    if (vm.zoneFilter.isEmpty()) stringResource(R.string.review_zones) else vm.zoneFilter.map { Format.prettyName(it) }.sorted().joinToString(", "),
+                    vm.zoneFilter.isNotEmpty(),
+                ) { close ->
+                    CheckItem(stringResource(R.string.review_all_zones), vm.zoneFilter.isEmpty()) { vm.zoneFilter = emptySet(); close() }
+                    for ((conn, zones) in zonesByServer) {
+                        if (several) { HorizontalDivider(); MenuHeading(conn.server.name) }
+                        for (z in zones) {
+                            CheckItem(Format.prettyName(z), z in vm.zoneFilter) { vm.zoneFilter = if (z in vm.zoneFilter) vm.zoneFilter - z else vm.zoneFilter + z }
+                        }
                     }
                 }
-                val others = seen.filter { it !in listed }.sorted()
-                if (others.isNotEmpty() && zonesByServer.isNotEmpty()) HorizontalDivider()
-                for (z in others) CheckItem(Format.prettyName(z), z in vm.zoneFilter) {
-                    vm.zoneFilter = if (z in vm.zoneFilter) vm.zoneFilter - z else vm.zoneFilter + z
-                }
             }
-        }
 
-        FilterChip(
-            selected = vm.unreviewedOnly, onClick = { vm.unreviewedOnly = !vm.unreviewedOnly },
-            label = { Text(stringResource(R.string.review_unreviewed), maxLines = 1, softWrap = false) },
-            leadingIcon = if (vm.unreviewedOnly) ({ Icon(Icons.Filled.Check, null, Modifier.size(18.dp)) }) else null,
-        )
+            FilterChip(
+                selected = vm.unreviewedOnly, onClick = { vm.unreviewedOnly = !vm.unreviewedOnly },
+                label = { Text(stringResource(R.string.review_unreviewed), maxLines = 1, softWrap = false) },
+                leadingIcon = if (vm.unreviewedOnly) ({ Icon(Icons.Filled.Check, null, Modifier.size(18.dp)) }) else null,
+            )
+        }
 
         MenuChip(vm.range.title, vm.range != ReviewRange.Last24Hours) { close ->
             val today = startOfDay(nowSeconds())
@@ -391,16 +399,19 @@ private fun Filters(vm: ReviewModel, onPickDay: () -> Unit, modifier: Modifier, 
     }
 }
 
-/** A day up to today; returns its local midnight in epoch ms. */
+/** A day up to today, opened on `day` (local midnight in epoch ms) or today; returns its local midnight in epoch ms. */
 @Composable
-private fun DayPicker(onPick: (Long) -> Unit, onDismiss: () -> Unit) {
-    val todayUtc = remember {
-        val local = Calendar.getInstance()
-        Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+private fun DayPicker(day: Long?, onPick: (Long) -> Unit, onDismiss: () -> Unit) {
+    // The picker works in UTC midnights: the same calendar day as the user's own.
+    fun utcMidnight(localMs: Long): Long {
+        val local = Calendar.getInstance().apply { timeInMillis = localMs }
+        return Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
             clear(); set(local.get(Calendar.YEAR), local.get(Calendar.MONTH), local.get(Calendar.DAY_OF_MONTH))
         }.timeInMillis
     }
-    val state = rememberDatePickerState(initialSelectedDateMillis = todayUtc, selectableDates = object : SelectableDates {
+    val todayUtc = remember { utcMidnight(System.currentTimeMillis()) }
+    val initial = remember(day) { day?.let { minOf(utcMidnight(it), todayUtc) } ?: todayUtc }
+    val state = rememberDatePickerState(initialSelectedDateMillis = initial, selectableDates = object : SelectableDates {
         override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis <= todayUtc
     })
     DatePickerDialog(
@@ -423,41 +434,51 @@ private fun DayPicker(onPick: (Long) -> Unit, onDismiss: () -> Unit) {
 // MARK: List
 
 @Composable
-private fun ReviewList(vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, onOpen: (ReviewEntry) -> Unit, onDetails: (ReviewEntry) -> Unit) {
+private fun ReviewList(
+    vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, header: @Composable () -> Unit,
+    onOpen: (ReviewEntry) -> Unit, onDetails: (ReviewEntry) -> Unit,
+) {
     val all = AppModel.scopedConnections
-    Column(Modifier.fillMaxSize()) {
+    // A problem while there are items shows at the top, under the filters.
+    val banner: @Composable () -> Unit = {
         vm.loadError?.takeIf { shown.isNotEmpty() }?.let {
-            ErrorBanner(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { vm.loadError = null }
+            ErrorBanner(it, Modifier.padding(vertical = 4.dp)) { vm.loadError = null }
         }
-        when {
-            all.isNotEmpty() && all.none { it.isOnline } -> Scrollable {
-                EmptyState(Icons.Outlined.WifiOff, stringResource(R.string.review_no_servers_online), stringResource(R.string.review_no_servers_online_message))
-            }
-            vm.loading && shown.isEmpty() -> Scrollable { LoadingBox() }
-            vm.loadError != null && shown.isEmpty() -> Scrollable {
-                EmptyState(Icons.Outlined.WarningAmber, stringResource(R.string.review_could_not_load), vm.loadError)
-            }
-            shown.isEmpty() -> Scrollable {
-                EmptyState(
-                    Icons.Outlined.TaskAlt,
-                    stringResource(if (vm.unreviewedOnly) R.string.review_all_caught_up else R.string.review_nothing_here),
-                    if (!vm.unreviewedOnly) null
-                    else stringResource(if (vm.kind == ReviewKind.Alert) R.string.review_no_unreviewed_alerts else R.string.review_no_unreviewed_detections),
-                )
-            }
-            else -> Items(vm, shown, wide, onOpen, onDetails)
+    }
+    when {
+        all.isNotEmpty() && all.none { it.isOnline } -> Scrollable(header) {
+            EmptyState(Icons.Outlined.WifiOff, stringResource(R.string.review_no_servers_online), stringResource(R.string.review_no_servers_online_message))
         }
+        vm.loading && shown.isEmpty() -> Scrollable(header) { LoadingBox() }
+        vm.loadError != null && shown.isEmpty() -> Scrollable(header) {
+            EmptyState(Icons.Outlined.WarningAmber, stringResource(R.string.review_could_not_load), vm.loadError)
+        }
+        shown.isEmpty() -> Scrollable(header) {
+            EmptyState(
+                Icons.Outlined.TaskAlt,
+                stringResource(if (vm.unreviewedOnly) R.string.review_all_caught_up else R.string.review_nothing_here),
+                if (!vm.unreviewedOnly) null
+                else stringResource(if (vm.kind == ReviewKind.Alert) R.string.review_no_unreviewed_alerts else R.string.review_no_unreviewed_detections),
+            )
+        }
+        else -> Items(vm, shown, wide, header, banner, onOpen, onDetails)
     }
 }
 
-/** Empty states inside a scrolling list, so pull to refresh works on them too. */
+/** Empty states under the header, in a scrolling list, so pull to refresh works on them too. */
 @Composable
-private fun Scrollable(content: @Composable () -> Unit) {
-    LazyColumn(Modifier.fillMaxSize()) { item { content() } }
+private fun Scrollable(header: @Composable () -> Unit, content: @Composable () -> Unit) {
+    LazyColumn(Modifier.fillMaxSize()) {
+        item(key = "header") { header() }
+        item { content() }
+    }
 }
 
 @Composable
-private fun Items(vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, onOpen: (ReviewEntry) -> Unit, onDetails: (ReviewEntry) -> Unit) {
+private fun Items(
+    vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, header: @Composable () -> Unit, banner: @Composable () -> Unit,
+    onOpen: (ReviewEntry) -> Unit, onDetails: (ReviewEntry) -> Unit,
+) {
     val lines = remember(shown) {
         buildList {
             var day: Long? = null
@@ -470,6 +491,8 @@ private fun Items(vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, onOp
     }
     val showServer = AppModel.orderedConnections.size > 1
     val scope = rememberCoroutineScope()
+    /** Lazy items before the first line: the header and the banner. */
+    val lead = 2
 
     if (wide) {
         // Tablets: large pictures in a grid, like Frigate's review page, with the timeline beside it.
@@ -483,17 +506,22 @@ private fun Items(vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, onOp
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                // The header brings its own margins (its filters scroll to the screen edge).
+                item(key = "header", span = { GridItemSpan(maxLineSpan) }) { Box(Modifier.bleed(16.dp)) { header() } }
+                item(key = "banner", span = { GridItemSpan(maxLineSpan) }) { banner() }
                 for (line in lines) when (line) {
                     is ReviewLine.Day -> item(key = "day-${line.start}", span = { GridItemSpan(maxLineSpan) }) {
                         SectionLabel(Format.dayTitle(Date(line.start)), Modifier.padding(top = 6.dp))
                     }
-                    is ReviewLine.Item -> item(key = line.entry.key) { EntryItem(vm, line.entry, tile = true, showServer, onOpen, onDetails) }
+                    is ReviewLine.Item -> item(key = line.entry.key) {
+                        EntryItem(vm, line.entry, tile = true, showServer, onOpen, onDetails)
+                    }
                 }
                 item(key = "more", span = { GridItemSpan(maxLineSpan) }) { LoadMore(vm) }
             }
             ReviewTimeline(shown, visibleKeys, onJump = { entry ->
                 val i = lines.indexOfFirst { it is ReviewLine.Item && it.entry.key == entry.key }
-                if (i >= 0) scope.launch { grid.animateScrollToItem(i) }
+                if (i >= 0) scope.launch { grid.animateScrollToItem(i + lead) }
             }, modifier = Modifier.width(76.dp).fillMaxHeight().padding(top = 8.dp, bottom = 16.dp, end = 12.dp))
         }
     } else {
@@ -503,11 +531,16 @@ private fun Items(vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, onOp
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // The header brings its own margins (its filters scroll to the screen edge).
+            item(key = "header") { Box(Modifier.bleed(16.dp)) { header() } }
+            item(key = "banner") { banner() }
             for (line in lines) when (line) {
                 is ReviewLine.Day -> item(key = "day-${line.start}") {
                     SectionLabel(Format.dayTitle(Date(line.start)), Modifier.padding(top = 6.dp))
                 }
-                is ReviewLine.Item -> item(key = line.entry.key) { EntryItem(vm, line.entry, tile = false, showServer, onOpen, onDetails) }
+                is ReviewLine.Item -> item(key = line.entry.key) {
+                    EntryItem(vm, line.entry, tile = false, showServer, onOpen, onDetails)
+                }
             }
             item(key = "more") { LoadMore(vm) }
         }
@@ -561,4 +594,14 @@ private fun LoadMore(vm: ReviewModel) {
         if (vm.loadingMore) SmallSpinner(size = 22.dp)
         else TextButton(onClick = { vm.loadMore() }) { Text(stringResource(R.string.review_load_more)) }
     }
+}
+
+/** Widens the content by `h` on both sides: a full-width item in a list with side padding. */
+private fun Modifier.bleed(h: Dp) = layout { measurable, constraints ->
+    val px = h.roundToPx()
+    val placeable = measurable.measure(constraints.copy(
+        minWidth = constraints.minWidth + 2 * px,
+        maxWidth = if (constraints.hasBoundedWidth) constraints.maxWidth + 2 * px else constraints.maxWidth,
+    ))
+    layout(placeable.width - 2 * px, placeable.height) { placeable.place(-px, 0) }
 }

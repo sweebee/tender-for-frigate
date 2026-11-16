@@ -105,7 +105,8 @@ fun PlaybackDetailList(
     client: FrigateClient?,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
-    onLongPress: (ReviewItem) -> Unit = {},
+    /** The long-press menu of a card, drawn on that card: the item, whether it is open, and how to close it. */
+    menu: (@Composable (ReviewItem, Boolean, () -> Unit) -> Unit)? = null,
     onJump: (Double) -> Unit,
 ) {
     var openId by remember { mutableStateOf<String?>(null) }
@@ -180,7 +181,7 @@ fun PlaybackDetailList(
                         open(r.id, animated = true)
                     }
                 },
-                onLongPress = { onLongPress(r) },
+                menu = menu?.let { m -> { open, close -> m(r, open, close) } },
                 onEntry = { onJump(it + annotationOffset - 1) },
             )
         }
@@ -190,9 +191,10 @@ fun PlaybackDetailList(
 @Composable
 private fun DetailCard(
     review: ReviewItem, open: Boolean, loading: Boolean, playing: Boolean, data: EventDetailData?, highlight: Int?, compact: Boolean,
-    onHeader: () -> Unit, onLongPress: () -> Unit, onEntry: (Double) -> Unit,
+    onHeader: () -> Unit, menu: (@Composable (Boolean, () -> Unit) -> Unit)?, onEntry: (Double) -> Unit,
 ) {
     val s = MaterialTheme.colorScheme
+    var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(12.dp)
     Column(
         Modifier
@@ -200,10 +202,12 @@ private fun DetailCard(
             .background(s.surfaceContainer, shape)
             .border(if (open || playing) 1.5.dp else 1.dp, if (open || playing) s.primary else s.outlineVariant, shape),
     ) {
+        Box {
+        menu?.invoke(menuOpen) { menuOpen = false }
         Row(
             Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onHeader, onLongClick = onLongPress)
+                .combinedClickable(onClick = onHeader, onLongClick = if (menu != null) ({ menuOpen = true }) else null)
                 .padding(horizontal = if (compact) 10.dp else 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -225,6 +229,7 @@ private fun DetailCard(
             if (loading) SmallSpinner(size = 16.dp)
             else Icon(if (open) Icons.Filled.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight, null,
                 tint = s.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        }
         }
         if (open) {
             if (data != null) {
