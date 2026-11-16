@@ -25,7 +25,8 @@ struct LiveObject: Equatable, Identifiable {
         id = d["id"] as? String ?? UUID().uuidString
         // A sub label confirmed by a model shows as "<label>-verified".
         self.label = label.replacingOccurrences(of: "-verified", with: "")
-        subLabel = d["sub_label"] as? String
+        // camera_activity sends a name; the events feed sends [name, score].
+        subLabel = d["sub_label"] as? String ?? (d["sub_label"] as? [Any])?.first as? String
         score = (d["score"] as? NSNumber)?.doubleValue
         ratio = (d["ratio"] as? NSNumber)?.doubleValue
         area = (d["area"] as? NSNumber)?.doubleValue
@@ -417,6 +418,25 @@ final class ServerConnection: Identifiable {
         activity = [:]
     }
 
+    /// Frigate sends the tracked objects once on connecting (camera_activity) and then each
+    /// change as an "events" message: new, update (e.g. it stopped or started moving) or end.
+    /// Kept up to date the same way as Frigate's web UI keeps its red outline.
+    private func applyTrackedObjectEvent(_ event: [String: Any]) {
+        guard let type = event["type"] as? String, let after = event["after"] as? [String: Any],
+              let cam = after["camera"] as? String, let id = after["id"] as? String else { return }
+        var act = activity[cam] ?? CameraActivity()
+        let index = act.objects.firstIndex { $0.id == id }
+        if type == "end" {
+            if let index { act.objects.remove(at: index) }
+        } else if after["false_positive"] as? Bool == true {
+            return
+        } else if let obj = LiveObject(after) {
+            if let index { act.objects[index] = obj } else if !obj.stationary { act.objects.append(obj) }
+        }
+        act.tracking = act.objects.filter { !$0.stationary }.map(\.label)
+        if activity[cam] != act { activity[cam] = act }
+    }
+
     /// "<camera>/enabled/state", "<camera>/detect/state" or "<camera>/recordings/state".
     private static func switchState(_ topic: String) -> (String, String)? {
         let parts = topic.split(separator: "/")
@@ -449,6 +469,9 @@ final class ServerConnection: Identifiable {
                                            objects: objects.compactMap(LiveObject.init))
             }
             activity = next
+        } else if topic == "events", let payload = (msg["payload"] as? String)?.data(using: .utf8),
+                  let event = try? JSONSerialization.jsonObject(with: payload) as? [String: Any] {
+            applyTrackedObjectEvent(event)
         } else if topic == "model_state", let payload = (msg["payload"] as? String)?.data(using: .utf8),
                   let states = try? JSONSerialization.jsonObject(with: payload) as? [String: String] {
             modelStates.merge(states) { $1 }
