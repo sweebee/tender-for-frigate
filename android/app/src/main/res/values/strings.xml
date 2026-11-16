@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared strings. Each feature keeps its own in strings_<feature>.xml. -->
+<resources>
+    <string name="app_name">Tender</string>
+    <string name="more_than_hour">&gt; 1 h</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="just_now">Just now</string>
+    <string name="minutes_ago">%1$d min ago</string>
+    <string name="hours_ago">%1$d h ago</string>
+    <plurals name="days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="error_invalid_url">The server address is not a valid URL.</string>
+    <string name="error_http">Server returned %1$d%2$s.</string>
+    <string name="error_unauthorized">Login failed. Check the username and password.</string>
+    <string name="error_not_frigate">This address did not respond like a Frigate server.</string>
+    <string name="no_recordings_in_span">No recordings in this span</string>
+    <string name="problem_disk_small">The disk is too small to keep recordings as long as set</string>
+    <string name="problem_detector_very_slow">Detector %1$s is very slow (%2$d ms)</string>
+    <string name="problem_detector_slow">Detector %1$s is slow (%2$d ms)</string>
+    <string name="problem_camera_offline">%1$s is offline</string>
+    <string name="problem_camera_skips">%1$s skips %2$d%% of detections</string>
+    <string name="connecting">Connecting…</string>
+    <string name="offline_last_seen">Offline · last seen %1$s</string>
+    <string name="offline">Offline</string>
+    <plurals name="n_cameras">
+        <item quantity="one">%1$d camera</item>
+        <item quantity="other">%1$d cameras</item>
+    </plurals>
+    <string name="remote">Remote</string>
+    <string name="local">Local</string>
+    <string name="not_reachable">Not reachable</string>
+    <string name="all_servers">All servers</string>
+    <string name="server">Server</string>
+    <string name="back">Back</string>
+    <string name="try_again">Try again</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="done">Done</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="remove">Remove</string>
+    <string name="edit">Edit</string>
+    <string name="rename">Rename</string>
+    <string name="close">Close</string>
+    <string name="add">Add</string>
+    <string name="not_saved">Not saved</string>
+    <string name="show_password">Show password</string>
+    <string name="hide_password">Hide password</string>
+    <string name="tab_live">Live</string>
+    <string name="tab_review">Review</string>
+    <string name="tab_explore">Explore</string>
+    <string name="tab_more">More</string>
+    <string name="exports">Exports</string>
+    <string name="classification">Classification</string>
+    <string name="face_library">Face Library</string>
+    <string name="chat">Chat</string>
+    <string name="settings">Settings</string>
+    <string name="exports_subtitle">Clips kept in Frigate</string>
+    <string name="classification_subtitle">Teach Frigate what it sees</string>
+    <string name="face_library_subtitle">Recognize the people Frigate sees</string>
+    <string name="chat_subtitle">Ask Frigate about your cameras</string>
+    <string name="settings_subtitle">Servers and live view</string>
+    <plurals name="n_clips">
+        <item quantity="one">1 clip</item>
+        <item quantity="other">%1$d clips</item>
+    </plurals>
+</resources>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the faces feature, in Dutch. -->
+<resources>
+    <string name="faces_unknown">Onbekend</string>
+    <string name="faces_select">Selecteer</string>
+    <string name="faces_add_face">Gezicht toevoegen</string>
+    <plurals name="faces_n_faces">
+        <item quantity="one">1 gezicht</item>
+        <item quantity="other">%1$d gezichten</item>
+    </plurals>
+    <string name="faces_off">Gezichtsherkenning staat uit op je servers.</string>
+    <string name="faces_recent">Recente herkenningen</string>
+    <string name="faces_faces">Gezichten</string>
+    <string name="faces_all">Alle</string>
+    <string name="faces_add_first">Voeg ten minste één gezicht toe aan de bibliotheek, anders werkt gezichtsherkenning niet.</string>
+    <string name="faces_no_faces">Geen gezichten beschikbaar</string>
+    <string name="faces_upload_image">Afbeelding uploaden</string>
+    <string name="faces_photo_library">Fotobibliotheek</string>
+    <string name="faces_files">Bestanden</string>
+    <string name="faces_no_attempts">Er zijn geen recente pogingen tot gezichtsherkenning</string>
+    <string name="faces_no_recent_result">Geen recente beelden met deze uitkomst.</string>
+    <string name="faces_name">Naam</string>
+    <string name="faces_rename_face">Gezicht hernoemen</string>
+    <string name="faces_delete_name">%1$s verwijderen?</string>
+    <string name="faces_delete_name_message">Alle bijbehorende gezichten worden definitief verwijderd.</string>
+    <plurals name="faces_delete_n_faces_q">
+        <item quantity="one">1 gezicht verwijderen?</item>
+        <item quantity="other">%1$d gezichten verwijderen?</item>
+    </plurals>
+    <string name="faces_cannot_undo">Dit kan niet ongedaan worden gemaakt.</string>
+    <string name="faces_name_taken">Er is al een gezicht met deze naam.</string>
+    <string name="faces_not_a_picture">Dit bestand is geen afbeelding.</string>
+    <string name="faces_uploaded">Afbeelding geüpload.</string>
+    <string name="faces_trained">Gezicht getraind.</string>
+    <string name="faces_reclassified">Gezicht verplaatst.</string>
+    <string name="faces_tries_hint">De pogingen voor dit object; de aangevinkte worden gebruikt.</string>
+    <string name="faces_not_recognized">Frigate herkende dit gezicht niet.</string>
+    <string name="faces_frigate_thought">Frigate dacht: %1$s, %2$s</string>
+    <string name="faces_train_as">Train gezicht als:</string>
+    <string name="faces_reclassify_as">Herclassificeer gezicht als:</string>
+    <string name="faces_new_face">Nieuw gezicht</string>
+    <string name="faces_reprocess">Gezicht opnieuw verwerken</string>
+    <plurals name="faces_delete_n_faces">
+        <item quantity="one">Verwijder 1 gezicht</item>
+        <item quantity="other">Verwijder %1$d gezichten</item>
+    </plurals>
+    <string name="faces_delete_face">Verwijder gezicht</string>
+</resources>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings of the faces feature. -->
+<resources>
+    <string name="faces_unknown">Unknown</string>
+    <string name="faces_select">Select</string>
+    <string name="faces_add_face">Add Face</string>
+    <plurals name="faces_n_faces">
+        <item quantity="one">1 face</item>
+        <item quantity="other">%1$d faces</item>
+    </plurals>
+    <string name="faces_off">Face recognition is off on your servers.</string>
+    <string name="faces_recent">Recent Recognitions</string>
+    <string name="faces_faces">Faces</string>
+    <string name="faces_all">All</string>
+    <string name="faces_add_first">You must add at least one face to the library for face recognition to function.</string>
+    <string name="faces_no_faces">No faces available</string>
+    <string name="faces_upload_image">Upload Image</string>
+    <string name="faces_photo_library">Photo Library</string>
+    <string name="faces_files">Files</string>
+    <string name="faces_no_attempts">There are no recent face recognition attempts</string>
+    <string name="faces_no_recent_result">No recent images with this result.</string>
+    <string name="faces_name">Name</string>
+    <string name="faces_rename_face">Rename Face</string>
+    <string name="faces_delete_name">Delete %1$s?</string>
+    <string name="faces_delete_name_message">This will permanently delete all associated faces.</string>
+    <plurals name="faces_delete_n_faces_q">
+        <item quantity="one">Delete 1 face?</item>
+        <item quantity="other">Delete %1$d faces?</item>
+    </plurals>
+    <string name="faces_cannot_undo">This action cannot be undone.</string>
+    <string name="faces_name_taken">There is already a face with this name.</string>
+    <string name="faces_not_a_picture">This file is not a picture.</string>
+    <string name="faces_uploaded">Successfully uploaded image.</string>
+    <string name="faces_trained">Successfully trained face.</string>
+    <string name="faces_reclassified">Successfully reclassified face.</string>
+    <string name="faces_tries_hint">The tries for this object; the ones ticked are used.</string>
+    <string name="faces_not_recognized">Frigate did not recognize this face.</string>
+    <string name="faces_frigate_thought">Frigate thought: %1$s, %2$s</string>
+    <string name="faces_train_as">Train Face as:</string>
+    <string name="faces_reclassify_as">Reclassify Face as:</string>
+    <string name="faces_new_face">New face</string>
+    <string name="faces_reprocess">Reprocess Face</string>
+    <plurals name="faces_delete_n_faces">
+        <item quantity="one">Delete 1 face</item>
+        <item quantity="other">Delete %1$d faces</item>
+    </plurals>
+    <string name="faces_delete_face">Delete face</string>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chat_new">New chat</string>
+    <string name="chat_unavailable">Chat is not available</string>
+    <string name="chat_unavailable_message">Configure a GenAI provider with the chat role in Frigate to ask questions about your cameras.</string>
+    <string name="chat_ask">Ask</string>
+    <string name="chat_asking">Asking %1$s, the server with chat.</string>
+    <string name="chat_intro_title">Ask about your cameras</string>
+    <string name="chat_intro_message">Frigate\'s AI assistant looks at your events, cameras and recordings to answer.</string>
+    <string name="chat_suggest_events">Show recent events</string>
+    <string name="chat_suggest_status">Show camera status</string>
+    <string name="chat_suggest_away">What happened while I was away?</string>
+    <string name="chat_thinking">Thinking…</string>
+    <string name="chat_placeholder">Ask a question…</string>
+    <string name="chat_stop">Stop</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_used">Used %1$s</string>
+    <string name="chat_something_wrong">Something went wrong</string>
+</resources>

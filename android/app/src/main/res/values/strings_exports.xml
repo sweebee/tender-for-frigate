@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exports_export">Export</string>
+    <string name="exports_case">Case</string>
+    <string name="exports_cases">Cases</string>
+    <string name="exports_not_in_case">Not in a case</string>
+    <string name="exports_none">No exports</string>
+    <string name="exports_none_message">Clips you export in Frigate, or save to Frigate from playback, appear here.</string>
+    <string name="exports_none_in_case">No exports in this case</string>
+    <string name="exports_none_in_case_message">Long-press an export to move it into this case.</string>
+    <string name="exports_exporting">Exporting…</string>
+    <string name="exports_rename_export">Rename export</string>
+    <string name="exports_name">Name</string>
+    <string name="exports_delete_title">Delete this export?</string>
+    <string name="exports_delete_message">The video is removed from the Frigate server.</string>
+    <string name="exports_new_case">New case</string>
+    <string name="exports_new_case_ellipsis">New case…</string>
+    <string name="exports_new_case_on">New case on</string>
+    <string name="exports_case_name">Case name</string>
+    <string name="exports_goes_into_it">%1$s goes into it.</string>
+    <string name="exports_the_export">The export</string>
+    <string name="exports_create">Create</string>
+    <string name="exports_rename_case">Rename case</string>
+    <string name="exports_delete_case">Delete case</string>
+    <string name="exports_delete_case_title">Delete this case?</string>
+    <string name="exports_delete_case_only">Delete case only</string>
+    <string name="exports_delete_case_and_exports">Delete case and exports</string>
+    <string name="exports_case_empty">The case is empty.</string>
+    <plurals name="exports_case_keeps">
+        <item quantity="one">Its export stays available outside a case, unless you delete it too.</item>
+        <item quantity="other">Its %1$d exports stay available outside a case, unless you delete them too.</item>
+    </plurals>
+    <plurals name="exports_n_exports">
+        <item quantity="one">%1$d export</item>
+        <item quantity="other">%1$d exports</item>
+    </plurals>
+    <string name="exports_more_options">More options</string>
+    <string name="exports_move_to_case">Move to case</string>
+    <string name="exports_remove_from_case">Remove from case</string>
+    <string name="exports_something_wrong">Something went wrong</string>
+    <string name="exports_share">Share</string>
+    <string name="exports_delete_export">Delete export</string>
+    <string name="exports_preparing">Preparing clip…</string>
+    <string name="exports_downloading">Downloading…</string>
+    <string name="exports_saved">Saved to Movies</string>
+    <string name="exports_save_to_device">Save to device</string>
+    <string name="exports_play">Play</string>
+    <string name="exports_pause">Pause</string>
+    <string name="exports_not_found">This export is no longer on the server.</string>
+    <string name="exports_could_not_load">Could not load the export</string>
+</resources>

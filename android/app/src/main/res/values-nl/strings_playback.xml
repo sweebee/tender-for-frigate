@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playback_events">Gebeurtenissen</string>
+    <string name="playback_timeline">Tijdlijn</string>
+    <string name="playback_detail">Detail</string>
+    <string name="playback_pick_date">Kies datum</string>
+    <string name="playback_pick_a_day">Kies een dag</string>
+    <string name="playback_previous_month">Vorige maand</string>
+    <string name="playback_next_month">Volgende maand</string>
+    <string name="playback_recordings">Opnames</string>
+    <string name="playback_alerts">Meldingen</string>
+    <string name="playback_detections">Detecties</string>
+    <string name="playback_a11y_recordings">opnames</string>
+    <string name="playback_a11y_no_recordings">geen opnames</string>
+    <string name="playback_a11y_alerts">%1$d meldingen</string>
+    <string name="playback_a11y_detections">%1$d detecties</string>
+
+    <string name="playback_back_10">10 seconden terug</string>
+    <string name="playback_forward_10">10 seconden vooruit</string>
+    <string name="playback_play">Afspelen</string>
+    <string name="playback_pause">Pauze</string>
+    <string name="playback_playing">Speelt af</string>
+    <string name="playback_speed">Afspeelsnelheid</string>
+    <string name="playback_fullscreen">Volledig scherm</string>
+    <string name="playback_exit_fullscreen">Volledig scherm sluiten</string>
+    <string name="playback_zoom_in">Inzoomen</string>
+    <string name="playback_zoom_out">Uitzoomen</string>
+    <string name="playback_failed">Afspelen mislukt</string>
+    <string name="playback_no_recordings_for">Geen opnames voor %1$s</string>
+    <string name="playback_no_recording_now">Geen opname op dit moment</string>
+    <string name="playback_press_play_next">Druk op afspelen om verder te gaan bij de volgende opname</string>
+    <string name="playback_no_video">Geen video</string>
+    <string name="playback_no_preview">Geen voorbeeld</string>
+
+    <plurals name="playback_n_events">
+        <item quantity="one">%1$s · %2$d gebeurtenis</item>
+        <item quantity="other">%1$s · %2$d gebeurtenissen</item>
+    </plurals>
+    <plurals name="playback_n_of_m_events">
+        <item quantity="one">%1$s · %2$d van %3$d gebeurtenis</item>
+        <item quantity="other">%1$s · %2$d van %3$d gebeurtenissen</item>
+    </plurals>
+    <string name="playback_no_events_day">Geen gebeurtenissen op deze dag.</string>
+    <string name="playback_no_events_filter">Geen gebeurtenissen die aan de filters voldoen.</string>
+    <string name="playback_clear_filters">Filters wissen</string>
+    <string name="playback_alert">Melding</string>
+    <string name="playback_detection">Detectie</string>
+    <string name="playback_zone">Zone: %1$s</string>
+    <string name="playback_event">Gebeurtenis</string>
+    <string name="playback_event_at">%1$s om %2$s</string>
+    <plurals name="playback_objects">
+        <item quantity="one">%1$d object</item>
+        <item quantity="other">%1$d objecten</item>
+    </plurals>
+
+    <string name="playback_filter_type">Type</string>
+    <string name="playback_filter_labels">Labels</string>
+    <string name="playback_filter_zones">Zones</string>
+    <string name="playback_all_types">Alle typen</string>
+    <string name="playback_all_labels">Alle labels</string>
+    <string name="playback_all_zones">Alle zones</string>
+
+    <string name="playback_life_detected">%1$s gedetecteerd</string>
+    <string name="playback_life_entered_zone">%1$s ging een zone binnen</string>
+    <string name="playback_life_entered">%1$s ging %2$s binnen</string>
+    <string name="playback_life_active">%1$s werd actief</string>
+    <string name="playback_life_stationary">%1$s staat stil</string>
+    <string name="playback_life_attribute">%1$s herkend als %2$s</string>
+    <string name="playback_life_attribute_word">kenmerk</string>
+    <string name="playback_life_gone">%1$s verdween uit beeld</string>
+    <string name="playback_life_heard">%1$s gehoord</string>
+    <string name="playback_life_external">%1$s (extern)</string>
+
+    <string name="playback_save_video">Video bewaren</string>
+    <string name="playback_export_ellipsis">Exporteren…</string>
+    <string name="playback_save_event_gallery">Gebeurtenis bewaren in galerij</string>
+    <string name="playback_save_event_frigate">Bewaar gebeurtenis in Frigate</string>
+    <string name="playback_share_event">Deel gebeurtenis</string>
+    <string name="playback_delete_event">Verwijder gebeurtenis</string>
+    <string name="playback_from_playhead">Vanaf de afspeelpositie</string>
+    <string name="playback_save_seconds">%1$d seconden opslaan</string>
+    <plurals name="playback_save_minutes">
+        <item quantity="one">%1$d minuut opslaan</item>
+        <item quantity="other">%1$d minuten opslaan</item>
+    </plurals>
+    <string name="playback_to_gallery">In de galerij</string>
+    <string name="playback_to_frigate_exports">Bij de exports in Frigate</string>
+    <string name="playback_delete_title">Dit item en de opnames verwijderen?</string>
+    <string name="playback_deleting">Verwijderen…</string>
+    <string name="playback_something_wrong">Er ging iets mis</string>
+    <string name="playback_preparing_video">Video voorbereiden…</string>
+    <string name="playback_saving_clip">Clip van %1$s bewaren…</string>
+    <string name="playback_saved_to_gallery">Bewaard in de galerij</string>
+    <string name="playback_not_saved_gallery">Kon niet in de galerij bewaren</string>
+    <string name="playback_saving_to_frigate">Bewaren in Frigate…</string>
+    <string name="playback_saved_to_frigate">Bewaard bij de exports in Frigate</string>
+    <string name="playback_some_saved">%1$d van %2$d bewaard; de rest heeft geen opnames</string>
+
+    <string name="playback_export_recordings">Exporteren</string>
+    <string name="playback_save_to_frigate">Bewaar in Frigate</string>
+    <string name="playback_export_n">Exporteer %1$d</string>
+    <string name="playback_this_camera">Deze camera</string>
+    <string name="playback_several_cameras">Meerdere camera\'s</string>
+    <string name="playback_time_span">Tijdspanne</string>
+    <string name="playback_from">Van</string>
+    <string name="playback_to">Tot</string>
+    <string name="playback_end_after_start">Het einde moet na het begin liggen.</string>
+    <string name="playback_cameras">Camera\'s</string>
+    <string name="playback_n_selected">%1$d / %2$d geselecteerd</string>
+    <string name="playback_cameras_footer">Camera\'s met gevolgde objecten in deze tijdspanne zijn vooraf geselecteerd.</string>
+    <plurals name="playback_tracked_objects">
+        <item quantity="one">%1$d gevolgd object</item>
+        <item quantity="other">%1$d gevolgde objecten</item>
+    </plurals>
+    <string name="playback_name">Naam</string>
+    <string name="playback_optional_base_name">Optionele basisnaam</string>
+    <string name="playback_base_name_footer">Elke export krijgt de naam van de camera erachter.</string>
+    <string name="playback_case">Zaak</string>
+    <string name="playback_no_case">Geen zaak</string>
+    <string name="playback_new_case">Nieuwe zaak</string>
+    <string name="playback_case_name">Naam van de zaak</string>
+    <string name="playback_case_footer">Zaken bundelen exports, zoals in Exports van Frigate.</string>
+</resources>

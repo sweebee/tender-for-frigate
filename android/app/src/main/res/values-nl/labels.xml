@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="label_amazon">Amazon</string>
+    <string name="label_an_post">An Post</string>
+    <string name="label_baby_crying">huilende baby</string>
+    <string name="label_bark">geblaf</string>
+    <string name="label_bicycle">fiets</string>
+    <string name="label_bird">vogel</string>
+    <string name="label_boat">boot</string>
+    <string name="label_bus">bus</string>
+    <string name="label_canada_post">Canada Post</string>
+    <string name="label_car">auto</string>
+    <string name="label_cat">kat</string>
+    <string name="label_deer">hert</string>
+    <string name="label_dhl">DHL</string>
+    <string name="label_dog">hond</string>
+    <string name="label_dpd">DPD</string>
+    <string name="label_face">gezicht</string>
+    <string name="label_fedex">FedEx</string>
+    <string name="label_fire_alarm">brandalarm</string>
+    <string name="label_fox">vos</string>
+    <string name="label_garbage_truck">vuilniswagen</string>
+    <string name="label_glass_breaking">brekend glas</string>
+    <string name="label_gls">GLS</string>
+    <string name="label_horse">paard</string>
+    <string name="label_license_plate">kenteken</string>
+    <string name="label_motorcycle">motor</string>
+    <string name="label_nzpost">NZ Post</string>
+    <string name="label_on_demand">handmatig</string>
+    <string name="label_package">pakket</string>
+    <string name="label_person">persoon</string>
+    <string name="label_postnl">PostNL</string>
+    <string name="label_postnord">PostNord</string>
+    <string name="label_purolator">Purolator</string>
+    <string name="label_rabbit">konijn</string>
+    <string name="label_royal_mail">Royal Mail</string>
+    <string name="label_skunk">stinkdier</string>
+    <string name="label_speech">spraak</string>
+    <string name="label_squirrel">eekhoorn</string>
+    <string name="label_truck">vrachtwagen</string>
+    <string name="label_ups">UPS</string>
+    <string name="label_usps">USPS</string>
+    <string name="label_waste_bin">afvalbak</string>
+    <string name="label_yell">geschreeuw</string>
+</resources>

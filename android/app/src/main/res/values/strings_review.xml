@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Review tab and review item (event) screen. -->
+<resources>
+    <string name="review_title">Review</string>
+    <string name="review_mark_all_reviewed">Mark all reviewed</string>
+    <string name="review_alerts">Alerts</string>
+    <string name="review_detections">Detections</string>
+    <string name="review_motion">Motion</string>
+    <string name="review_count_title">%1$s · %2$d</string>
+    <string name="review_cameras">Cameras</string>
+    <plurals name="review_n_cameras">
+        <item quantity="one">%1$d camera</item>
+        <item quantity="other">%1$d cameras</item>
+    </plurals>
+    <string name="review_all_cameras">All cameras</string>
+    <string name="review_labels">Labels</string>
+    <string name="review_all_labels">All labels</string>
+    <string name="review_zones">Zones</string>
+    <string name="review_all_zones">All zones</string>
+    <string name="review_unreviewed">Unreviewed</string>
+    <string name="review_last_24_hours">Last 24 hours</string>
+    <string name="review_pick_date">Pick date…</string>
+    <string name="review_no_servers_online">No servers online</string>
+    <string name="review_no_servers_online_message">Review items appear when a server is reachable.</string>
+    <string name="review_could_not_load">Could not load review</string>
+    <string name="review_all_caught_up">All caught up</string>
+    <string name="review_nothing_here">Nothing here</string>
+    <string name="review_no_unreviewed_alerts">There are no unreviewed alerts.</string>
+    <string name="review_no_unreviewed_detections">There are no unreviewed detections.</string>
+    <string name="review_load_more">Load more</string>
+    <string name="review_event_details">Event details</string>
+    <string name="review_mark_reviewed">Mark reviewed</string>
+    <string name="review_save_to_device">Save as file…</string>
+    <string name="review_save_to_frigate">Save to Frigate</string>
+    <string name="review_share">Share</string>
+    <string name="review_select">Select</string>
+    <string name="review_select_all">Select all</string>
+    <string name="review_end_selection">Done</string>
+    <plurals name="review_n_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="review_delete_title">Delete this review item and its recordings?</string>
+    <plurals name="review_delete_selected_title">
+        <item quantity="one">Delete this review item and its recordings?</item>
+        <item quantity="other">Delete these %1$d review items and their recordings?</item>
+    </plurals>
+    <string name="review_delete_message">%1$s at %2$s</string>
+    <string name="review_something_went_wrong">Something went wrong</string>
+    <string name="review_event">Event</string>
+    <string name="review_security_concern">Security concern</string>
+    <string name="review_needs_review">Needs review</string>
+    <string name="review_unreviewed_dot">Unreviewed</string>
+    <string name="review_live">LIVE</string>
+    <string name="review_preparing_clip">Preparing clip…</string>
+    <string name="review_saving_clip">Saving %1$s clip…</string>
+    <string name="review_saved_file">Saved</string>
+    <string name="review_deleting">Deleting…</string>
+    <string name="review_saving_to_frigate">Saving to Frigate…</string>
+    <string name="review_saved_to_frigate">Saved to Frigate\'s exports</string>
+    <string name="review_export_name">Name</string>
+    <string name="review_export_name_label">%1$s · %2$s, %3$s</string>
+    <string name="review_export_name_plain">%1$s, %2$s</string>
+
+    <!-- Review item screen -->
+    <string name="review_alert">Alert</string>
+    <string name="review_detection">Detection</string>
+    <string name="review_open_in_playback">Open in recordings</string>
+    <string name="review_share_clip">Share clip</string>
+    <string name="review_reviewed">Reviewed</string>
+    <string name="review_save">Save</string>
+    <string name="review_delete">Delete</string>
+    <string name="review_no_recording">No recording for this event</string>
+    <string name="review_time_in_progress">%1$s, %2$s, in progress</string>
+    <string name="review_time_range">%1$s, %2$s to %3$s</string>
+    <string name="review_time_range_days">%1$s, %2$s to %3$s %4$s</string>
+    <string name="review_tile_score">SCORE</string>
+    <string name="review_tile_zones">ZONES</string>
+    <string name="review_tile_plate">PLATE</string>
+    <string name="review_tile_sub_label">SUB LABEL</string>
+    <string name="review_tile_duration">DURATION</string>
+    <string name="review_none">None</string>
+    <string name="review_ai_analysis">AI Analysis</string>
+    <string name="review_ai_title">Title</string>
+    <string name="review_ai_description">Description</string>
+    <string name="review_ai_score">Score</string>
+    <string name="review_ai_concerns">Concerns</string>
+    <string name="review_objects">Objects</string>
+    <string name="review_object_lifecycle">Object lifecycle</string>
+    <string name="review_show_snapshot">Show snapshot</string>
+    <string name="review_play_from">Play from %1$s</string>
+    <string name="review_play">Play</string>
+    <string name="review_pause">Pause</string>
+    <string name="review_back_10">Back 10 seconds</string>
+    <string name="review_forward_10">Forward 10 seconds</string>
+    <string name="review_full_screen">Full screen</string>
+    <string name="review_exit_full_screen">Exit full screen</string>
+    <string name="review_lc_detected">%1$s detected</string>
+    <string name="review_lc_entered_zone">%1$s entered a zone</string>
+    <string name="review_lc_entered">%1$s entered %2$s</string>
+    <string name="review_lc_active">%1$s became active</string>
+    <string name="review_lc_stationary">%1$s became stationary</string>
+    <string name="review_lc_attribute">%1$s recognized as %2$s</string>
+    <string name="review_lc_gone">%1$s left the frame</string>
+    <string name="review_lc_heard">%1$s heard</string>
+    <string name="review_lc_external">%1$s (external)</string>
+</resources>

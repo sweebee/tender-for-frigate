@@ -1,0 +1,214 @@
+<!doctype html>
+<html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<style>
+html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}
+video,img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+</style></head>
+<body>
+<video id="v" playsinline autoplay muted></video>
+<script>
+const P = JSON.parse(Android.params());
+document.getElementById('v').style.objectFit = P.fit || 'contain';
+const video = document.getElementById('v');
+video.muted = P.muted;
+let ws = null, pc = null, img = null, timer = null, stopped = false;
+let snapTimer = null, retryTimer = null, snapFails = 0, rx = 0;
+function post(o){ try { Android.post(JSON.stringify(o)); } catch(e){} }
+function setMuted(m){ video.muted = m; if (!m) video.play().catch(()=>{}); }
+function stopAll(){
+  stopped = true;
+  if (ws) { try { ws.close(); } catch(e){} ws = null; }
+  if (pc) { try { pc.close(); } catch(e){} pc = null; }
+  if (timer) clearTimeout(timer);
+  video.removeAttribute('src'); video.srcObject = null;
+  stopSnapshots();
+}
+// Stops the still-image fallback. Called once real video plays, so the last frame stays
+// visible while a retry connects.
+function stopSnapshots(){
+  if (snapTimer) { clearTimeout(snapTimer); snapTimer = null; }
+  if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+  if (img) { img.remove(); img = null; }
+}
+function cleanupTransport(){
+  // Detach every handler first: closing a socket that is still connecting fires 'error',
+  // which would otherwise skip the next transport.
+  if (ws) { ws.onclose = ws.onerror = ws.onmessage = ws.onopen = null; try { ws.close(); } catch(e){} ws = null; }
+  if (pc) { try { pc.close(); } catch(e){} pc = null; }
+  if (timer) { clearTimeout(timer); timer = null; }
+  video.removeAttribute('src'); video.srcObject = null;
+}
+let idx = -1;
+function next(reason){
+  if (stopped) return;
+  cleanupTransport();
+  idx++;
+  const mode = P.modes[idx];
+  if (!mode) { post({status: 'Stream unavailable' + (reason ? ': ' + reason : ''), playing:false}); return; }
+  post({status: 'Connecting', mode: mode});
+  // Give each transport a few seconds to produce frames.
+  timer = setTimeout(() => { if (!playingNow) next(mode + ' timed out'); }, mode === 'mse' ? 10000 : 8000);
+  if (mode === 'mse') startMSE(); else if (mode === 'webrtc') startWebRTC(); else startMJPEG();
+}
+let playingNow = false;
+function markPlaying(mode){
+  if (timer) { clearTimeout(timer); timer = null; }
+  playingNow = true;
+  if (mode !== 'mjpeg') stopSnapshots();
+  post({status:'Live', mode: mode, playing:true, bytes: rx, width: video.videoWidth || (img ? img.naturalWidth : 0), height: video.videoHeight || (img ? img.naturalHeight : 0)});
+}
+video.addEventListener('playing', () => markPlaying(P.modes[idx]));
+// Watchdog: if the picture stops advancing while we think it plays, reconnect.
+let lastTime = -1, stuckFor = 0;
+setInterval(() => {
+  if (stopped || !playingNow || img) return;
+  if (video.paused && !video.ended) { video.play().catch(()=>{}); }
+  if (video.currentTime === lastTime) { stuckFor += 2; } else { stuckFor = 0; lastTime = video.currentTime; }
+  if (stuckFor >= 6) {
+    stuckFor = 0; lastTime = -1; playingNow = false;
+    post({status: 'Reconnecting', playing: false});
+    idx--; next('stalled');
+  }
+}, 2000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && playingNow) video.play().catch(()=>{}); });
+video.addEventListener('resize', () => post({width: video.videoWidth, height: video.videoHeight}));
+
+const CODECS = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
+function startMSE(){
+  const MS = window.ManagedMediaSource || window.MediaSource;
+  if (!MS) { next('MSE not supported'); return; }
+  const ms = new MS();
+  if (window.ManagedMediaSource && MS === window.ManagedMediaSource) {
+    video.disableRemotePlayback = true;
+    video.srcObject = ms;
+  } else {
+    video.src = URL.createObjectURL(ms);
+  }
+  ms.addEventListener('sourceopen', () => {
+    ws = new WebSocket(P.mse);
+    ws.binaryType = 'arraybuffer';
+    let sb = null, queue = [];
+    ws.onopen = () => {
+      const codecs = CODECS.filter(c => MS.isTypeSupported('video/mp4; codecs="' + c + '"')).join();
+      ws.send(JSON.stringify({type:'mse', value: codecs}));
+    };
+    ws.onmessage = (ev) => {
+      if (typeof ev.data === 'string') {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'mse') {
+          post({audio: /mp4a|opus|flac/.test(msg.value)});
+          try { sb = ms.addSourceBuffer(msg.value); } catch(e) { next('codec ' + msg.value); return; }
+          sb.mode = 'segments';
+          sb.addEventListener('updateend', () => {
+            if (queue.length && !sb.updating) {
+              try { sb.appendBuffer(queue.shift()); } catch(e) {}
+              return;
+            }
+            if (!sb.updating && sb.buffered.length) {
+              const end = sb.buffered.end(sb.buffered.length - 1);
+              const start0 = sb.buffered.start(0);
+              if (end - start0 > 10) { try { sb.remove(start0, end - 5); } catch(e) {} }
+              if (ms.setLiveSeekableRange) { try { ms.setLiveSeekableRange(Math.max(start0, end - 5), end); } catch(e) {} }
+              if (video.currentTime < end - 3 || video.currentTime > end) video.currentTime = Math.max(0, end - 0.3);
+              const gap = end - video.currentTime;
+              video.playbackRate = gap > 0.8 ? 1.1 : 1.0;
+              if (video.paused) video.play().catch(()=>{});
+            }
+          });
+        } else if (msg.type === 'error') {
+          next(msg.value);
+        }
+      } else if (sb) {
+        rx += ev.data.byteLength;
+        if (sb.updating || queue.length) queue.push(ev.data);
+        else { try { sb.appendBuffer(ev.data); } catch(e) { queue.push(ev.data); } }
+      }
+    };
+    ws.onerror = () => next('websocket error');
+    ws.onclose = () => { if (!stopped && playingNow) { post({status:'Reconnecting', playing:false}); playingNow = false; idx--; next(); } };
+  }, {once: true});
+  video.play().catch(()=>{});
+}
+
+async function onSignal(msg){
+  if (!pc) return;
+  if (msg.type === 'webrtc/answer') await pc.setRemoteDescription({type: 'answer', sdp: msg.value});
+  else if (msg.type === 'webrtc/candidate' && msg.value) { try { await pc.addIceCandidate({candidate: msg.value, sdpMid: '0'}); } catch(e) {} }
+  else if (msg.type === 'error') next(msg.value);
+}
+async function startWebRTC(){
+  if (!window.RTCPeerConnection) { next('WebRTC not supported'); return; }
+  pc = new RTCPeerConnection({bundlePolicy: 'max-bundle', iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
+  // Talking: the microphone goes out first, like Frigate's web UI does.
+  if (P.talk) {
+    try {
+      const mic = await navigator.mediaDevices.getUserMedia({audio: {echoCancellation: true, noiseSuppression: true}});
+      mic.getTracks().forEach(t => pc.addTransceiver(t, {direction: 'sendonly'}));
+    } catch (e) {
+      post({micError: String(e && e.name || e)});
+    }
+  }
+  pc.addTransceiver('video', {direction: 'recvonly'});
+  pc.addTransceiver('audio', {direction: 'recvonly'});
+  const stream = new MediaStream();
+  pc.ontrack = (e) => {
+    stream.addTrack(e.track);
+    if (e.track.kind === 'audio') post({audio: true});
+    video.srcObject = stream;
+    video.play().catch(()=>{});
+  };
+  const send = (o) => {
+    if (P.talk) post({signal: o});
+    else if (ws && ws.readyState === 1) ws.send(JSON.stringify(o));
+  };
+  pc.onicecandidate = (e) => send({type: 'webrtc/candidate', value: e.candidate ? e.candidate.candidate : ''});
+  const offer = async () => {
+    const o = await pc.createOffer();
+    await pc.setLocalDescription(o);
+    send({type: 'webrtc/offer', value: o.sdp});
+  };
+  if (P.talk) { offer(); return; }
+  ws = new WebSocket(P.webrtc);
+  ws.onopen = offer;
+  ws.onmessage = (ev) => onSignal(JSON.parse(ev.data));
+  ws.onerror = () => next('websocket error');
+}
+
+// Last resort: refresh a still image every second. A failed request keeps the previous
+// frame, so a flaky connection never shows a broken image.
+function startMJPEG(){
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (img) {
+    // Still showing snapshots from before a retry: keep them and try video again later.
+    playingNow = true;
+    post({status: 'Live', mode: 'mjpeg', playing: true});
+    if (P.modes.length > 1) retryTimer = setTimeout(() => { if (!stopped) { idx = -1; playingNow = false; next(); } }, 30000);
+    return;
+  }
+  img = document.createElement('img');
+  document.body.appendChild(img);
+  post({audio: false});
+  const tick = async () => {
+    if (stopped || !img) return;
+    try {
+      const r = await fetch(P.snapshot + (P.snapshot.includes('?') ? '&' : '?') + 't=' + Date.now(), {cache: 'no-store', credentials: 'include'});
+      if (!r.ok) throw new Error('http ' + r.status);
+      const url = URL.createObjectURL(await r.blob());
+      const old = img.src;
+      img.onload = () => { if (old.startsWith('blob:')) URL.revokeObjectURL(old); if (!playingNow) markPlaying('mjpeg'); };
+      img.src = url;
+      snapFails = 0;
+    } catch (e) {
+      snapFails++;
+      if (!playingNow && snapFails >= 5) { next('snapshots failed'); return; }
+    }
+    snapTimer = setTimeout(tick, 1000);
+  };
+  tick();
+  // Keep trying to get real video back.
+  if (P.modes.length > 1) retryTimer = setTimeout(() => { if (!stopped) { idx = -1; playingNow = false; next(); } }, 30000);
+}
+next();
+</script>
+</body></html>
