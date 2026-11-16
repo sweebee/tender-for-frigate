@@ -16,16 +16,20 @@ enum GroupIcon {
     }
 }
 
-/// What the editor works on: a new group on a server, or an existing one.
+/// What the editor works on: a new group, or an existing one by name. A group with one name is
+/// one group in the app, whichever servers have it.
 struct CameraGroupTarget: Identifiable {
-    let serverID: UUID
     /// nil: a new group.
     let name: String?
-    var id: String { serverID.uuidString + "/" + (name ?? "+new") }
+    /// The servers it may change (where this user is admin).
+    let serverIDs: [UUID]
+    var id: String { name ?? "+new" }
 }
 
 /// Adding or editing a camera group, as Frigate's group editor in Live: a name, an icon and the
-/// cameras in it. Saved in the config at once (no restart).
+/// cameras in it, here from all your servers at once. Frigate keeps groups per server, so on
+/// saving every server with cameras chosen gets a group of this name and icon with its own
+/// cameras, and a server left without cameras loses it. Saved at once (no restart).
 struct CameraGroupEditor: View {
     let target: CameraGroupTarget
     /// Saved, with the group's (possibly new) name.
@@ -34,15 +38,17 @@ struct CameraGroupEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var icon = "LuHouse"
-    @State private var cameras: Set<String> = []
+    /// Chosen cameras per server.
+    @State private var cameras: [UUID: Set<String>] = [:]
     @State private var saving = false
     @State private var errorMessage: String?
     @FocusState private var nameFocused: Bool
 
-    private var conn: ServerConnection? { model.connection(for: target.serverID) }
-    private var existing: [String: CameraGroupConfig] { conn?.config?.cameraGroups ?? [:] }
-    private var allCameras: [CameraConfig] { conn?.config?.orderedCameras ?? [] }
+    private var conns: [ServerConnection] {
+        target.serverIDs.compactMap { model.connection(for: $0) }.filter { $0.config != nil }
+    }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespaces) }
+    private var chosenCount: Int { cameras.values.reduce(0) { $0 + $1.count } }
 
     /// As Frigate's form allows: a name without a dot, not "default", not taken by another group.
     private var nameProblem: String? {
@@ -50,10 +56,12 @@ struct CameraGroupEditor: View {
         if n.isEmpty { return nil }
         if n.contains(".") { return L("The name cannot contain a period.") }
         if n.lowercased() == "default" { return L("This name is reserved.") }
-        if n != target.name && existing[n] != nil { return L("There is already a group with this name.") }
+        if n != target.name && conns.contains(where: { $0.config?.cameraGroups?[n] != nil }) {
+            return L("There is already a group with this name.")
+        }
         return nil
     }
-    private var canSave: Bool { !trimmedName.isEmpty && nameProblem == nil && !cameras.isEmpty && !saving }
+    private var canSave: Bool { !trimmedName.isEmpty && nameProblem == nil && chosenCount > 0 && !saving }
 
     var body: some View {
         NavigationStack {
@@ -86,21 +94,7 @@ struct CameraGroupEditor: View {
                             .accessibilityAddTraits(on ? .isSelected : [])
                         }
                     }
-                    SectionLabel(text: L("Cameras")).padding(.top, 10)
-                    VStack(spacing: 0) {
-                        ForEach(Array(allCameras.enumerated()), id: \.element.name) { i, cam in
-                            Toggle(isOn: Binding(get: { cameras.contains(cam.name) },
-                                                 set: { if $0 { cameras.insert(cam.name) } else { cameras.remove(cam.name) } })) {
-                                Text(cam.displayName).font(.system(size: 15))
-                            }
-                            .padding(.horizontal, 14).frame(minHeight: 48)
-                            .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Theme.cardBorder).frame(height: 1) } }
-                        }
-                    }
-                    .card(radius: 12)
-                    if model.orderedConnections.count > 1, let conn {
-                        Text(L("On \(conn.server.name)")).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
-                    }
+                    ForEach(conns) { conn in serverSection(conn) }
                 }
                 .padding(16)
                 .readableWidth(560)
@@ -126,6 +120,38 @@ struct CameraGroupEditor: View {
         .largeSheetOnWideScreens()
     }
 
+    /// One server's cameras; with one server just "Cameras", as before.
+    private func serverSection(_ conn: ServerConnection) -> some View {
+        let id = conn.server.id
+        let cams = conn.config?.orderedCameras ?? []
+        return VStack(alignment: .leading, spacing: 8) {
+            if conns.count > 1 {
+                HStack(spacing: 8) {
+                    ServerBadge(initial: conn.server.initial, tint: conn.server.tint)
+                    SectionLabel(text: conn.server.name)
+                }
+                .padding(.top, 10)
+            } else {
+                SectionLabel(text: L("Cameras")).padding(.top, 10)
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(cams.enumerated()), id: \.element.name) { i, cam in
+                    Toggle(isOn: Binding(get: { cameras[id]?.contains(cam.name) == true },
+                                         set: { on in
+                                             var set = cameras[id] ?? []
+                                             if on { set.insert(cam.name) } else { set.remove(cam.name) }
+                                             cameras[id] = set
+                                         })) {
+                        Text(cam.displayName).font(.system(size: 15))
+                    }
+                    .padding(.horizontal, 14).frame(minHeight: 48)
+                    .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Theme.cardBorder).frame(height: 1) } }
+                }
+            }
+            .card(radius: 12)
+        }
+    }
+
     /// The offered icons, plus the group's own when it is one the app does not draw: it stays.
     private var iconChoices: [(lucide: String, symbol: String)] {
         var list = GroupIcon.choices
@@ -134,35 +160,49 @@ struct CameraGroupEditor: View {
     }
 
     private func fill() {
-        guard let old = target.name, let g = existing[old] else {
-            if target.name == nil { nameFocused = true }
-            return
-        }
+        guard let old = target.name else { nameFocused = true; return }
         name = old
-        icon = g.icon ?? icon
-        cameras = Set(g.cameras)
+        var foundIcon = false
+        for conn in conns {
+            guard let g = conn.config?.cameraGroups?[old] else { continue }
+            cameras[conn.server.id] = Set(g.cameras)
+            if !foundIcon, let i = g.icon { icon = i; foundIcon = true }
+        }
     }
 
+    /// Writes the group to every server it is on now or gets cameras on; one at a time, so a
+    /// failure says which server.
     private func save() async {
-        guard let client = conn?.client, canSave else { return }
+        guard canSave else { return }
         saving = true
         defer { saving = false }
         let newName = trimmedName
-        // A new group goes last, as in Frigate; an edited one keeps its place.
-        let order = target.name.flatMap { existing[$0]?.order } ?? ((existing.values.compactMap(\.order).max() ?? existing.count) + 1)
-        // Keep Frigate's camera order in the list.
-        let members = allCameras.map(\.name).filter(cameras.contains)
-            + cameras.filter { c in !allCameras.contains { $0.name == c } }.sorted()
-        var groups: [String: Any] = [newName: ["order": order, "icon": icon, "cameras": members]]
-        // Renamed: the old key goes, as Frigate's editor does it.
-        if let old = target.name, old != newName { groups[old] = "" }
-        do {
-            try await client.setConfig(["camera_groups": groups], requiresRestart: false, updateTopic: nil)
-            await conn?.refresh(reloadConfig: true)
-            onDone(newName)
-            closePresented(dismiss)
-        } catch {
-            errorMessage = error.localizedDescription
+        for conn in conns {
+            guard let client = conn.client else { continue }
+            let existing = conn.config?.cameraGroups ?? [:]
+            let had = target.name.flatMap { existing[$0] }
+            let chosen = cameras[conn.server.id] ?? []
+            let all = conn.config?.orderedCameras.map(\.name) ?? []
+            // Frigate's camera order, then any member the app does not list (kept as it was).
+            let members = all.filter(chosen.contains) + chosen.filter { !all.contains($0) }.sorted()
+            var groups: [String: Any] = [:]
+            if !members.isEmpty {
+                // A group new on this server goes last, as in Frigate; an existing one keeps its place.
+                let order = had?.order ?? ((existing.values.compactMap(\.order).max() ?? existing.count) + 1)
+                groups[newName] = ["order": order, "icon": icon, "cameras": members]
+            }
+            // Renamed, or no cameras left here: the old key goes, as Frigate's editor does it.
+            if let old = target.name, had != nil, old != newName || members.isEmpty { groups[old] = "" }
+            if groups.isEmpty { continue }
+            do {
+                try await client.setConfig(["camera_groups": groups], requiresRestart: false, updateTopic: nil)
+                await conn.refresh(reloadConfig: true)
+            } catch {
+                errorMessage = L("\(conn.server.name): \(error.localizedDescription)")
+                return
+            }
         }
+        onDone(newName)
+        closePresented(dismiss)
     }
 }

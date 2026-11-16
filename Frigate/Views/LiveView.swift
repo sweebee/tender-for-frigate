@@ -2,7 +2,15 @@ import SwiftUI
 
 struct LiveView: View {
     @Environment(AppModel.self) private var model
+    /// The chosen camera group, `Self.nowActive`, or nil for all cameras.
     @State private var group: String? = nil
+    /// The "Now active" chip: cameras where an object moves, across all servers.
+    private static let nowActive = "\u{0}active"
+    /// When each camera ("<server id>|<camera>") last had a moving object, so it stays a while
+    /// after it goes quiet (as Birdseye does) instead of tiles jumping in and out.
+    @State private var lastActive: [String: Date] = [:]
+    @State private var clock = Date()
+    private static let activeLinger: TimeInterval = 30
     /// Signed-in role per server; nil (no authentication) counts as admin.
     @State private var roles: [UUID: String] = [:]
     @State private var editingGroup: CameraGroupTarget?
@@ -38,7 +46,7 @@ struct LiveView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     header
                     if model.showRecentAlerts { RecentAlertsStrip() }
-                    if !groupNames.isEmpty || !groupAdmins.isEmpty { groupChips }
+                    if !model.scopedConnections.isEmpty { groupChips }
                     content
                 }
                 .padding(.horizontal, 16)
@@ -61,13 +69,26 @@ struct LiveView: View {
                 }
                 .environment(model)
             }
+            .onChange(of: movingNow, initial: true) { _, keys in
+                let now = Date()
+                for k in keys { lastActive[k] = now }
+            }
+            // Lets a quiet camera leave "Now active" once its time is up.
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(5))
+                    clock = Date()
+                }
+            }
             .alert(L("Delete \(deletingGroup.map { FrigateFormat.prettyName($0.name ?? "") } ?? "")?"),
                    isPresented: Binding(get: { deletingGroup != nil }, set: { if !$0 { deletingGroup = nil } })) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) { if let t = deletingGroup { Task { await deleteGroup(t) } } }
             } message: { Text("The group is removed from Frigate; its cameras stay.") }
             // The group shown was removed (here or in Frigate): show all cameras again.
-            .onChange(of: groupNames) { _, names in if let g = group, !names.contains(g) { group = nil } }
+            .onChange(of: groupNames) { _, names in
+                if let g = group, g != Self.nowActive, !names.contains(g) { group = nil }
+            }
             .alert("Not saved", isPresented: Binding(get: { groupError != nil }, set: { if !$0 { groupError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: { Text(groupError ?? "") }
@@ -128,6 +149,12 @@ struct LiveView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 Button { group = nil } label: { Chip(title: L("All"), selected: group == nil) }
+                let active = activeCount
+                Button { group = Self.nowActive } label: {
+                    Chip(title: active > 0 ? "\(L("Now active")) \(active)" : L("Now active"),
+                         selected: group == Self.nowActive, systemImage: "dot.radiowaves.left.and.right")
+                }
+                .accessibilityLabel(L("Now active") + (active > 0 ? ", \(active)" : ""))
                 ForEach(groupNames, id: \.self) { name in
                     Button { group = name } label: {
                         HStack(spacing: 6) {
@@ -137,24 +164,34 @@ struct LiveView: View {
                     }
                     .contextMenu { groupMenu(name) }
                 }
-                let admins = groupAdmins
-                if admins.count == 1, let conn = admins.first {
-                    Button { editingGroup = CameraGroupTarget(serverID: conn.server.id, name: nil) } label: { addChip }
+                if !groupAdmins.isEmpty {
+                    Button { editingGroup = CameraGroupTarget(name: nil, serverIDs: groupAdmins.map(\.server.id)) } label: { addChip }
                         .accessibilityLabel("New group")
-                } else if admins.count > 1 {
-                    // Groups belong to one server: pick which.
-                    Menu {
-                        ForEach(admins) { conn in
-                            Button(conn.server.name) { editingGroup = CameraGroupTarget(serverID: conn.server.id, name: nil) }
-                        }
-                    } label: { addChip }
-                    .accessibilityLabel("New group")
                 }
             }
             .padding(.horizontal, 16)
         }
         .padding(.horizontal, -16)
         .buttonStyle(.plain)
+    }
+
+    /// Cameras ("<server id>|<camera>") with a moving object right now.
+    private var movingNow: Set<String> {
+        var keys = Set<String>()
+        for conn in model.scopedConnections {
+            for (cam, act) in conn.activity where !act.tracking.isEmpty { keys.insert("\(conn.server.id)|\(cam)") }
+        }
+        return keys
+    }
+
+    private func isActive(_ conn: ServerConnection, _ cam: String) -> Bool {
+        let key = "\(conn.server.id)|\(cam)"
+        if movingNow.contains(key) { return true }
+        return lastActive[key].map { clock.timeIntervalSince($0) < Self.activeLinger } ?? false
+    }
+
+    private var activeCount: Int {
+        model.scopedConnections.reduce(0) { n, conn in n + conn.cameras.filter { isActive(conn, $0.name) }.count }
     }
 
     private var addChip: some View {
@@ -173,34 +210,36 @@ struct LiveView: View {
         return nil
     }
 
-    /// Edit and Delete for a group on each server (where this user is admin) that has it.
+    /// Edit and Delete for a group: one group in the app, whichever of your servers have it.
     @ViewBuilder
     private func groupMenu(_ name: String) -> some View {
-        let servers = groupAdmins.filter { $0.config?.cameraGroups?[name] != nil }
-        ForEach(servers) { conn in
-            let target = CameraGroupTarget(serverID: conn.server.id, name: name)
-            Button { editingGroup = target } label: {
-                Label(servers.count > 1 ? L("Edit on \(conn.server.name)") : L("Edit"), systemImage: "pencil")
-            }
-            Button(role: .destructive) { deletingGroup = target } label: {
-                DestructiveMenuLabel(title: servers.count > 1 ? "Delete on \(conn.server.name)" : "Delete")
-            }
+        let admins = groupAdmins
+        if admins.contains(where: { $0.config?.cameraGroups?[name] != nil }) {
+            let target = CameraGroupTarget(name: name, serverIDs: admins.map(\.server.id))
+            Button { editingGroup = target } label: { Label("Edit", systemImage: "pencil") }
+            Button(role: .destructive) { deletingGroup = target } label: { DestructiveMenuLabel(title: "Delete") }
         }
     }
 
+    /// Removes the group from every server (where this user is admin) that has it.
     private func deleteGroup(_ target: CameraGroupTarget) async {
-        guard let name = target.name, let conn = model.connection(for: target.serverID), let client = conn.client else { return }
+        guard let name = target.name else { return }
         busyGroup = name
         defer { busyGroup = nil }
-        do {
-            try await client.setConfig(["camera_groups": [name: ""]], requiresRestart: false, updateTopic: nil)
-            await conn.refresh(reloadConfig: true)
-        } catch {
-            groupError = error.localizedDescription
+        for id in target.serverIDs {
+            guard let conn = model.connection(for: id), conn.config?.cameraGroups?[name] != nil, let client = conn.client else { continue }
+            do {
+                try await client.setConfig(["camera_groups": [name: ""]], requiresRestart: false, updateTopic: nil)
+                await conn.refresh(reloadConfig: true)
+            } catch {
+                groupError = L("\(conn.server.name): \(error.localizedDescription)")
+                return
+            }
         }
     }
 
     private func cameras(for conn: ServerConnection) -> [CameraConfig] {
+        if group == Self.nowActive { return conn.cameras.filter { isActive(conn, $0.name) } }
         guard let group, let members = conn.config?.cameraGroups?[group]?.cameras else {
             return group == nil ? conn.cameras : []
         }
@@ -229,7 +268,12 @@ struct LiveView: View {
         if all.count == 1, let conn = all.first {
             serverGrid(conn)
         } else if conns.isEmpty {
-            EmptyStateView(systemImage: "video.slash", title: L("No cameras"), message: L("This group has no cameras."))
+            if group == Self.nowActive {
+                EmptyStateView(systemImage: "dot.radiowaves.left.and.right", title: L("Nothing is moving right now"),
+                               message: L("Cameras show here while Frigate tracks a moving object."))
+            } else {
+                EmptyStateView(systemImage: "video.slash", title: L("No cameras"), message: L("This group has no cameras."))
+            }
         } else {
             ForEach(conns) { conn in
                 VStack(alignment: .leading, spacing: 10) {

@@ -9878,6 +9878,46 @@
           }
         }
       }
+    },
+    "Now active": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu actief"
+          }
+        }
+      }
+    },
+    "Nothing is moving right now": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er beweegt nu niets"
+          }
+        }
+      }
+    },
+    "Cameras show here while Frigate tracks a moving object.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera's verschijnen hier zolang Frigate een bewegend object volgt."
+          }
+        }
+      }
+    },
+    "%@: %@": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
