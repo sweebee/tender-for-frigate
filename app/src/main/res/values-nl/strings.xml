@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="more_than_hour">&gt; 1 u</string>
+    <string name="today">Vandaag</string>
+    <string name="yesterday">Gisteren</string>
+    <string name="just_now">Zojuist</string>
+    <string name="minutes_ago">%1$d min geleden</string>
+    <string name="hours_ago">%1$d u geleden</string>
+    <plurals name="days_ago">
+        <item quantity="one">%1$d dag geleden</item>
+        <item quantity="other">%1$d dagen geleden</item>
+    </plurals>
+    <string name="error_invalid_url">Het serveradres is geen geldige URL.</string>
+    <string name="error_http">Server antwoordde met %1$d%2$s.</string>
+    <string name="error_unauthorized">Inloggen mislukt. Controleer gebruikersnaam en wachtwoord.</string>
+    <string name="error_not_frigate">Dit adres reageerde niet als een Frigate-server.</string>
+    <string name="no_recordings_in_span">Geen opnames in deze tijdspanne</string>
+    <string name="problem_disk_small">De schijf is te klein om opnames zo lang te bewaren als ingesteld</string>
+    <string name="problem_detector_very_slow">Detector %1$s is erg traag (%2$d ms)</string>
+    <string name="problem_detector_slow">Detector %1$s is traag (%2$d ms)</string>
+    <string name="problem_camera_offline">%1$s is offline</string>
+    <string name="problem_camera_skips">%1$s slaat %2$d%% van de detecties over</string>
+    <string name="connecting">Verbinden…</string>
+    <string name="offline_last_seen">Offline · laatst gezien %1$s</string>
+    <string name="offline">Offline</string>
+    <plurals name="n_cameras">
+        <item quantity="one">%1$d camera</item>
+        <item quantity="other">%1$d camera\'s</item>
+    </plurals>
+    <string name="remote">Extern</string>
+    <string name="local">Lokaal</string>
+    <string name="not_reachable">Niet bereikbaar</string>
+    <string name="all_servers">Alle servers</string>
+    <string name="server">Server</string>
+    <string name="back">Terug</string>
+    <string name="try_again">Probeer opnieuw</string>
+    <string name="cancel">Annuleer</string>
+    <string name="ok">OK</string>
+    <string name="done">Klaar</string>
+    <string name="save">Bewaar</string>
+    <string name="delete">Verwijder</string>
+    <string name="remove">Verwijder</string>
+    <string name="edit">Wijzig</string>
+    <string name="rename">Hernoem</string>
+    <string name="close">Sluit</string>
+    <string name="add">Toevoegen</string>
+    <string name="not_saved">Niet opgeslagen</string>
+    <string name="show_password">Toon wachtwoord</string>
+    <string name="hide_password">Verberg wachtwoord</string>
+    <string name="tab_live">Live</string>
+    <string name="tab_review">Beoordelen</string>
+    <string name="tab_explore">Verkennen</string>
+    <string name="tab_more">Meer</string>
+    <string name="exports">Exports</string>
+    <string name="classification">Classificatie</string>
+    <string name="face_library">Gezichtenbibliotheek</string>
+    <string name="chat">Chat</string>
+    <string name="settings">Instellingen</string>
+    <string name="exports_subtitle">Clips bewaard in Frigate</string>
+    <string name="classification_subtitle">Leer Frigate wat het ziet</string>
+    <string name="face_library_subtitle">Herken de mensen die Frigate ziet</string>
+    <string name="chat_subtitle">Vraag Frigate over je camera\'s</string>
+    <string name="settings_subtitle">Servers en liveweergave</string>
+    <plurals name="n_clips">
+        <item quantity="one">1 clip</item>
+        <item quantity="other">%1$d clips</item>
+    </plurals>
+</resources>
