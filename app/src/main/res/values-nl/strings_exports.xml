@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exports_export">Export</string>
+    <string name="exports_case">Zaak</string>
+    <string name="exports_cases">Zaken</string>
+    <string name="exports_not_in_case">Niet in een zaak</string>
+    <string name="exports_none">Geen exports</string>
+    <string name="exports_none_message">Clips die je in Frigate exporteert, of vanuit terugkijken in Frigate bewaart, verschijnen hier.</string>
+    <string name="exports_none_in_case">Geen exports in deze zaak</string>
+    <string name="exports_none_in_case_message">Houd een export ingedrukt om hem naar deze zaak te verplaatsen.</string>
+    <string name="exports_exporting">Exporteren…</string>
+    <string name="exports_rename_export">Export hernoemen</string>
+    <string name="exports_name">Naam</string>
+    <string name="exports_delete_title">Deze export verwijderen?</string>
+    <string name="exports_delete_message">De video wordt van de Frigate-server verwijderd.</string>
+    <string name="exports_new_case">Nieuwe zaak</string>
+    <string name="exports_new_case_ellipsis">Nieuwe zaak…</string>
+    <string name="exports_new_case_on">Nieuwe zaak op</string>
+    <string name="exports_case_name">Naam van de zaak</string>
+    <string name="exports_goes_into_it">%1$s komt erin.</string>
+    <string name="exports_the_export">De export</string>
+    <string name="exports_create">Maak</string>
+    <string name="exports_rename_case">Zaak hernoemen</string>
+    <string name="exports_delete_case">Verwijder zaak</string>
+    <string name="exports_delete_case_title">Deze zaak verwijderen?</string>
+    <string name="exports_delete_case_only">Alleen zaak verwijderen</string>
+    <string name="exports_delete_case_and_exports">Zaak én exports verwijderen</string>
+    <string name="exports_case_empty">De zaak is leeg.</string>
+    <plurals name="exports_case_keeps">
+        <item quantity="one">De export blijft bewaard buiten een zaak, tenzij je hem ook verwijdert.</item>
+        <item quantity="other">De %1$d exports blijven bewaard buiten een zaak, tenzij je ze ook verwijdert.</item>
+    </plurals>
+    <plurals name="exports_n_exports">
+        <item quantity="one">%1$d export</item>
+        <item quantity="other">%1$d exports</item>
+    </plurals>
+    <string name="exports_more_options">Meer opties</string>
+    <string name="exports_move_to_case">Verplaats naar zaak</string>
+    <string name="exports_remove_from_case">Haal uit zaak</string>
+    <string name="exports_something_wrong">Er ging iets mis</string>
+    <string name="exports_share">Delen</string>
+    <string name="exports_delete_export">Export verwijderen</string>
+    <string name="exports_preparing">Clip voorbereiden…</string>
+    <string name="exports_downloading">Downloaden…</string>
+    <string name="exports_saved">Bewaard in Films</string>
+    <string name="exports_save_to_device">Bewaar op toestel</string>
+    <string name="exports_play">Afspelen</string>
+    <string name="exports_pause">Pauzeren</string>
+    <string name="exports_not_found">Deze export staat niet meer op de server.</string>
+    <string name="exports_could_not_load">Kon de export niet laden</string>
+</resources>

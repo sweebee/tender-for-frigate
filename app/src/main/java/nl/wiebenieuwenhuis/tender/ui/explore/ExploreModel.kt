@@ -150,7 +150,11 @@ class ExploreViewModel : ViewModel() {
         }
     }
 
+    /** Each load gets a number; a cancelled, older one leaves the state alone. */
+    private var generation = 0
+
     private suspend fun reload() {
+        val gen = ++generation
         loading = true
         loadError = null
         try {
@@ -174,7 +178,7 @@ class ExploreViewModel : ViewModel() {
         } catch (e: Exception) {
             loadError = e.message ?: e.toString()
         } finally {
-            loading = false
+            if (gen == generation) loading = false
         }
     }
 
@@ -293,6 +297,7 @@ class ExploreViewModel : ViewModel() {
         val last = grid.lastOrNull()?.event?.startTime ?: return
         val f = filter
         loadJob = viewModelScope.launch {
+            val gen = ++generation
             loading = true
             try {
                 val (after, before) = f.dayRange
@@ -308,7 +313,7 @@ class ExploreViewModel : ViewModel() {
                     canLoadMore = fresh.isNotEmpty()
                 }
             } finally {
-                loading = false
+                if (gen == generation) loading = false
             }
         }
     }

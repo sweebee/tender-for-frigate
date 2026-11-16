@@ -525,7 +525,7 @@ private fun ResultGrid(vm: ExploreViewModel, open: (ExploreEntry) -> Unit) {
         derivedStateOf { (state.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) >= state.layoutInfo.totalItemsCount - 6 }
     }
     LaunchedEffect(state) {
-        snapshotFlow { nearEnd }.collect { if (it && vm.grid.isNotEmpty()) vm.loadMore() }
+        snapshotFlow { nearEnd to vm.grid.size }.collect { (near, size) -> if (near && size > 0) vm.loadMore() }
     }
     LazyVerticalGrid(
         GridCells.Adaptive(150.dp), state = state, modifier = Modifier.fillMaxSize(),
