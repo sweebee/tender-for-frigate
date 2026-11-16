@@ -20,6 +20,15 @@ enum ScreenshotMode {
 
     static func allows(_ camera: String) -> Bool { cameras?.contains(camera) ?? true }
 
+    /// `-ScreenshotServers Home`: only these servers (by name) are shown and connected; the
+    /// saved server list itself is left as it is.
+    static let servers: [String]? = {
+        guard let raw = UserDefaults.standard.string(forKey: "ScreenshotServers"), !raw.isEmpty else { return nil }
+        return raw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+    }()
+
+    static func allowsServer(_ name: String) -> Bool { servers?.contains(name.lowercased()) ?? true }
+
     /// The cameras to request from the API when the caller did not choose any.
     static func scope(_ requested: [String]?) -> [String]? {
         guard let cameras else { return requested }

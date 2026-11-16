@@ -695,7 +695,9 @@ final class AppModel {
         if let data = try? JSONEncoder().encode(scope) { UserDefaults.standard.set(data, forKey: "scope") }
     }
 
-    var orderedConnections: [ServerConnection] { servers.compactMap { connections[$0.id] } }
+    var orderedConnections: [ServerConnection] {
+        servers.filter { ScreenshotMode.allowsServer($0.name) }.compactMap { connections[$0.id] }
+    }
     var onlineConnections: [ServerConnection] { orderedConnections.filter(\.isOnline) }
 
     /// Connections in the current Live/History scope.
