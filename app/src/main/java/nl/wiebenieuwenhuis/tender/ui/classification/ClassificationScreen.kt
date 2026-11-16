@@ -115,6 +115,7 @@ import nl.wiebenieuwenhuis.tender.ui.ClassificationModelRoute
 import nl.wiebenieuwenhuis.tender.ui.LocalNav
 import nl.wiebenieuwenhuis.tender.ui.MoreTab
 import nl.wiebenieuwenhuis.tender.ui.components.ConfirmDialog
+import nl.wiebenieuwenhuis.tender.ui.components.relativeTime
 import nl.wiebenieuwenhuis.tender.ui.components.DestructiveMenuItem
 import nl.wiebenieuwenhuis.tender.ui.components.EmptyState
 import nl.wiebenieuwenhuis.tender.ui.components.LoadingBox
@@ -855,7 +856,7 @@ private fun TrainCard(
         !dataset.hasTrained -> stringResource(R.string.classification_not_trained)
         // After a move Frigate's record says "trained now, 0 images": its date says nothing then.
         dataset.lastTrainedImages == 0 -> stringResource(R.string.classification_train_again)
-        dataset.lastTrained != null -> stringResource(R.string.classification_trained_ago, Format.relative(dataset.lastTrained).lowercase())
+        dataset.lastTrained != null -> stringResource(R.string.classification_trained_ago, relativeTime(dataset.lastTrained.time / 1000.0).lowercase())
         else -> stringResource(R.string.classification_trained)
     }
     val detail = when {
