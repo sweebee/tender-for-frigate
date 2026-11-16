@@ -12,7 +12,9 @@ android {
         applicationId = "nl.wiebenieuwenhuis.tender"
         minSdk = 28
         targetSdk = 37
-        versionCode = 1
+        // Every commit on main counts up, so each upload has a higher version code.
+        versionCode = providers.exec { commandLine("git", "rev-list", "--count", "HEAD"); isIgnoreExitValue = true }
+            .standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }.getOrElse(1)
         versionName = "0.1"
         // The commit the app was built from, shown in Settings next to the version.
         val commit = providers.exec { commandLine("git", "rev-parse", "--short", "HEAD"); isIgnoreExitValue = true }
@@ -20,8 +22,23 @@ android {
         buildConfigField("String", "GIT_COMMIT", "\"$commit\"")
     }
 
+    // The Play upload key lives outside the repo (~/.android-keys); its password comes from the
+    // macOS Keychain through scripts/bundle-release.sh (ORG_GRADLE_PROJECT_tenderUploadPassword).
+    val uploadPassword = providers.gradleProperty("tenderUploadPassword").orNull
+    signingConfigs {
+        if (uploadPassword != null) {
+            create("upload") {
+                storeFile = file(System.getProperty("user.home") + "/.android-keys/tender-upload.jks")
+                storePassword = uploadPassword
+                keyAlias = "upload"
+                keyPassword = uploadPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (uploadPassword != null) signingConfig = signingConfigs.getByName("upload")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
