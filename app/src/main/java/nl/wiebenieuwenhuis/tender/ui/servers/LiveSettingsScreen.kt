@@ -72,11 +72,6 @@ fun LiveSettingsScreen() {
                             subtitle = stringResource(R.string.play_alerts_info))
                     }
                 }
-                SectionLabel(stringResource(R.string.layout), Modifier.padding(top = 14.dp))
-                SectionCard {
-                    SwitchRow(stringResource(R.string.large_tiles), AppModel.largeTiles, { AppModel.updateLargeTiles(it) },
-                        subtitle = stringResource(R.string.large_tiles_info))
-                }
             }
         }
     }

@@ -53,7 +53,6 @@
     <string name="retry">Retry</string>
     <string name="not_recording">Not recording</string>
     <string name="more">More</string>
-    <string name="playback_mode">Playback</string>
     <string name="reload_stream">Reload stream</string>
     <string name="debug">Debug</string>
     <string name="audio">Audio</string>
@@ -100,4 +99,8 @@
     <string name="score">Score</string>
     <string name="ratio">Ratio</string>
     <string name="area">Area</string>
+    <string name="switching_camera_on">Switching the camera on…</string>
+    <string name="switching_camera_on_info">The picture appears once Frigate has the stream.</string>
+    <string name="switch_detection_on">Switch detection on</string>
+    <string name="switch_recording_on">Switch recording on</string>
 </resources>

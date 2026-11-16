@@ -14,6 +14,10 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1"
+        // The commit the app was built from, shown in Settings next to the version.
+        val commit = providers.exec { commandLine("git", "rev-parse", "--short", "HEAD"); isIgnoreExitValue = true }
+            .standardOutput.asText.map { it.trim() }.getOrElse("")
+        buildConfigField("String", "GIT_COMMIT", "\"$commit\"")
     }
 
     buildTypes {

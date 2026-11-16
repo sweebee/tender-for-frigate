@@ -61,7 +61,5 @@
     <string name="show_recent_alerts_info">Toont onbeoordeelde meldingen van het afgelopen etmaal bovenaan Live.</string>
     <string name="play_alerts">Meldingen afspelen</string>
     <string name="play_alerts_info">Speelt recente meldingen af als korte lusvideo\'s. Zet uit om alleen een stilstaand beeld te tonen.</string>
-    <string name="layout">Indeling</string>
     <string name="large_tiles">Grote tegels</string>
-    <string name="large_tiles_info">Eén kolom tegels op een telefoon, met het hele beeld.</string>
 </resources>

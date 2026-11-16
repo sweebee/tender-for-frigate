@@ -126,7 +126,8 @@ fun ServersScreen(showsBack: Boolean = true) {
                     }
                     Text(stringResource(R.string.about_line), Modifier.fillMaxWidth().padding(top = 20.dp),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
-                    Text(stringResource(R.string.version_line, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE), Modifier.fillMaxWidth(),
+                    Text(stringResource(R.string.version_line, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE) +
+                        (if (BuildConfig.GIT_COMMIT.isNotEmpty()) " · ${BuildConfig.GIT_COMMIT}" else ""), Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
             }
@@ -173,7 +174,7 @@ private fun ServerRow(conn: ServerConnection) {
         Spacer(Modifier.width(4.dp))
         // The server's settings: its connection (address, sign-in) and, for admins, Frigate's own settings.
         FilledTonalIconButton(onClick = {
-            if (conn.isOnline && conn.config != null) nav.navigate(ServerSettingsRoute(conn.id)) else nav.navigate(ConnectRoute(conn.id))
+            nav.navigate(ServerSettingsRoute(conn.id))
         }) { Icon(Icons.Outlined.Settings, stringResource(R.string.settings_of, conn.server.name)) }
     }
 }

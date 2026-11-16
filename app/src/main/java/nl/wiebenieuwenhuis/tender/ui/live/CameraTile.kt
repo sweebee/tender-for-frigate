@@ -141,7 +141,7 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
                 !on -> stringResource(R.string.off)
                 !online -> stringResource(R.string.offline)
                 objects.isNotEmpty() -> stringResource(R.string.now)
-                else -> conn.lastActivity[camera.name]?.let { Format.relative(it.toDate()) } ?: ""
+                else -> conn.lastActivity[camera.name]?.let { nl.wiebenieuwenhuis.tender.ui.components.relativeTime(it) } ?: ""
             }
             Text(meta, style = MaterialTheme.typography.bodySmall, maxLines = 1,
                 color = if (detectOff || recordOff) status.warning else MaterialTheme.colorScheme.onSurfaceVariant)

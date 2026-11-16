@@ -168,9 +168,9 @@ fun ProfileSwitcher() {
             try {
                 conn.setProfile(name)
                 // Frigate applies it to every camera, which takes a few seconds.
-                repeat(10) {
+                for (i in 0 until 10) {
                     delay(1000)
-                    if (runCatching { conn.client?.profiles()?.second }.getOrNull() == name) return@repeat
+                    if (runCatching { conn.client?.profiles()?.second }.getOrNull() == name) break
                 }
                 conn.refresh(reloadConfig = true)
             } catch (e: Exception) { error = e.message } finally { switching = false }
@@ -234,7 +234,7 @@ fun ServerProblemsBanner(conn: ServerConnection) {
                 Text(p.text, style = MaterialTheme.typography.bodyLarge)
             }
             if (conn.problems.isEmpty()) Text(stringResource(R.string.no_problems_anymore))
-            if (conn.isAdmin) TextButton(onClick = { showing = false; nav.navigate(nl.wiebenieuwenhuis.tender.ui.settings.SystemStatusRoute(conn.id)) }) {
+            TextButton(onClick = { showing = false; nav.navigate(nl.wiebenieuwenhuis.tender.ui.settings.SystemStatusRoute(conn.id)) }) {
                 Text(stringResource(R.string.system_status_and_logs))
             }
         }
@@ -298,7 +298,7 @@ fun AlertPreviewTile(serverId: String, item: ReviewItem, modifier: Modifier = Mo
         if (AppModel.playAlertPreviews && !item.inProgress && client != null) LoopingVideo(client.reviewPreviewUrl(item), Modifier.fillMaxSize())
         Row(Modifier.padding(5.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) { item.labels.take(3).forEach { LabelIcon(it, size = 16.dp) } }
         Text(
-            if (item.inProgress) "LIVE" else Format.relative(item.startTime.toDate()),
+            if (item.inProgress) "LIVE" else nl.wiebenieuwenhuis.tender.ui.components.relativeTime(item.startTime),
             Modifier.align(Alignment.BottomStart).padding(5.dp)
                 .background(if (item.inProgress) Palette.status.recording else Color.Black.copy(alpha = 0.6f), RoundedCornerShape(5.dp))
                 .padding(horizontal = 6.dp, vertical = 2.dp),

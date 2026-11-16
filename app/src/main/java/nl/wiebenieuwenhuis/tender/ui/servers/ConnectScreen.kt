@@ -213,7 +213,8 @@ fun ConnectScreen(route: ConnectRoute, onboarding: Boolean = false) {
         confirmText = stringResource(R.string.remove),
         onConfirm = {
             AppModel.delete(existing)
-            if (AppModel.servers.isNotEmpty()) { nav.popBackStack(); nav.popBackStack() }
+            // The server's settings page below closes itself once its server is gone.
+            if (AppModel.servers.isNotEmpty()) nav.popBackStack()
         },
         onDismiss = { confirmDelete = false },
     )

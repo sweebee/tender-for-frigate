@@ -86,7 +86,7 @@ import java.util.Locale
  * /api/<camera>/ptz/info) plus its presets. Commands go over Frigate's websocket while pressed.
  */
 @Composable
-fun PtzControls(conn: ServerConnection, client: FrigateClient, camera: String) {
+fun PtzControls(conn: ServerConnection, client: FrigateClient, camera: String, overlay: Boolean = false) {
     var features by remember { mutableStateOf<List<String>?>(null) }
     var presets by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(camera) {
@@ -98,22 +98,22 @@ fun PtzControls(conn: ServerConnection, client: FrigateClient, camera: String) {
     val canMove = features?.contains("pt") ?: true
     val canZoom = features?.contains("zoom") ?: true
     fun send(cmd: String) { conn.command("$camera/ptz", cmd) }
-    Column(Modifier.fillMaxWidth().padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(stringResource(if (canMove) R.string.pan_tilt_zoom else R.string.zoom), style = MaterialTheme.typography.titleMedium)
+    Column(if (overlay) Modifier else Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(if (overlay) 10.dp else 16.dp)) {
+        if (!overlay) Text(stringResource(if (canMove) R.string.pan_tilt_zoom else R.string.zoom), style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(36.dp), verticalAlignment = Alignment.CenterVertically) {
             if (canMove) Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pad(Icons.Filled.KeyboardArrowUp, "MOVE_UP", ::send)
+                Pad(Icons.Filled.KeyboardArrowUp, "MOVE_UP", overlay, ::send)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Pad(Icons.Filled.KeyboardArrowLeft, "MOVE_LEFT", ::send)
-                    Spacer(Modifier.size(56.dp))
-                    Pad(Icons.Filled.KeyboardArrowRight, "MOVE_RIGHT", ::send)
+                    Pad(Icons.Filled.KeyboardArrowLeft, "MOVE_LEFT", overlay, ::send)
+                    Spacer(Modifier.size(if (overlay) 46.dp else 56.dp))
+                    Pad(Icons.Filled.KeyboardArrowRight, "MOVE_RIGHT", overlay, ::send)
                 }
-                Pad(Icons.Filled.KeyboardArrowDown, "MOVE_DOWN", ::send)
+                Pad(Icons.Filled.KeyboardArrowDown, "MOVE_DOWN", overlay, ::send)
             }
             if (canZoom) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pad(Icons.Filled.ZoomIn, "ZOOM_IN", ::send)
-                Pad(Icons.Filled.ZoomOut, "ZOOM_OUT", ::send)
+                Pad(Icons.Filled.ZoomIn, "ZOOM_IN", overlay, ::send)
+                Pad(Icons.Filled.ZoomOut, "ZOOM_OUT", overlay, ::send)
             }
         }
         if (presets.isNotEmpty()) LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -127,9 +127,10 @@ fun PtzControls(conn: ServerConnection, client: FrigateClient, camera: String) {
 
 /** Sends the command while held, STOP when let go. */
 @Composable
-private fun Pad(icon: androidx.compose.ui.graphics.vector.ImageVector, command: String, send: (String) -> Unit) {
+private fun Pad(icon: androidx.compose.ui.graphics.vector.ImageVector, command: String, overlay: Boolean, send: (String) -> Unit) {
     Box(
-        Modifier.size(56.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        Modifier.size(if (overlay) 46.dp else 56.dp).clip(CircleShape)
+            .background(if (overlay) Color.Black.copy(alpha = 0.55f) else MaterialTheme.colorScheme.surfaceContainerHigh)
             .pointerInput(command) {
                 awaitEachGesture {
                     awaitFirstDown()
@@ -139,7 +140,7 @@ private fun Pad(icon: androidx.compose.ui.graphics.vector.ImageVector, command: 
                 }
             },
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, command.replace('_', ' ').lowercase()) }
+    ) { Icon(icon, command.replace('_', ' ').lowercase(), tint = if (overlay) Color.White else MaterialTheme.colorScheme.onSurface) }
 }
 
 /**

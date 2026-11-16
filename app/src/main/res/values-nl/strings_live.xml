@@ -53,7 +53,6 @@
     <string name="retry">Opnieuw</string>
     <string name="not_recording">Geen opname</string>
     <string name="more">Meer</string>
-    <string name="playback_mode">Terugkijken</string>
     <string name="reload_stream">Stream herladen</string>
     <string name="debug">Foutopsporing</string>
     <string name="audio">Geluid</string>
@@ -100,4 +99,8 @@
     <string name="score">Score</string>
     <string name="ratio">Verhouding</string>
     <string name="area">Gebied</string>
+    <string name="switching_camera_on">Camera wordt aangezet…</string>
+    <string name="switching_camera_on_info">Het beeld verschijnt zodra Frigate de stream heeft.</string>
+    <string name="switch_detection_on">Detectie aanzetten</string>
+    <string name="switch_recording_on">Opname aanzetten</string>
 </resources>

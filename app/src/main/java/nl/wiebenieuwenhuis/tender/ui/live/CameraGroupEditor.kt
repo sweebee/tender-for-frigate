@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -87,6 +88,8 @@ fun CameraGroupEditor(target: GroupTarget, onDismiss: () -> Unit, onDone: (Strin
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var pickingIcon by remember { mutableStateOf(false) }
+    val nameFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    androidx.compose.runtime.LaunchedEffect(Unit) { if (target.name == null) runCatching { nameFocus.requestFocus() } }
     val trimmed = name.trim()
     val chosenCount = chosen.values.sumOf { it.size }
     // As Frigate's form allows: a name without a dot, not "default", not taken by another group.
@@ -143,7 +146,7 @@ fun CameraGroupEditor(target: GroupTarget, onDismiss: () -> Unit, onDone: (Strin
             Column(Modifier.padding(pad).fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 Column(Modifier.readableWidth(560.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text(stringResource(R.string.name)) }, singleLine = true,
+                    OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth().focusRequester(nameFocus), label = { Text(stringResource(R.string.name)) }, singleLine = true,
                         isError = nameProblem != null, supportingText = nameProblem?.let { { Text(it) } })
                     SectionLabel(stringResource(R.string.icon), Modifier.padding(top = 10.dp))
                     SectionCard {
