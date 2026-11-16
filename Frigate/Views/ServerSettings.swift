@@ -784,6 +784,7 @@ struct RecordSettingsView: View {
     private func stepper(_ key: String, unit: Unit) -> some View {
         let value = values[key] ?? 0
         let changed = values[key] != original[key]
+        let top = Self.maximum(key)
         return HStack(spacing: 0) {
             Button { values[key] = max(0, value - 1) } label: {
                 Image(systemName: "minus").frame(width: 36, height: 30).contentShape(Rectangle())
@@ -793,9 +794,10 @@ struct RecordSettingsView: View {
                 .font(.system(size: 14, weight: .semibold).monospacedDigit())
                 .foregroundStyle(changed ? Theme.accent : Theme.text)
                 .frame(minWidth: 64)
-            Button { values[key] = value + 1 } label: {
+            Button { values[key] = min(value + 1, top ?? .infinity) } label: {
                 Image(systemName: "plus").frame(width: 36, height: 30).contentShape(Rectangle())
             }
+            .disabled(top.map { value >= $0 } ?? false)
         }
         .font(.system(size: 13, weight: .bold))
         .foregroundStyle(Theme.accent)
@@ -804,6 +806,9 @@ struct RecordSettingsView: View {
         .disabled(!isAdmin)
         .opacity(isAdmin ? 1 : 0.5)
     }
+
+    /// Frigate refuses more than 60 seconds before an alert or detection (MAX_PRE_CAPTURE).
+    private static func maximum(_ key: String) -> Double? { key.hasSuffix(".pre_capture") ? 60 : nil }
 
     static func days(_ d: Double) -> String {
         let n = d.rounded() == d ? String(Int(d)) : String(format: "%.1f", d)
