@@ -10,7 +10,6 @@ struct LiveView: View {
     /// after it goes quiet (as Birdseye does) instead of tiles jumping in and out.
     @State private var lastActive: [String: Date] = [:]
     @State private var clock = Date()
-    private static let activeLinger: TimeInterval = 30
     /// Signed-in role per server; nil (no authentication) counts as admin.
     @State private var roles: [UUID: String] = [:]
     @State private var editingGroup: CameraGroupTarget?
@@ -186,7 +185,9 @@ struct LiveView: View {
     private func isActive(_ conn: ServerConnection, _ cam: String) -> Bool {
         let key = "\(conn.server.id)|\(cam)"
         if movingNow.contains(key) { return true }
-        return lastActive[key].map { clock.timeIntervalSince($0) < Self.activeLinger } ?? false
+        // As long as Birdseye on that server keeps a camera after its activity ends.
+        let linger = conn.config?.inactivityThreshold ?? 30
+        return lastActive[key].map { clock.timeIntervalSince($0) < linger } ?? false
     }
 
     private var activeCount: Int {

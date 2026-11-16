@@ -22,13 +22,16 @@ struct FrigateConfig: Decodable {
     var semanticSearch = false
     /// Face recognition is on: the face library applies.
     var faceRecognition = false
+    /// Seconds Birdseye keeps a camera after its activity ends (birdseye.inactivity_threshold);
+    /// "Now active" in Live keeps cameras as long.
+    var inactivityThreshold: Double = 30
     /// Face scores at or above this are a match (Frigate's face_recognition.recognition_threshold).
     var faceRecognitionThreshold = 0.9
     /// Face scores below this are unknown (face_recognition.unknown_score).
     var faceUnknownScore = 0.8
 
     enum CodingKeys: String, CodingKey {
-        case cameras, genai, lpr, ui
+        case cameras, genai, lpr, ui, birdseye
         case cameraGroups = "camera_groups"
         case semanticSearch = "semantic_search"
         case faceRecognition = "face_recognition"
@@ -37,6 +40,7 @@ struct FrigateConfig: Decodable {
     /// `genai` is a map of named providers, each with `roles`; older versions use one flat object.
     private struct GenAIProvider: Decodable { var roles: [String]? }
     private struct UISettings: Decodable { var time_format: String? }
+    private struct BirdseyeSettings: Decodable { var inactivity_threshold: Double? }
     private struct FaceSettings: Decodable { var enabled: Bool?; var recognition_threshold: Double?; var unknown_score: Double? }
 
     init(from decoder: Decoder) throws {
@@ -49,6 +53,7 @@ struct FrigateConfig: Decodable {
         let global = (try? c.decodeIfPresent(CameraConfig.Toggle.self, forKey: .lpr))??.enabled == true
         platesOnServer = global
         timeFormat = (try? c.decodeIfPresent(UISettings.self, forKey: .ui))??.time_format
+        inactivityThreshold = ((try? c.decodeIfPresent(BirdseyeSettings.self, forKey: .birdseye))??.inactivity_threshold) ?? 30
         semanticSearch = (try? c.decodeIfPresent(CameraConfig.Toggle.self, forKey: .semanticSearch))??.enabled == true
         if let face = (try? c.decodeIfPresent(FaceSettings.self, forKey: .faceRecognition)) ?? nil {
             faceRecognition = face.enabled == true

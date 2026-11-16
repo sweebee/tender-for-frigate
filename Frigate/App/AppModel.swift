@@ -56,8 +56,18 @@ final class ServerConnection: Identifiable {
     var go2rtcStreams: Set<String>?
     var stats: FrigateStats?
     var summary: ReviewSummary?
-    /// Labels of objects currently being tracked, per camera.
-    var activeObjects: [String: [String]] = [:]
+    /// Labels of objects currently being tracked, per camera: from Frigate's websocket while it
+    /// is connected (at once, as the web UI), else from the last poll of in-progress events.
+    var activeObjects: [String: [String]] {
+        guard feedLive else { return polledObjects }
+        return activity.mapValues { act in
+            var seen = Set<String>()
+            return act.objects.map(\.label).filter { seen.insert($0).inserted }
+        }
+    }
+    private var polledObjects: [String: [String]] = [:]
+    /// The websocket has sent its first snapshot of tracked objects and is still open.
+    private(set) var feedLive = false
     /// Start of the most recent review item, per camera.
     var lastActivity: [String: Date] = [:]
     /// When the config was last fetched; it is fetched again now and then to pick up new cameras.
@@ -408,6 +418,7 @@ final class ServerConnection: Identifiable {
             if activitySocket === task {
                 activitySocket = nil
                 activity = [:]
+                feedLive = false
             }
         }
     }
@@ -416,6 +427,7 @@ final class ServerConnection: Identifiable {
         activitySocket?.cancel(with: .goingAway, reason: nil)
         activitySocket = nil
         activity = [:]
+        feedLive = false
     }
 
     /// Frigate sends the tracked objects once on connecting (camera_activity) and then each
@@ -430,8 +442,15 @@ final class ServerConnection: Identifiable {
             if let index { act.objects.remove(at: index) }
         } else if after["false_positive"] as? Bool == true {
             return
-        } else if let obj = LiveObject(after) {
-            if let index { act.objects[index] = obj } else if !obj.stationary { act.objects.append(obj) }
+        } else if var obj = LiveObject(after) {
+            if let index {
+                // camera_activity names an object by its attribute ("dhl" for a car); keep that name.
+                obj.label = act.objects[index].label
+                act.objects[index] = obj
+            } else if !obj.stationary {
+                // As the web UI: a new object counts once it moves.
+                act.objects.append(obj)
+            }
         }
         act.tracking = act.objects.filter { !$0.stationary }.map(\.label)
         if activity[cam] != act { activity[cam] = act }
@@ -469,6 +488,7 @@ final class ServerConnection: Identifiable {
                                            objects: objects.compactMap(LiveObject.init))
             }
             activity = next
+            feedLive = true
         } else if topic == "events", let payload = (msg["payload"] as? String)?.data(using: .utf8),
                   let event = try? JSONSerialization.jsonObject(with: payload) as? [String: Any] {
             applyTrackedObjectEvent(event)
@@ -519,7 +539,9 @@ final class ServerConnection: Identifiable {
         }
         async let statsReq = try? client.stats()
         async let summaryReq = try? client.reviewSummary()
-        async let activeReq = try? client.activeEvents()
+        // Tracked objects come over the websocket; poll them only while it is not connected.
+        let pollObjects = !feedLive
+        async let activeReq = pollObjects ? try? client.activeEvents() : nil
         async let recentReq = try? client.reviews(after: Date().addingTimeInterval(-86400), limit: 200)
         let (s, sum, active, recent) = await (statsReq, summaryReq, activeReq, recentReq)
         // A cancelled refresh (view went away) says nothing about the server.
@@ -543,7 +565,7 @@ final class ServerConnection: Identifiable {
             for e in active where map[e.camera]?.contains(e.label) != true {
                 map[e.camera, default: []].append(e.label)
             }
-            activeObjects = map
+            polledObjects = map
         }
         if let recent {
             var map: [String: Date] = [:]
