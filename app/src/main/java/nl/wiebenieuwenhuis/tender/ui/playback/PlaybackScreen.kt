@@ -90,6 +90,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -128,6 +129,10 @@ import nl.wiebenieuwenhuis.tender.ui.components.MonoDigits
 import nl.wiebenieuwenhuis.tender.ui.components.RemoteImage
 import nl.wiebenieuwenhuis.tender.ui.components.SectionLabel
 import nl.wiebenieuwenhuis.tender.ui.selectTab
+import nl.wiebenieuwenhuis.tender.ui.review.ReviewActions
+import nl.wiebenieuwenhuis.tender.ui.review.ReviewActionsHost
+import nl.wiebenieuwenhuis.tender.ui.review.ReviewEntry
+import nl.wiebenieuwenhuis.tender.ui.review.ReviewItemMenuItems
 import java.util.Date
 
 /** Recordings of a camera on a day, with the events list, the timeline or the detail view. */
@@ -139,6 +144,9 @@ fun PlaybackScreen(route: PlaybackRoute) {
     DisposableEffect(preview) { onDispose { preview.release() } }
     val state = remember { PlaybackState(route, scope, player, preview) }
     val exporter = remember { ClipExporter() }
+    // The events' long-press menu is Review's own: the same items, saving and deleting as there.
+    val reviewActions = remember { ReviewActions(scope) }
+    reviewActions.onDeleted = { entry -> state.reviews = state.reviews.filter { it.id != entry.item.id } }
     val nav = LocalNav.current
     val activity = LocalActivity.current
     val context = LocalContext.current
@@ -248,10 +256,10 @@ fun PlaybackScreen(route: PlaybackRoute) {
         },
         pickDay = { showCalendar = true },
         setFullscreen = ::setFullscreen,
-        canDelete = state.conn?.isAdmin != false,
+        review = reviewActions,
     )
 
-    Box(Modifier.fillMaxSize()) {
+    ReviewActionsHost(reviewActions, Modifier.fillMaxSize()) {
         when {
             (wide && state.fullscreen) || landscape -> LandscapeBody(state, exporter, actions, wide)
             wide -> WideBody(state, exporter, actions)
@@ -307,7 +315,8 @@ internal class PlaybackActions(
     val openLive: () -> Unit,
     val pickDay: () -> Unit,
     val setFullscreen: (Boolean) -> Unit,
-    val canDelete: Boolean,
+    /** The long-press menu of an event: Review's own. */
+    val review: ReviewActions,
 )
 
 private fun setSystemBarsHidden(activity: Activity, hidden: Boolean) {
@@ -533,7 +542,8 @@ private fun VideoArea(state: PlaybackState, exporter: ClipExporter, actions: Pla
                 }
             }
             FadingControls(state.overlayVisible, Modifier.align(Alignment.BottomCenter)) {
-                PlaybackOverlayControls(player, large = large, togglePlay = state::togglePlay, onUse = state::keepOverlay)
+                PlaybackOverlayControls(player, large = large, togglePlay = state::togglePlay, onUse = state::keepOverlay,
+                    onMenuOpen = { state.menusOpen++ }, onMenuClose = { state.menusOpen-- })
             }
         }
     }
@@ -656,20 +666,11 @@ private fun MenuHeader(text: String) {
 
 // MARK: - Events
 
-/** Long-press actions on an event: save, share, delete. */
+/** Long-press actions on an event: Review's own menu (save, save to Frigate, share, delete). */
 @Composable
-private fun EventMenu(r: ReviewItem, open: Boolean, actions: PlaybackActions, onDismiss: () -> Unit) {
+private fun EventMenu(state: PlaybackState, r: ReviewItem, open: Boolean, actions: PlaybackActions, onDismiss: () -> Unit) {
     DropdownMenu(open, onDismissRequest = onDismiss) {
-        val end = (r.endTime ?: nowSeconds()) + 3
-        MenuHeader(eventTitle(r))
-        DropdownMenuItem(text = { Text(stringResource(R.string.playback_save_event_gallery)) }, leadingIcon = { Icon(Icons.Outlined.PhotoLibrary, null) },
-            onClick = { onDismiss(); actions.saveToGallery(r.startTime - 3, end) })
-        DropdownMenuItem(text = { Text(stringResource(R.string.playback_save_event_frigate)) }, leadingIcon = { Icon(Icons.Outlined.Storage, null) },
-            onClick = { onDismiss(); actions.saveToFrigate(r.startTime - 3, end, r.labels.firstOrNull()) })
-        DropdownMenuItem(text = { Text(stringResource(R.string.playback_share_event)) }, leadingIcon = { Icon(Icons.Outlined.Share, null) },
-            onClick = { onDismiss(); actions.share(r.startTime - 3, end) })
-        // Deleting is for admins only in Frigate.
-        if (actions.canDelete) DestructiveMenuItem(stringResource(R.string.playback_delete_event), Icons.Outlined.Delete) { onDismiss(); actions.delete(r) }
+        ReviewItemMenuItems(ReviewEntry(state.route.serverId, r), actions.review, onDismiss)
     }
 }
 
@@ -733,6 +734,7 @@ private fun EventRow(state: PlaybackState, r: ReviewItem, playing: Boolean, acti
                 .background(s.surfaceContainer)
                 .border(if (playing) 1.5.dp else 1.dp, if (playing) s.primary else s.outlineVariant, shape)
                 .combinedClickable(onClick = { state.play(r) }, onLongClick = { menu = true })
+                .alpha(if (actions.review.deleting[r.id] == true) 0.5f else 1f)
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -759,20 +761,18 @@ private fun EventRow(state: PlaybackState, r: ReviewItem, playing: Boolean, acti
                 }
             }
         }
-        EventMenu(r, menu, actions) { menu = false }
+        EventMenu(state, r, menu, actions) { menu = false }
     }
 }
 
 @Composable
 private fun DetailList(state: PlaybackState, actions: PlaybackActions, modifier: Modifier, edge: Dp = 16.dp, compact: Boolean = false) {
-    var menuFor by remember { mutableStateOf<ReviewItem?>(null) }
-    Box(modifier) {
-        PlaybackDetailList(
-            state.visibleReviews, state.currentReview?.id, { state.wallTime }, state.annotationOffset, state.client,
-            Modifier.fillMaxSize(), compact = compact || edge == 0.dp, onLongPress = { menuFor = it },
-        ) { t -> state.jump(t, autoplay = true, earlier = 2.0); state.keepOverlay() }
-        menuFor?.let { r -> Box(Modifier.align(Alignment.Center)) { EventMenu(r, true, actions) { menuFor = null } } }
-    }
+    // The long-press menu opens on the card that was pressed.
+    PlaybackDetailList(
+        state.visibleReviews, state.currentReview?.id, { state.wallTime }, state.annotationOffset, state.client,
+        modifier, compact = compact || edge == 0.dp,
+        menu = { r, open, close -> EventMenu(state, r, open, actions, close) },
+    ) { t -> state.jump(t, autoplay = true, earlier = 2.0); state.keepOverlay() }
 }
 
 // MARK: - Landscape and full screen
@@ -830,7 +830,8 @@ private fun LandscapeBody(state: PlaybackState, exporter: ClipExporter, actions:
                             }
                             SaveMenu(state, exporter, actions, 44.dp)
                             OverlayMenuButton(RecordingPlayer.rateTitle(player.rate), stringResource(R.string.playback_speed), RecordingPlayer.rates,
-                                player.rate, RecordingPlayer::rateTitle, onOpen = { state.keepOverlay() }) { player.changeRate(it); state.keepOverlay() }
+                                player.rate, RecordingPlayer::rateTitle, onOpen = { state.menusOpen++; state.keepOverlay() },
+                                onClose = { state.menusOpen--; state.keepOverlay() }) { player.changeRate(it); state.keepOverlay() }
                         }
                     }
                 }
@@ -907,7 +908,7 @@ private fun LandscapeEventsPanel(state: PlaybackState, actions: PlaybackActions)
                                 Text(Format.time(r.startTime, seconds = true), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                             }
                         }
-                        EventMenu(r, menu, actions) { menu = false }
+                        EventMenu(state, r, menu, actions) { menu = false }
                     }
                 }
             }

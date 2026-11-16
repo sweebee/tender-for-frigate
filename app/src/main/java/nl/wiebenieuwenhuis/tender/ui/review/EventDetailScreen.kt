@@ -1,6 +1,7 @@
 package nl.wiebenieuwenhuis.tender.ui.review
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -13,6 +14,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -141,6 +143,8 @@ import nl.wiebenieuwenhuis.tender.ui.components.VideoSurface
 import nl.wiebenieuwenhuis.tender.ui.components.load
 import nl.wiebenieuwenhuis.tender.ui.components.rememberVideoPlayer
 import nl.wiebenieuwenhuis.tender.ui.theme.Palette
+import nl.wiebenieuwenhuis.tender.ui.explore.ObjectDescriptionSection
+import nl.wiebenieuwenhuis.tender.ui.playback.VideoOverlayControls
 import java.util.Calendar
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.floor
@@ -226,6 +230,9 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
     var fullscreen by remember { mutableStateOf(false) }
     var overlayVisible by remember { mutableStateOf(true) }
     var overlayToken by remember { mutableIntStateOf(0) }
+    /** Menus over the video that are open (the speed); the controls stay while one is. */
+    var menusOpen by remember { mutableIntStateOf(0) }
+    var rate by remember { mutableFloatStateOf(1f) }
     fun keepOverlay() { overlayToken++ }
 
     val isReviewed = item.isReviewed
@@ -275,12 +282,16 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
         }
     }
     // The controls over the video hide after 4 seconds of playback without use; pausing brings them back.
-    LaunchedEffect(overlayToken, ps.wantsToPlay, overlayVisible) {
+    LaunchedEffect(overlayToken, ps.wantsToPlay, overlayVisible, menusOpen) {
         if (!ps.wantsToPlay) { overlayVisible = true; return@LaunchedEffect }
-        if (!overlayVisible) return@LaunchedEffect
+        if (!overlayVisible || menusOpen > 0) return@LaunchedEffect
         delay(4000)
         if (ps.wantsToPlay && !ps.scrubbing) overlayVisible = false
     }
+
+    // Full screen is for tablets (a phone turns sideways for it); Back leaves it first.
+    LaunchedEffect(wide) { if (!wide) fullscreen = false }
+    BackHandler(fullscreen) { fullscreen = false; keepOverlay() }
 
     // Full screen: no tab bar or rail, no system bars.
     val view = LocalView.current
@@ -396,6 +407,13 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
         player.seekTo((t * 1000).toLong())
     }
 
+    fun togglePlay() {
+        if (ps.wantsToPlay) player.pause() else {
+            if (player.playbackState == Player.STATE_ENDED) player.seekTo(0)
+            player.play()
+        }
+    }
+
     fun playFrom(e: FrigateEvent) {
         seek(max(0.0, e.startTime + offset - origin - 1))
         player.play()
@@ -460,10 +478,7 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
             RoundButton(Icons.Filled.Replay10, stringResource(R.string.review_back_10), 48) { seek(ps.position - 10); keepOverlay() }
             RoundButton(if (ps.wantsToPlay) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 stringResource(if (ps.wantsToPlay) R.string.review_pause else R.string.review_play), 60) {
-                if (ps.wantsToPlay) player.pause() else {
-                    if (player.playbackState == Player.STATE_ENDED) player.seekTo(0)
-                    player.play()
-                }
+                togglePlay()
                 keepOverlay()
             }
             RoundButton(Icons.Filled.Forward10, stringResource(R.string.review_forward_10), 48) { seek(ps.position + 10); keepOverlay() }
@@ -505,11 +520,20 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
                 RemoteImage(posterUrl, Modifier.matchParentSize(), contentScale = ContentScale.Fit)
             }
             PlayerStatus(showPlay = !overlayVisible)
-            AnimatedVisibility(overlayVisible && canPlay, Modifier.align(Alignment.Center), enter = fadeIn(), exit = fadeOut()) {
-                CenterControls()
+            // Along the bottom, as on the playback screen: back 10 s, play/pause, forward 10 s and the speed.
+            AnimatedVisibility(overlayVisible && canPlay, Modifier.align(Alignment.BottomCenter), enter = fadeIn(), exit = fadeOut()) {
+                VideoOverlayControls(
+                    playing = ps.wantsToPlay, rate = rate,
+                    onSkip = { seek(ps.position + it) },
+                    onTogglePlay = { togglePlay() },
+                    onRate = { rate = it; player.setPlaybackSpeed(it) },
+                    large = wide, onUse = { keepOverlay() },
+                    onMenuOpen = { menusOpen++ }, onMenuClose = { menusOpen-- },
+                )
             }
             if (ps.appeared) TimeLabel(Modifier.align(Alignment.TopStart).padding(10.dp))
-            if (!noRecording) AnimatedVisibility(overlayVisible, Modifier.align(Alignment.TopEnd), enter = fadeIn(), exit = fadeOut()) {
+            // Tablets only: on a phone, turning it sideways is full screen.
+            if (wide && !noRecording) AnimatedVisibility(overlayVisible, Modifier.align(Alignment.TopEnd), enter = fadeIn(), exit = fadeOut()) {
                 RoundButton(Icons.Filled.Fullscreen, stringResource(R.string.review_full_screen), 40, Modifier.padding(8.dp)) {
                     fullscreen = true; keepOverlay()
                 }
@@ -575,18 +599,11 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
         }
     }
 
-    // Opened on one object: its description, read-only (Explore's object screen edits it).
+    // Opened on one object: its description and Find similar, as Frigate's tracked object details.
     @Composable
     fun Describe() {
-        val text = focus?.description?.takeIf { it.isNotBlank() } ?: return
-        Column(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionLabel(stringResource(R.string.review_ai_description))
-            Card {
-                SelectionContainer {
-                    Text(text, Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
+        val f = focus ?: return
+        ObjectDescriptionSection(route.serverId, f)
     }
 
     // A tap on the picture shows it large; the time on it plays the video from that object.
@@ -627,11 +644,15 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
         Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionLabel(stringResource(R.string.review_objects), Modifier.padding(horizontal = 16.dp))
             if (wide) {
-                // Tablets: the column has room for the cards side by side and below each other.
-                FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp), maxItemsInEachRow = 2) {
-                    list.forEach { ObjectCard(it, Modifier.weight(1f)) }
-                    if (list.size % 2 == 1) Spacer(Modifier.weight(1f))
+                // Tablets: as many columns of at least 200 dp as fit, none cut off at the edge.
+                BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    val columns = max(1, ((maxWidth + 10.dp) / 210.dp).toInt())
+                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp), maxItemsInEachRow = columns) {
+                        list.forEach { ObjectCard(it, Modifier.weight(1f)) }
+                        val rest = (columns - list.size % columns) % columns
+                        repeat(rest) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             } else {
                 // Runs to the screen edge, like the rows in Explore; the margin sits inside.
@@ -642,13 +663,14 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
         }
     }
 
+    /** `edge`: its side margin; none under the video, where it lines up with the video's edges. */
     @Composable
-    fun Lifecycle() {
+    fun Lifecycle(edge: Dp = 16.dp) {
         if (timeline.isEmpty()) return
         val length = if (ps.duration > 0) ps.duration else clipEnd - origin
         val spanStart = origin - offset
         val spanEnd = spanStart + max(length, 0.0)
-        Column(Modifier.padding(horizontal = 16.dp).padding(top = 16.dp)) {
+        Column(Modifier.padding(horizontal = edge).padding(top = 16.dp)) {
             Card {
                 Text(stringResource(R.string.review_object_lifecycle).uppercase(), Modifier.padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 6.dp),
                     style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -716,7 +738,6 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
         Analysis()
         Describe()
         Objects()
-        Lifecycle()
     }
 
     // MARK: Layout
@@ -765,8 +786,9 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
                 }
             }
         } else {
+            // No title: the camera's name is the large heading under the video.
             ScreenScaffold(
-                title = camName,
+                title = "",
                 actions = {
                     IconButton(onClick = { openPlayback() }) { Icon(Icons.Outlined.VideoLibrary, stringResource(R.string.review_open_in_playback)) }
                     // Not disabled while loading: that would dim the spinner. share() ignores a second tap.
@@ -777,22 +799,25 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
                 bottomBar = { if (!wide) Surface(color = MaterialTheme.colorScheme.surface) { ActionsBar(Modifier.navigationBarsPadding()) } },
             ) { padding ->
                 if (wide) {
-                    // Tablets: video and scrubber beside the details.
-                    Row(Modifier.fillMaxSize().padding(padding).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Column(Modifier.weight(1.4f).fillMaxHeight().padding(start = 8.dp, top = 8.dp)) {
-                            Video(Modifier.fillMaxWidth().aspectRatio(aspect).clip(RoundedCornerShape(12.dp)))
-                            Scrubber(onDark = false)
-                        }
-                        Column(Modifier.weight(1f).fillMaxHeight()) {
-                            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) { Details() }
-                            ActionsBar()
-                        }
-                    }
+                    // Tablets: the video as large as the window allows, with the details around it.
+                    WideDetailLayout(
+                        aspect, Modifier.fillMaxSize().padding(padding),
+                        media = { w, h ->
+                            Column(Modifier.width(w)) {
+                                Video(Modifier.width(w).height(h).clip(RoundedCornerShape(12.dp)))
+                                Scrubber(onDark = false)
+                            }
+                        },
+                        details = { Details() },
+                        extra = { edge -> Lifecycle(edge) },
+                        actions = { ActionsBar() },
+                    )
                 } else {
                     Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
                         Video(Modifier.fillMaxWidth().aspectRatio(aspect))
                         Scrubber(onDark = false)
                         Details()
+                        Lifecycle()
                     }
                 }
             }
@@ -813,6 +838,67 @@ private fun EventDetail(route: EventRoute, conn: ServerConnection, item: ReviewI
 }
 
 // MARK: Small parts
+
+/** Height under the video that the media also uses: the scrubber and its times. */
+private val ScrubberReserve = 64.dp
+
+/**
+ * Tablets: the video as large as the window allows, with the details around it, as the iOS app's
+ * WideDetailLayout.
+ * - Upright windows (narrower than 1.1 × their height): the video across the width, the details under it.
+ * - Wide windows: the video on the left and the details beside it; when the video leaves 200 dp or
+ *   more under it, `extra` (the lifecycle) fills that room instead of the side.
+ * `media` gets the video's width and height; `details` and `extra` bring their own 16 dp margins
+ * (`extra` gets the margin to use).
+ */
+@Composable
+private fun WideDetailLayout(
+    aspect: Float,
+    modifier: Modifier,
+    media: @Composable (Dp, Dp) -> Unit,
+    details: @Composable ColumnScope.() -> Unit,
+    extra: @Composable ColumnScope.(Dp) -> Unit,
+    actions: @Composable () -> Unit,
+) {
+    BoxWithConstraints(modifier) {
+        val w = maxWidth
+        val h = maxHeight
+        if (w < h * 1.1f) {
+            val height = minOf((w - 32.dp) / aspect, h * 0.55f)
+            Column(Modifier.fillMaxSize().padding(bottom = 8.dp)) {
+                Box(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.TopCenter) { media(height * aspect, height) }
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+                    details()
+                    extra(16.dp)
+                }
+                actions()
+            }
+        } else {
+            val side = minOf(400.dp, w * 0.36f)
+            val mediaWidth = maxOf(200.dp, w - side - 32.dp)
+            val height = minOf(mediaWidth / aspect, maxOf(160.dp, h - 28.dp - ScrubberReserve))
+            // Room left under the video for the lifecycle.
+            val extraBelow = h - 28.dp - ScrubberReserve - height >= 200.dp
+            Row(Modifier.fillMaxSize().padding(start = 16.dp, top = 4.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.width(mediaWidth).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    media(height * aspect, height)
+                    if (extraBelow) {
+                        Column(Modifier.width(height * aspect).weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+                            extra(0.dp)
+                        }
+                    }
+                }
+                Column(Modifier.width(side).fillMaxHeight()) {
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+                        details()
+                        if (!extraBelow) extra(16.dp)
+                    }
+                    actions()
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun Card(content: @Composable ColumnScope.() -> Unit) {

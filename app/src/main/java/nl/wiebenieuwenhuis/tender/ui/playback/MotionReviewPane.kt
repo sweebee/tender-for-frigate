@@ -92,7 +92,9 @@ fun MotionReviewPane(
 ) {
     val nav = LocalNav.current
     val scope = rememberCoroutineScope()
-    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
+    // Tablet: larger previews, buttons and timeline. Not on a phone held sideways, nor in a window too low for it.
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout() &&
+        currentWindowAdaptiveInfo().windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
     val connections = AppModel.scopedConnections.filter { it.isOnline }
     val cams = connections.flatMap { c ->
         c.cameras.filter { cameraFilter.isEmpty() || it.name in cameraFilter }.map { MotionCam(c, it) }
