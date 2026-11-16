@@ -9868,6 +9868,16 @@
           }
         }
       }
+    },
+    "This group has no cameras.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze groep heeft geen camera's."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

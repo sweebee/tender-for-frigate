@@ -223,9 +223,13 @@ struct LiveView: View {
 
     @ViewBuilder
     private var content: some View {
-        let conns = model.scopedConnections
-        if conns.count == 1, let conn = conns.first {
+        let all = model.scopedConnections
+        // With a group chosen, only the servers that have cameras in it (a group is per server).
+        let conns = group == nil ? all : all.filter { !cameras(for: $0).isEmpty }
+        if all.count == 1, let conn = all.first {
             serverGrid(conn)
+        } else if conns.isEmpty {
+            EmptyStateView(systemImage: "video.slash", title: L("No cameras"), message: L("This group has no cameras."))
         } else {
             ForEach(conns) { conn in
                 VStack(alignment: .leading, spacing: 10) {
