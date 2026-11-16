@@ -1,10 +1,12 @@
 package nl.wiebenieuwenhuis.tender.ui.classification
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -25,6 +27,11 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CropFree
 import androidx.compose.material.icons.outlined.RemoveCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -62,6 +69,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -82,11 +92,10 @@ import nl.wiebenieuwenhuis.tender.api.rawClassificationTrainFiles
 import nl.wiebenieuwenhuis.tender.api.setClassificationModel
 import nl.wiebenieuwenhuis.tender.api.trainClassification
 import nl.wiebenieuwenhuis.tender.app.AppModel
-import nl.wiebenieuwenhuis.tender.ui.LocalNav
 import nl.wiebenieuwenhuis.tender.ui.components.MessageDialog
 import nl.wiebenieuwenhuis.tender.ui.components.ReadableWidth
 import nl.wiebenieuwenhuis.tender.ui.components.RemoteImage
-import nl.wiebenieuwenhuis.tender.ui.components.ScreenScaffold
+import nl.wiebenieuwenhuis.tender.ui.components.isWideLayout
 import nl.wiebenieuwenhuis.tender.ui.components.SectionCard
 import nl.wiebenieuwenhuis.tender.ui.components.SectionLabel
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
@@ -111,16 +120,19 @@ private enum class WizardStep { Define, Area, Examples, Done }
  * A new classification model in Frigate's three steps: name and classes; for a state model the
  * area on one or more cameras; then examples Frigate picks from past events, sorted per class.
  * The model is written and trained only at the end.
+ *
+ * Shown over the models list, as the iOS app's sheet: a full-height bottom sheet on phones, a
+ * large centred dialog on wide windows. `onClose(made)`: the wizard is done (`made`: a model was
+ * written) or cancelled; examples made for a cancelled model are removed first.
  */
 @Composable
-fun ClassificationWizard(route: ClassificationWizardRoute) {
-    val nav = LocalNav.current
+fun ClassificationWizard(serverId: String, startAsState: Boolean, onClose: (made: Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
-    val conn = AppModel.connection(route.serverId)
+    val conn = AppModel.connection(serverId)
     val client = conn?.client
     var step by rememberSaveable { mutableStateOf(WizardStep.Define) }
     var name by rememberSaveable { mutableStateOf("") }
-    var isState by rememberSaveable { mutableStateOf(route.state) }
+    var isState by rememberSaveable { mutableStateOf(startAsState) }
     var label by rememberSaveable { mutableStateOf("") }
     var asAttribute by rememberSaveable { mutableStateOf(false) }
     val classes = remember { mutableStateListOf("", "") }
@@ -149,23 +161,27 @@ fun ClassificationWizard(route: ClassificationWizardRoute) {
         val cfg = runCatching { client?.rawConfig() }.getOrNull() ?: return@LaunchedEffect
         labels = ClassificationNames.trackedLabels(cfg)
         if (label.isEmpty()) label = if ("person" in labels) "person" else labels.firstOrNull() ?: ""
-        existing = ClassificationModel.all(cfg, route.serverId).map { it.name }.toSet() +
+        existing = ClassificationModel.all(cfg, serverId).map { it.name }.toSet() +
             (cfg["classification"]["custom"].obj()?.keys ?: emptySet())
     }
 
-    fun cancel() {
+    /** Closing needs no work first: nothing to clean up and nothing being written. */
+    val closesAtOnce = step == WizardStep.Done || (!finishing && !cancelling && !generated && !generating)
+
+    /** Cancel, Back, a swipe down: done when done; otherwise cancel, removing the examples made. */
+    fun close() {
+        if (step == WizardStep.Done) { onClose(true); return }
         if (finishing || cancelling) return
         // Examples were made under the model's name: remove them; the config was not written yet.
         if ((generated || generating) && client != null) {
+            cancelling = true
             scope.launch {
-                cancelling = true
                 runCatching { client.deleteClassificationFiles(cleanName) }
                 cancelling = false
-                nav.popBackStack()
+                onClose(false)
             }
-        } else nav.popBackStack()
+        } else onClose(false)
     }
-    BackHandler(enabled = step != WizardStep.Done) { cancel() }
 
     fun defineProblem(): String? {
         val n = cleanName
@@ -221,7 +237,7 @@ fun ClassificationWizard(route: ClassificationWizardRoute) {
             }
             try {
                 cl.setClassificationModel(n, node)
-                ClassificationStore.deleted.remove("${route.serverId}/$n")
+                ClassificationStore.deleted.remove("$serverId/$n")
                 val assigned = chosen.toMutableMap()
                 if (!isState) for (file in examples) if (assigned[file] == null) assigned[file] = "none"
                 for ((file, cls) in assigned) cl.categorize(n, file, cls)
@@ -245,19 +261,25 @@ fun ClassificationWizard(route: ClassificationWizardRoute) {
         }
     }
 
-    ScreenScaffold(
-        stringResource(R.string.classification_new_model),
-        showsBack = step != WizardStep.Done,
-        onBack = { cancel() },
-        actions = { if (cancelling) Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) { SmallSpinner() } },
-    ) { pad ->
-        Box(Modifier.fillMaxSize().padding(pad), contentAlignment = Alignment.TopCenter) {
+    WizardFrame(closesAtOnce = closesAtOnce, onCloseRequest = { close() }) {
+        // Cancel on the left, as every sheet; the Done step closes with its own button.
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp).heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.widthIn(min = 88.dp), contentAlignment = Alignment.CenterStart) {
+                if (step != WizardStep.Done) TextButton(onClick = { close() }, enabled = !finishing && !cancelling) {
+                    if (cancelling) SmallSpinner() else Text(stringResource(R.string.cancel), maxLines = 1)
+                }
+            }
+            Text(stringResource(R.string.classification_new_model), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
+                maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+            Spacer(Modifier.width(88.dp))
+        }
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             if (step == WizardStep.Done) {
-                DoneStep(cleanName, trained) { nav.popBackStack() }
+                DoneStep(cleanName, trained) { onClose(true) }
                 return@Box
             }
             Column(
-                Modifier.widthIn(max = ReadableWidth).fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
+                Modifier.widthIn(max = ReadableWidth).fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val steps = if (isState) 3 else 2
@@ -412,6 +434,40 @@ private fun PrimaryButton(title: String, modifier: Modifier = Modifier.fillMaxWi
 private fun SecondaryButton(title: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = 44.dp), shape = RoundedCornerShape(12.dp)) {
         Text(title, maxLines = 1, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/**
+ * The wizard's window: a full-height bottom sheet on phones, a large centred dialog on wide
+ * windows. A swipe down or Back asks `onCloseRequest`; while closing needs work first (removing
+ * examples, writing the model) the sheet stays up until the wizard closes it.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WizardFrame(closesAtOnce: Boolean, onCloseRequest: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val atOnce by rememberUpdatedState(closesAtOnce)
+    val request by rememberUpdatedState(onCloseRequest)
+    if (isWideLayout()) {
+        Dialog(onDismissRequest = { request() }, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
+            Surface(
+                Modifier.widthIn(max = 760.dp).fillMaxWidth(0.92f).fillMaxHeight(0.9f),
+                shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Column(Modifier.fillMaxSize().padding(top = 8.dp)) { content() }
+            }
+        }
+    } else {
+        // One lambda for the sheet's life: a new one would make a new sheet state.
+        val confirm = remember {
+            { v: SheetValue ->
+                if (v != SheetValue.Hidden || atOnce) true
+                else { request(); false }
+            }
+        }
+        val state = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = confirm)
+        ModalBottomSheet(onDismissRequest = { request() }, sheetState = state) {
+            Column(Modifier.fillMaxWidth().fillMaxHeight()) { content() }
+        }
     }
 }
 

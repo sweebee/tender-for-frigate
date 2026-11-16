@@ -2,10 +2,6 @@
 <resources>
     <string name="explore_per_label">Per label</string>
     <string name="explore_all_in_grid">Alles in een raster</string>
-    <string name="explore_sort">Sorteren</string>
-    <string name="explore_sort_newest">Nieuwste bovenaan</string>
-    <string name="explore_sort_oldest">Oudste eerst</string>
-    <string name="explore_sort_score">Hoogste score</string>
     <string name="explore_search">Zoek…</string>
     <string name="explore_search_plate">Zoek kenteken</string>
     <string name="explore_clear_search">Wis zoekopdracht</string>

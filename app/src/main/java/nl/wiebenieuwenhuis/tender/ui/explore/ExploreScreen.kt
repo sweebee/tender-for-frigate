@@ -35,7 +35,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
@@ -100,7 +99,6 @@ import androidx.navigation.toRoute
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 import nl.wiebenieuwenhuis.tender.R
-import nl.wiebenieuwenhuis.tender.api.EventSort
 import nl.wiebenieuwenhuis.tender.api.Format
 import nl.wiebenieuwenhuis.tender.api.FrigateEvent
 import nl.wiebenieuwenhuis.tender.api.SearchSource
@@ -117,6 +115,7 @@ import nl.wiebenieuwenhuis.tender.ui.components.OverlayChip
 import nl.wiebenieuwenhuis.tender.ui.components.RemoteImage
 import nl.wiebenieuwenhuis.tender.ui.components.ScreenScaffold
 import nl.wiebenieuwenhuis.tender.ui.components.ServerBadge
+import nl.wiebenieuwenhuis.tender.ui.components.relativeTime
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -174,7 +173,6 @@ private fun ExploreContent(similar: ExploreEntry?, showsBack: Boolean) {
     ScreenScaffold(
         stringResource(R.string.tab_explore), showsBack = showsBack,
         actions = {
-            if (!vm.filter.isSearch) SortMenu(vm)
             IconButton(onClick = { ExplorePrefs.toggleGrid() }) {
                 if (ExplorePrefs.gridByDefault) Icon(Icons.Outlined.ViewAgenda, stringResource(R.string.explore_per_label))
                 else Icon(Icons.Outlined.Apps, stringResource(R.string.explore_all_in_grid))
@@ -186,23 +184,6 @@ private fun ExploreContent(similar: ExploreEntry?, showsBack: Boolean) {
             ExploreHeader(vm)
             PullToRefreshBox(isRefreshing = vm.refreshing, onRefresh = { vm.refresh() }, modifier = Modifier.fillMaxSize()) {
                 ExploreResults(vm)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SortMenu(vm: ExploreViewModel) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { open = true }) { Icon(Icons.AutoMirrored.Filled.Sort, stringResource(R.string.explore_sort)) }
-        DropdownMenu(open, { open = false }) {
-            for ((sort, title) in listOf(
-                EventSort.Newest to R.string.explore_sort_newest,
-                EventSort.Oldest to R.string.explore_sort_oldest,
-                EventSort.Score to R.string.explore_sort_score,
-            )) {
-                OptionItem(stringResource(title), vm.filter.sort == sort) { vm.filter = vm.filter.copy(sort = sort); open = false }
             }
         }
     }
@@ -624,7 +605,7 @@ fun ObjectTile(entry: ExploreEntry, showLabel: Boolean, modifier: Modifier = Mod
             }
             // The time as well, as Frigate shows it: "5 min ago" alone is hard to find back.
             Column(horizontalAlignment = Alignment.End) {
-                Text(Format.relative(event.startTime.toDate()), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(relativeTime(event.startTime), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 Text(tileWhen(event.startTime), color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Medium,
                     maxLines = 1, style = MonoDigits)
             }

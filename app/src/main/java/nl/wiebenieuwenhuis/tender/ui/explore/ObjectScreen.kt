@@ -3,22 +3,16 @@ package nl.wiebenieuwenhuis.tender.ui.explore
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Share
@@ -41,7 +35,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -76,6 +69,7 @@ import nl.wiebenieuwenhuis.tender.ui.components.SectionLabel
 import nl.wiebenieuwenhuis.tender.ui.components.ServerBadge
 import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
 import nl.wiebenieuwenhuis.tender.ui.components.StatusDot
+import nl.wiebenieuwenhuis.tender.ui.components.isWideLayout
 import nl.wiebenieuwenhuis.tender.ui.exports.FileShare
 import nl.wiebenieuwenhuis.tender.ui.theme.Palette
 
@@ -117,7 +111,7 @@ fun ObjectScreen(route: ObjectRoute) {
     if (resolved && e != null) {
         ObjectDetail(route.serverId, e)
     } else {
-        ScreenScaffold(e?.let { Format.labelName(it.label) } ?: "") { pad ->
+        ScreenScaffold("") { pad ->
             Box(Modifier.padding(pad).fillMaxSize()) {
                 if (resolved) EmptyState(Icons.Outlined.WarningAmber, stringResource(R.string.explore_could_not_load_object),
                     problem ?: conn?.let { (it.status as? ConnectionStatus.Offline)?.message })
@@ -185,17 +179,12 @@ private fun ObjectDetail(serverId: String, event: FrigateEvent) {
     }
 
     val image: @Composable (Modifier) -> Unit = { mod ->
-        Box(mod.aspectRatio(aspect).background(Color.Black)) {
+        Box(mod.background(Color.Black)) {
             RemoteImage(
                 if (event.hasSnapshot == true) client?.snapshotUrl(event) else client?.thumbnailUrl(event),
                 Modifier.fillMaxSize().zoomable(), contentScale = ContentScale.Fit,
             )
         }
-    }
-    val details: @Composable ColumnScope.() -> Unit = {
-        ObjectInfo(serverId, event)
-        ObjectTiles(event)
-        ObjectDescriptionSection(serverId, event)
     }
     val actions: @Composable () -> Unit = {
         Button(
@@ -209,8 +198,9 @@ private fun ObjectDetail(serverId: String, event: FrigateEvent) {
         }
     }
 
+    // No title: the info block under the picture already names the object.
     ScreenScaffold(
-        Format.labelName(event.label),
+        "",
         actions = {
             if (event.hasSnapshot == true) {
                 IconButton(onClick = { shareSnapshot() }, enabled = client != null) {
@@ -219,40 +209,20 @@ private fun ObjectDetail(serverId: String, event: FrigateEvent) {
             }
         },
     ) { pad ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(pad)) {
-            val wide = maxWidth >= 600.dp
-            val pictureMax = maxHeight * 0.55f
-            if (wide && maxWidth > maxHeight * 1.1f) {
-                // Tablets in landscape: the snapshot beside the details instead of above them.
-                val side = minOf(400.dp, maxWidth * 0.36f)
-                Row(Modifier.fillMaxSize().padding(start = 16.dp, top = 4.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState())) {
-                        image(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)))
-                        Lifecycle(timeline, Modifier.padding(top = 16.dp, bottom = 16.dp))
-                    }
-                    Column(Modifier.width(side).fillMaxHeight()) {
-                        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) { details() }
-                        actions()
-                    }
-                }
-            } else {
-                Column(Modifier.fillMaxSize()) {
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-                        if (wide) {
-                            // A tablet upright: the picture large, but leaving room for the details.
-                            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
-                                image(Modifier.heightIn(max = pictureMax).clip(RoundedCornerShape(12.dp)))
-                            }
-                        } else {
-                            image(Modifier.fillMaxWidth())
-                        }
-                        details()
-                        Lifecycle(timeline, Modifier.padding(horizontal = 16.dp).padding(top = 16.dp))
-                    }
-                    actions()
-                }
-            }
-        }
+        // The picture stays put; only the details scroll.
+        WideDetailLayout(
+            aspect = aspect, modifier = Modifier.padding(pad), edgeToEdge = !isWideLayout(),
+            media = image,
+            details = {
+                ObjectInfo(serverId, event)
+                ObjectTiles(event)
+                ObjectDescriptionSection(serverId, event)
+            },
+            extra = { underMedia ->
+                Lifecycle(timeline, if (underMedia) Modifier.padding(top = 16.dp) else Modifier.padding(horizontal = 16.dp).padding(top = 16.dp))
+            },
+            actions = actions,
+        )
     }
     errorMessage?.let { MessageDialog(stringResource(R.string.explore_something_wrong), it) { errorMessage = null } }
 }
@@ -264,7 +234,6 @@ private fun ObjectInfo(serverId: String, event: FrigateEvent) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             LabelTag(event.label)
             event.subLabel?.takeIf { it.isNotEmpty() }?.let { SmallTag(it) }
-            event.recognizedPlate?.let { SmallTag(it) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (AppModel.orderedConnections.size > 1 && conn != null) { ServerBadge(conn.server); Spacer(Modifier.width(8.dp)) }

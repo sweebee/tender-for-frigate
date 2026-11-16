@@ -2,10 +2,6 @@
 <resources>
     <string name="explore_per_label">Per label</string>
     <string name="explore_all_in_grid">All in a grid</string>
-    <string name="explore_sort">Sort</string>
-    <string name="explore_sort_newest">Newest first</string>
-    <string name="explore_sort_oldest">Oldest first</string>
-    <string name="explore_sort_score">Highest score</string>
     <string name="explore_search">Search…</string>
     <string name="explore_search_plate">Search license plate</string>
     <string name="explore_clear_search">Clear search</string>

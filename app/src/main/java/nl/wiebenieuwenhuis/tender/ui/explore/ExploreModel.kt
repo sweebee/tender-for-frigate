@@ -36,7 +36,6 @@ data class ExploreFilter(
     val subLabels: Set<String> = emptySet(),
     /** Local midnight of the day shown, in epoch milliseconds. */
     val day: Long? = null,
-    val sort: EventSort = EventSort.Newest,
     /** Part of a recognized license plate. */
     val plate: String = "",
     /** Semantic search: text to look for, and where (the pictures, the descriptions or both). */
@@ -48,8 +47,8 @@ data class ExploreFilter(
     val isActive: Boolean get() = this != ExploreFilter()
     /** A semantic search: results come best match first, from the servers that have it on. */
     val isSearch: Boolean get() = query.isNotEmpty() || similar != null
-    /** Rows per label until a label is picked or the order changes; then one grid. */
-    val showsGrid: Boolean get() = labels.isNotEmpty() || sort != EventSort.Newest || plate.isNotEmpty() || isSearch
+    /** Rows per label until a label or plate is picked; then one grid, newest first. */
+    val showsGrid: Boolean get() = labels.isNotEmpty() || plate.isNotEmpty() || isSearch
     /** Only the label rows' shortcut endpoint can be used. */
     val isPlain: Boolean get() = plate.isEmpty() && cameras.isEmpty() && zones.isEmpty() && subLabels.isEmpty() && day == null
 
@@ -167,8 +166,7 @@ class ExploreViewModel : ViewModel() {
                 val (after, before) = f.dayRange
                 val result = search(f, f.labels.takeIf { it.isNotEmpty() }?.toList(), before, after, pageSize)
                 grid = result
-                // Frigate pages by time; sorting by score shows the best matches only.
-                canLoadMore = f.sort != EventSort.Score && result.size >= pageSize
+                canLoadMore = result.size >= pageSize
             } else {
                 rows = loadRows(f)
             }
@@ -217,12 +215,12 @@ class ExploreViewModel : ViewModel() {
         val all = coroutineScope {
             targets(f).map { t ->
                 async {
-                    t.client.searchEvents(t.cameras, labels, zones, subs, plate, after, before, f.sort, limit)
+                    t.client.searchEvents(t.cameras, labels, zones, subs, plate, after, before, EventSort.Newest, limit)
                         .map { ExploreEntry(t.conn.id, it) }
                 }
             }.awaitAll().flatten()
         }
-        return sorted(all.distinctBy { it.key }, f.sort)
+        return all.distinctBy { it.key }.sortedByDescending { it.event.startTime }
     }
 
     /** Semantic search on the servers that have it on (similar objects: on the object's own server), best match first. */
@@ -248,12 +246,6 @@ class ExploreViewModel : ViewModel() {
         }
         val similarity = f.similar != null
         return all.distinctBy { it.key }.sortedByDescending { searchMatch(it.event, similarity)?.percent ?: 0 }
-    }
-
-    private fun sorted(list: List<ExploreEntry>, sort: EventSort): List<ExploreEntry> = when (sort) {
-        EventSort.Newest -> list.sortedByDescending { it.event.startTime }
-        EventSort.Oldest -> list.sortedBy { it.event.startTime }
-        EventSort.Score -> list.sortedByDescending { it.event.bestScore ?: 0.0 }
     }
 
     private suspend fun loadRows(f: ExploreFilter): List<LabelRow> {
@@ -302,10 +294,7 @@ class ExploreViewModel : ViewModel() {
             try {
                 val (after, before) = f.dayRange
                 val labels = f.labels.takeIf { it.isNotEmpty() }?.toList()
-                val more = runCatching {
-                    if (f.sort == EventSort.Oldest) search(f, labels, before, last, pageSize)
-                    else search(f, labels, last, after, pageSize)
-                }.getOrNull()
+                val more = runCatching { search(f, labels, last, after, pageSize) }.getOrNull()
                 if (more != null && f == filter) {
                     val known = grid.map { it.key }.toSet()
                     val fresh = more.filter { it.key !in known }
