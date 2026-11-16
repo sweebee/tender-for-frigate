@@ -121,6 +121,11 @@ private fun sections(wide: Boolean): List<Section> = buildList {
 fun AppRoot(activity: MainActivity) {
     LaunchedEffect(Unit) { AppModel.connectAll() }
     if (AppModel.servers.isEmpty()) {
+        // Before the first server only "add" links apply; others wait until there is one.
+        LaunchedEffect(activity.pendingUri) {
+            val uri = activity.pendingUri ?: return@LaunchedEffect
+            if (uri.scheme == "frigate" && uri.host == "add") { activity.pendingUri = null; DeepLinks.addServer(uri) }
+        }
         val nav = rememberNavController()
         CompositionLocalProvider(LocalNav provides nav) {
             NavHost(nav, startDestination = ConnectRoute()) {
