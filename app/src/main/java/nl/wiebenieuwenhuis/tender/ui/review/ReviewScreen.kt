@@ -181,7 +181,8 @@ fun ReviewScreen() {
                 Header(vm, wide, onPickDay = { pickingDay = true })
                 if (vm.kind == ReviewKind.Motion) {
                     // Motion fills the screen below the header: previews and a timeline.
-                    MotionReviewPane(Modifier.weight(1f).fillMaxWidth())
+                    MotionReviewPane(Modifier.weight(1f).fillMaxWidth(), cameraFilter = vm.cameraFilter.toSet(),
+                        start = vm.range.bounds.first, end = vm.range.bounds.second)
                 } else {
                     PullToRefreshBox(
                         isRefreshing = refreshing,
@@ -236,12 +237,12 @@ private fun Header(vm: ReviewModel, wide: Boolean, onPickDay: () -> Unit) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 KindBar(vm, Modifier.widthIn(max = 560.dp).weight(1f))
-                if (vm.kind != ReviewKind.Motion) Filters(vm, onPickDay, Modifier.weight(1f, fill = false), padded = false)
+                Filters(vm, onPickDay, Modifier.weight(1f, fill = false), padded = false)
             }
         } else {
             KindBar(vm, Modifier.fillMaxWidth().padding(horizontal = 16.dp))
             // Motion takes its cameras and time from its own view.
-            if (vm.kind != ReviewKind.Motion) Filters(vm, onPickDay, Modifier.fillMaxWidth(), padded = true)
+            Filters(vm, onPickDay, Modifier.fillMaxWidth(), padded = true)
         }
     }
 }
