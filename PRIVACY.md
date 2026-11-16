@@ -1,8 +1,8 @@
 # Privacy Policy
 
-_Last updated: 12 November 2026_
+_Last updated: 16 November 2026_
 
-Tender for Frigate ("Tender", "the app") is a client for Frigate NVR, self-hosted camera
+Tender for Frigate ("Tender", "the app", on iOS and Android) is a client for Frigate NVR, self-hosted camera
 software. This policy explains what happens with your data when you use the app.
 
 ## Summary
@@ -14,7 +14,7 @@ from the app.
 ## What the app stores on your device
 
 - The Frigate servers you add: name, address and (optional) username. Passwords are stored in
-  the iOS Keychain.
+  the iOS Keychain, or on Android encrypted with a key in the Android Keystore.
 - App settings, such as your selected server and display preferences.
 
 This data stays on your device and is removed when you delete the app.
@@ -31,7 +31,12 @@ find Frigate. This information is not sent anywhere.
 ## Photos
 
 When you save a snapshot or video clip, the app asks permission to add it to your photo
-library. It never reads your photo library.
+library (on Android: your gallery or Downloads). It never reads your photo library.
+
+## Microphone
+
+For two-way talk the app asks for the microphone. Your voice goes only to the camera on your own
+Frigate server, and only while talk is switched on. Nothing is recorded or stored by the app.
 
 ## Children
 
