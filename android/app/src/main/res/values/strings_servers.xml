@@ -4,7 +4,6 @@
     <string name="add_server">Add server</string>
     <string name="edit_server">Edit server</string>
     <string name="show">Show</string>
-    <string name="from_n_online_servers">from %1$d online servers</string>
     <string name="your_servers">Your servers</string>
     <string name="reorder_servers">Reorder servers</string>
     <string name="live_view">Live view</string>
@@ -62,4 +61,8 @@
     <string name="play_alerts">Play alerts</string>
     <string name="play_alerts_info">Plays recent alerts as short looping clips. Turn off to show a still image.</string>
     <string name="large_tiles">Large tiles</string>
+    <plurals name="from_n_online_servers">
+        <item quantity="one">from %1$d online server</item>
+        <item quantity="other">from %1$d online servers</item>
+    </plurals>
 </resources>

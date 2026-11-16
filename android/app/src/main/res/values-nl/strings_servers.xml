@@ -4,7 +4,6 @@
     <string name="add_server">Server toevoegen</string>
     <string name="edit_server">Server wijzigen</string>
     <string name="show">Toon</string>
-    <string name="from_n_online_servers">van %1$d online servers</string>
     <string name="your_servers">Je servers</string>
     <string name="reorder_servers">Volgorde van servers</string>
     <string name="live_view">Liveweergave</string>
@@ -62,4 +61,8 @@
     <string name="play_alerts">Meldingen afspelen</string>
     <string name="play_alerts_info">Speelt recente meldingen af als korte lusvideo\'s. Zet uit om alleen een stilstaand beeld te tonen.</string>
     <string name="large_tiles">Grote tegels</string>
+    <plurals name="from_n_online_servers">
+        <item quantity="one">van %1$d online server</item>
+        <item quantity="other">van %1$d online servers</item>
+    </plurals>
 </resources>

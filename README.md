@@ -58,6 +58,25 @@ same rail and layout.
   </tr>
 </table>
 
+### Android
+
+The same screens in Kotlin and Jetpack Compose with Material 3, always dark like the iOS app.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/android-1-live.png" width="200"><br><sub>Live</sub></td>
+    <td align="center"><img src="docs/screenshots/android-2-camera.png" width="200"><br><sub>Camera</sub></td>
+    <td align="center"><img src="docs/screenshots/android-3-review.png" width="200"><br><sub>Review</sub></td>
+    <td align="center"><img src="docs/screenshots/android-4-event.png" width="200"><br><sub>Event</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/android-5-motion.png" width="200"><br><sub>Motion</sub></td>
+    <td align="center"><img src="docs/screenshots/android-6-playback.png" width="200"><br><sub>Playback</sub></td>
+    <td align="center"><img src="docs/screenshots/android-7-timeline.png" width="200"><br><sub>Timeline</sub></td>
+    <td align="center"><img src="docs/screenshots/android-8-settings.png" width="200"><br><sub>Servers</sub></td>
+  </tr>
+</table>
+
 ## Run
 
 **iOS, iPadOS and Mac:**

@@ -41,8 +41,8 @@ object DeepLinks {
                 selectTab(nav, ReviewTab)
             }
             "explore" -> selectTab(nav, ExploreTab)
-            "settings" -> { selectTab(nav, LiveTab); nav.navigate(SettingsTab) }
-            "chat" -> { selectTab(nav, LiveTab); nav.navigate(ChatTab) }
+            "settings" -> { selectTab(nav, MoreTab); nav.navigate(SettingsTab) }
+            "chat" -> { selectTab(nav, MoreTab); nav.navigate(ChatTab) }
             "camera" -> {
                 conn ?: return; arg ?: return
                 selectTab(nav, LiveTab)

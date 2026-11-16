@@ -42,6 +42,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -135,10 +136,11 @@ fun AppRoot(activity: MainActivity) {
     val list = sections(wide)
     // The section the user is in: the last top-level section shown. Screens pushed inside it
     // (a camera, an event, Settings from More) keep it highlighted, as the iOS tab bar does.
+    val stack by nav.currentBackStack.collectAsState()
     var section by remember { mutableStateOf<Any>(LiveTab) }
-    LaunchedEffect(entry, list) {
-        val d = entry?.destination ?: return@LaunchedEffect
-        list.firstOrNull { d.hasRoute(it.route::class) }?.let { section = it.route }
+    LaunchedEffect(stack, list) {
+        // The nearest section down the stack: a pushed screen (also Settings from More) keeps it.
+        stack.asReversed().firstNotNullOfOrNull { e -> list.firstOrNull { e.destination.hasRoute(it.route::class) } }?.let { section = it.route }
     }
     // As iOS hides its tab bar on these: video and detail screens get the whole screen.
     val hideBar = entry?.destination?.let { d ->

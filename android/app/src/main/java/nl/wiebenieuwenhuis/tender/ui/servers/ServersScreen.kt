@@ -107,7 +107,7 @@ fun ServersScreen(showsBack: Boolean = true) {
                             Text(stringResource(R.string.all_servers), style = MaterialTheme.typography.titleMedium)
                             val online = AppModel.onlineConnections
                             val cams = online.sumOf { it.cameras.size }
-                            Text(pluralStringResource(R.plurals.n_cameras, cams, cams) + " " + stringResource(R.string.from_n_online_servers, online.size),
+                            Text(pluralStringResource(R.plurals.n_cameras, cams, cams) + " " + pluralStringResource(R.plurals.from_n_online_servers, online.size, online.size),
                                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (allActive) Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary)
