@@ -25,6 +25,8 @@ struct ReviewView: View {
     @State private var loading = false
     @State private var canLoadMore = false
     @State private var loadError: String?
+    /// Counts loads, so only the latest one writes the list, the error and the spinner.
+    @State private var loads = 0
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// Items on screen, for the timeline beside the grid.
     @State private var visibility = ReviewVisibility()
@@ -382,6 +384,10 @@ struct ReviewView: View {
     }
 
     private func reload(silent: Bool = false) async {
+        // Only the latest load writes the list: a slow or cancelled one (filters or connections
+        // changed meanwhile) must not overwrite newer items or leave a "cancelled" error behind.
+        loads += 1
+        let generation = loads
         if !silent { loading = true }
         loadError = nil
         // The counts on the segments and the tab badge come from each server's summary;
@@ -390,14 +396,15 @@ struct ReviewView: View {
         defer { _ = counts }
         do {
             var result = try await fetch(before: nil)
+            guard generation == loads else { return }
             // Frigate's list can lag a moment behind items just marked reviewed.
             for i in result.indices where model.reviewedIDs.contains(result[i].item.id) { result[i].item.hasBeenReviewed = true }
             if unreviewedOnly { result.removeAll { $0.item.hasBeenReviewed } }
             entries = result
             canLoadMore = result.count >= pageSize
-        } catch is CancellationError {
         } catch {
-            loadError = error.localizedDescription
+            guard generation == loads else { return }
+            if !Task.isCancelled && !error.isCancellation { loadError = error.localizedDescription }
         }
         loading = false
     }
@@ -586,5 +593,12 @@ struct ThreatChip: View {
                 .padding(.horizontal, 7).padding(.vertical, 2)
                 .background((concern ? Theme.destructive : Theme.warning).opacity(0.16), in: Capsule())
         }
+    }
+}
+
+private extension Error {
+    /// A cancelled task: Swift's CancellationError, or URLSession's own "cancelled".
+    var isCancellation: Bool {
+        self is CancellationError || (self as? URLError)?.code == .cancelled
     }
 }
