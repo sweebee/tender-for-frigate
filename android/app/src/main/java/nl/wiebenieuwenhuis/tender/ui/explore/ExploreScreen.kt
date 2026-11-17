@@ -285,6 +285,12 @@ private fun FilterRow(vm: ExploreViewModel, canSearchText: Boolean) {
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
+        // First, so the way back to the default view needs no scrolling and stays put.
+        if (filter.isActive) {
+            OutlinedIconButton(onClick = { vm.filter = ExploreFilter() }, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.Filled.Close, stringResource(R.string.explore_clear_filters), Modifier.size(16.dp))
+            }
+        }
         val similar = filter.similar
         if (similar != null) {
             // Frigate's "Similarity search active", with a way out.
@@ -325,12 +331,6 @@ private fun FilterRow(vm: ExploreViewModel, canSearchText: Boolean) {
                 for (cam in conn.cameras) {
                     OptionItem(cam.displayName, cam.name in vm.filter.cameras) { vm.filter = vm.filter.copy(cameras = vm.filter.cameras.toggled(cam.name)) }
                 }
-            }
-        }
-        // Right after Cameras, so the way back to the default view needs no scrolling.
-        if (filter.isActive) {
-            OutlinedIconButton(onClick = { vm.filter = ExploreFilter() }, modifier = Modifier.size(34.dp)) {
-                Icon(Icons.Filled.Close, stringResource(R.string.explore_clear_filters), Modifier.size(16.dp))
             }
         }
         val labelOptions = vm.labelOptions()

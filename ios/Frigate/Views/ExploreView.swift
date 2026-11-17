@@ -256,6 +256,17 @@ struct ExploreView: View {
     private var filters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                // First, so the way back to the default view needs no scrolling and stays put.
+                if filter.isActive {
+                    Button { filter = ExploreFilter() } label: {
+                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Theme.textSecondary)
+                            .frame(width: 34, height: 34)
+                            .background(Theme.card, in: Circle())
+                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
+                    }
+                    .accessibilityLabel("Clear filters")
+                }
                 if let similar = filter.similar {
                     // Frigate's "Similarity search active", with a way out.
                     Button { filter.similar = nil } label: {
@@ -293,17 +304,6 @@ struct ExploreView: View {
                             ? cameraOptions.first { filter.cameras.contains($0.name) }?.displayName ?? L("\(filter.cameras.count) cameras")
                             : L("\(filter.cameras.count) cameras")),
                          outlined: !filter.cameras.isEmpty, trailingChevron: true)
-                }
-                // Right after Cameras, so the way back to the default view needs no scrolling.
-                if filter.isActive {
-                    Button { filter = ExploreFilter() } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Theme.textSecondary)
-                            .frame(width: 34, height: 34)
-                            .background(Theme.card, in: Circle())
-                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
-                    }
-                    .accessibilityLabel("Clear filters")
                 }
                 Menu {
                     option(L("All labels"), filter.labels.isEmpty) { filter.labels = [] }
