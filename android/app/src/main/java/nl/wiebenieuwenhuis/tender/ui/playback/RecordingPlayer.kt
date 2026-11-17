@@ -1,5 +1,6 @@
 package nl.wiebenieuwenhuis.tender.ui.playback
 
+import nl.wiebenieuwenhuis.tender.ui.explore.pinchStep
 import android.view.TextureView
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
@@ -280,13 +281,8 @@ fun ZoomableVideo(player: RecordingPlayer, modifier: Modifier = Modifier, onTap:
                 )
             }
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val s = (scale * zoom).coerceIn(1f, 6f)
-                    val maxX = size.width * (s - 1) / 2
-                    val maxY = size.height * (s - 1) / 2
-                    scale = s
-                    offset = if (s <= 1.01f) Offset.Zero
-                    else Offset((offset.x + pan.x).coerceIn(-maxX, maxX), (offset.y + pan.y).coerceIn(-maxY, maxY))
+                detectTransformGestures { centroid, pan, zoom, _ ->
+                    pinchStep(scale, offset, centroid, pan, zoom, size, 6f).let { (s, o) -> scale = s; offset = o }
                 }
             },
     ) {

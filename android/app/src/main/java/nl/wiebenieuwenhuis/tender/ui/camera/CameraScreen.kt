@@ -1,5 +1,6 @@
 package nl.wiebenieuwenhuis.tender.ui.camera
 
+import nl.wiebenieuwenhuis.tender.ui.explore.pinchStep
 import android.Manifest
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -589,9 +590,8 @@ private fun VideoBox(
         // view, which would otherwise take the touches itself.
         Box(Modifier.fillMaxSize()
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 6f)
-                    offset = if (scale == 1f) Offset.Zero else offset + pan
+                detectTransformGestures { centroid, pan, zoom, _ ->
+                    pinchStep(scale, offset, centroid, pan, zoom, size, 6f).let { (s, o) -> scale = s; offset = o }
                 }
             }
             .pointerInput(onTap) { detectTapGestures(onDoubleTap = { scale = 1f; offset = Offset.Zero }, onTap = { onTap() }) })
