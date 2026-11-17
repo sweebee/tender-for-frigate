@@ -1,5 +1,6 @@
 package nl.wiebenieuwenhuis.tender.ui.playback
 
+import nl.wiebenieuwenhuis.tender.ui.components.newExoPlayer
 import android.graphics.BitmapFactory
 import android.util.LruCache
 import androidx.annotation.OptIn

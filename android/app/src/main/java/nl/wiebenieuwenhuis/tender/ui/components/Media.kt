@@ -25,6 +25,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -36,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import nl.wiebenieuwenhuis.tender.TenderApplication
 import nl.wiebenieuwenhuis.tender.api.Http
 import nl.wiebenieuwenhuis.tender.api.await
 import okhttp3.Request
@@ -100,15 +102,26 @@ fun RefreshingImage(
     }
 }
 
+/**
+ * An ExoPlayer for Frigate's recordings and clips, with the login cookie. When a decoder fails to
+ * start, the next one is tried: many tablets have a hardware HEVC decoder up to 1920×1088, which
+ * refuses higher-resolution recordings (such as 2688×1520) where the software decoder plays them.
+ * Android often reports every decoder as unable to play such a size, and ExoPlayer then tries only
+ * the first one unless fallback is on.
+ */
+@OptIn(UnstableApi::class)
+fun newExoPlayer(): ExoPlayer {
+    val ctx = TenderApplication.context
+    val factory = DefaultMediaSourceFactory(ctx).setDataSourceFactory(OkHttpDataSource.Factory(Http.client))
+    val renderers = DefaultRenderersFactory(ctx).setEnableDecoderFallback(true)
+    return ExoPlayer.Builder(ctx, renderers).setMediaSourceFactory(factory).build()
+}
+
 /** A player for recordings and clips, released when the composable leaves. Plays Frigate's HLS and MP4 with the login cookie. */
 @OptIn(UnstableApi::class)
 @Composable
 fun rememberVideoPlayer(): ExoPlayer {
-    val ctx = LocalContext.current
-    val player = remember {
-        val factory = DefaultMediaSourceFactory(ctx).setDataSourceFactory(OkHttpDataSource.Factory(Http.client))
-        ExoPlayer.Builder(ctx).setMediaSourceFactory(factory).build()
-    }
+    val player = remember { newExoPlayer() }
     DisposableEffect(player) { onDispose { player.release() } }
     return player
 }

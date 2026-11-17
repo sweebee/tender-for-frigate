@@ -62,28 +62,17 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.SeekParameters
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import nl.wiebenieuwenhuis.tender.R
-import nl.wiebenieuwenhuis.tender.TenderApplication
-import nl.wiebenieuwenhuis.tender.api.Http
 import nl.wiebenieuwenhuis.tender.api.L
+import nl.wiebenieuwenhuis.tender.ui.components.newExoPlayer
 import kotlin.math.abs
-
-/** An ExoPlayer for Frigate's recordings, with the login cookie. */
-@OptIn(UnstableApi::class)
-fun newExoPlayer(): ExoPlayer {
-    val ctx = TenderApplication.context
-    val factory = DefaultMediaSourceFactory(ctx).setDataSourceFactory(OkHttpDataSource.Factory(Http.client))
-    return ExoPlayer.Builder(ctx).setMediaSourceFactory(factory).build()
-}
 
 /**
  * Wraps an ExoPlayer for HLS recordings from Frigate's /vod endpoint, as `RecordingPlayer` in the
