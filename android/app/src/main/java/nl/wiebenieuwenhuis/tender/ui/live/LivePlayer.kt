@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
@@ -106,7 +107,11 @@ fun LivePlayerView(client: FrigateClient, camera: String, state: LivePlayerState
     }
     AndroidView(
         factory = { ctx ->
-            WebView(ctx).apply {
+            // Touches go to Compose (taps on a tile, pinch to zoom); the page needs none. A WebView
+            // takes every touch it gets, even with a touch listener that declines it, so it gets none.
+            object : WebView(ctx) {
+                override fun dispatchTouchEvent(event: MotionEvent) = false
+            }.apply {
                 layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                 setBackgroundColor(android.graphics.Color.BLACK)
                 settings.javaScriptEnabled = true
@@ -114,10 +119,8 @@ fun LivePlayerView(client: FrigateClient, camera: String, state: LivePlayerState
                 settings.domStorageEnabled = true
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
-                // Touches go to Compose (pinch to zoom, taps); the page needs none.
                 isClickable = false
                 isFocusable = false
-                setOnTouchListener { _, _ -> false }
                 webViewClient = WebViewClient()
                 webChromeClient = object : WebChromeClient() {
                     // The user already chose to talk; the app holds the microphone permission.
