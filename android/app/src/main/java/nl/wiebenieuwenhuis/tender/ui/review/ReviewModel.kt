@@ -1,5 +1,6 @@
 package nl.wiebenieuwenhuis.tender.ui.review
 
+import nl.wiebenieuwenhuis.tender.app.Prefs
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +61,11 @@ class ReviewModel : ViewModel() {
     var cameraFilter by mutableStateOf(emptySet<String>())
     var labelFilter by mutableStateOf(emptySet<String>())
     var zoneFilter by mutableStateOf(emptySet<String>())
-    var unreviewedOnly by mutableStateOf(true)
+    private var unreviewedOnlyState = mutableStateOf(Prefs.bool("reviewUnreviewedOnly", true))
+    /** Remembered between launches, as on iOS. */
+    var unreviewedOnly: Boolean
+        get() = unreviewedOnlyState.value
+        set(v) { unreviewedOnlyState.value = v; Prefs.setBool("reviewUnreviewedOnly", v) }
     var range by mutableStateOf<ReviewRange>(ReviewRange.Last24Hours)
 
     var entries by mutableStateOf<List<ReviewEntry>>(emptyList())

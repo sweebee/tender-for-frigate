@@ -16,7 +16,8 @@ struct ReviewView: View {
     @State private var cameraFilter: Set<String> = []
     @State private var labelFilter: Set<String> = []
     @State private var zoneFilter: Set<String> = []
-    @State private var unreviewedOnly = true
+    /// Remembered, like the last choice in Frigate's web UI would be per browser.
+    @AppStorage("reviewUnreviewedOnly") private var unreviewedOnly = true
     /// Like Frigate: the last 24 hours, or one chosen day.
     @State private var range: ReviewRange = .last24Hours
     @State private var pickingDay = false
