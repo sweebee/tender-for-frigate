@@ -147,6 +147,7 @@ import nl.wiebenieuwenhuis.tender.ui.components.SmallSpinner
 import nl.wiebenieuwenhuis.tender.ui.components.StatusDot
 import nl.wiebenieuwenhuis.tender.ui.components.isPhoneLandscape
 import nl.wiebenieuwenhuis.tender.ui.components.isWideLayout
+import nl.wiebenieuwenhuis.tender.ui.live.StreamSupport
 import nl.wiebenieuwenhuis.tender.ui.live.CameraSwitchItems
 import nl.wiebenieuwenhuis.tender.ui.live.LiveMode
 import nl.wiebenieuwenhuis.tender.ui.live.LivePlayerState
@@ -181,12 +182,25 @@ fun CameraScreen(route: CameraRoute) {
     val streamKey = "liveStream.${route.serverId}.${route.camera}"
     val streams = conn.liveStreams(camera)
     val player = remember {
-        val saved = Prefs.string(streamKey)?.takeIf { s -> streams.any { it.name == s } }
+        // Streams this device cannot decode (too large for its decoder) are left out, as in the tiles.
+        val usable = StreamSupport.playable(route.serverId, streams)
+        val saved = Prefs.string(streamKey)?.takeIf { s -> usable.any { it.name == s } }
         // On mobile data start with the lighter sub stream when the camera has one.
-        val first = if (AppModel.isExpensiveNetwork && streams.size > 1) streams.last() else streams.firstOrNull()
+        val first = if (AppModel.isExpensiveNetwork && usable.size > 1) usable.last() else usable.firstOrNull()
         // No restream to play: straight to snapshots instead of waiting for MSE and WebRTC to time out.
         val mode = if (streams.isEmpty() && conn.go2rtcStreams != null) LiveMode.Mjpeg else LiveMode.Auto
         LivePlayerState(saved ?: first?.name ?: camera.name, mode, muted = !LivePlayerState.soundOn)
+    }
+    // A stream the user picked in the menu is kept, even one this device turns out not to decode.
+    var pickedStream by remember { mutableStateOf(false) }
+    fun pickStream(s: String) { player.stream = s; Prefs.setString(streamKey, s); pickedStream = true }
+    // The stream started but this device cannot decode it at its size: switch to a lighter one
+    // rather than wait for MSE and WebRTC to fail and end up on snapshots.
+    LaunchedEffect(player.mseInfo) {
+        val info = player.mseInfo ?: return@LaunchedEffect
+        val current = player.stream
+        if (!StreamSupport.check(route.serverId, current, info) || pickedStream) return@LaunchedEffect
+        StreamSupport.playable(route.serverId, streams).firstOrNull { it.name != current }?.let { player.stream = it.name }
     }
     val cameraOn = conn.isCameraEnabled(camera)
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -370,7 +384,7 @@ fun CameraScreen(route: CameraRoute) {
     val playerContent = remember(client, camera.name) {
         movableContentOf { modifier: Modifier, chrome: Boolean, onTap: () -> Unit ->
             VideoBox(client, camera, player, conn, modifier, chrome, onTap, switchingOn, recordingNow, manualEventId != null, manualStarted,
-                streams.map { it.title to it.name }) { s -> player.stream = s; Prefs.setString(streamKey, s) }
+                streams.map { it.title to it.name }) { s -> pickStream(s) }
         }
     }
 
@@ -420,7 +434,7 @@ fun CameraScreen(route: CameraRoute) {
                         StatusChips(conn, camera, recordingNow, manualEventId != null, manualStarted)
                         if (streams.size > 1) StreamChip(streams.map { it.title to it.name }, player.stream, Modifier,
                             onOpen = { menuOpen = true; keepOverlay() }, onClose = { menuOpen = false; keepOverlay() }) { s ->
-                            player.stream = s; Prefs.setString(streamKey, s)
+                            pickStream(s)
                         }
                         Clock(recordingNow == true && !conn.isRecordSwitchedOff(camera))
                         MoreMenu(Color.White)

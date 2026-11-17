@@ -108,7 +108,7 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
                     RefreshingImage(client.latestImageUrl(camera.name, 270), refresh, Modifier.fillMaxSize().alpha(if (online) 1f else 0.4f))
                     val stream = tileStream(conn, camera, widthPx)
                     if (online && stream != null && (AppModel.showsLiveGrid || (AppModel.autoLive && autoLiveOn))) {
-                        TileLivePlayer(client, camera, stream.name, Modifier.fillMaxSize())
+                        TileLivePlayer(conn, client, camera, stream.name, Modifier.fillMaxSize())
                     }
                 }
             }
@@ -154,7 +154,7 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
  * than about 800 pixels and the connection is not metered: then the main stream.
  */
 private fun tileStream(conn: ServerConnection, camera: CameraConfig, widthPx: Int): StreamChoice? {
-    val streams = conn.liveStreams(camera, inFrigateOrder = false)
+    val streams = StreamSupport.playable(conn.id, conn.liveStreams(camera, inFrigateOrder = false))
     return when (AppModel.tileStream) {
         TileStream.Main -> streams.firstOrNull()
         TileStream.Sub -> streams.lastOrNull()
@@ -164,8 +164,10 @@ private fun tileStream(conn: ServerConnection, camera: CameraConfig, widthPx: In
 
 /** Muted live video for a tile; the picture underneath stays visible until the video plays. */
 @Composable
-fun TileLivePlayer(client: FrigateClient, camera: CameraConfig, stream: String, modifier: Modifier = Modifier) {
+fun TileLivePlayer(conn: ServerConnection, client: FrigateClient, camera: CameraConfig, stream: String, modifier: Modifier = Modifier) {
     val state = remember(stream) { LivePlayerState(stream, LiveMode.Mse) }
+    // A stream this device cannot decode is remembered; the tile then picks another one (tileStream).
+    LaunchedEffect(state.mseInfo) { state.mseInfo?.let { StreamSupport.check(conn.id, stream, it) } }
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     state.suspended = !lifecycle.isAtLeast(Lifecycle.State.RESUMED)
     LivePlayerView(client, camera.name, state, modifier.alpha(if (state.playing) 1f else 0f), fill = true)

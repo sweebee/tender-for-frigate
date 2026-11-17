@@ -45,6 +45,9 @@ import okhttp3.WebSocketListener
 /** How a live stream is played: go2rtc's MSE, WebRTC or Frigate's MJPEG snapshots, or the best that works. */
 enum class LiveMode(val raw: String) { Auto("auto"), Mse("mse"), WebRtc("webrtc"), Mjpeg("mjpeg") }
 
+/** What go2rtc sends over MSE: its codec string and the video's size. */
+data class MseInfo(val codecs: String, val width: Int, val height: Int)
+
 /** State shared between a live player and its controls, as `LivePlayerState` in the iOS app. */
 @Stable
 class LivePlayerState(stream: String = "", preferred: LiveMode = LiveMode.Auto, muted: Boolean = true) {
@@ -55,6 +58,8 @@ class LivePlayerState(stream: String = "", preferred: LiveMode = LiveMode.Auto, 
     var videoWidth by mutableStateOf(0.0)
     var videoHeight by mutableStateOf(0.0)
     var hasAudio by mutableStateOf(false)
+    /** The MSE stream's codecs and size once known, for [StreamSupport]; null until then and after a reload. */
+    var mseInfo by mutableStateOf<MseInfo?>(null)
     var preferred by mutableStateOf(preferred)
     var stream by mutableStateOf(stream)
     /** Bumped to force a reload. */
@@ -185,6 +190,7 @@ private class PlayerBridge(val client: FrigateClient, val camera: String, val st
         state.status = "Connecting"
         state.playing = false
         state.activeMode = ""
+        state.mseInfo = null
         val html = TenderApplication.context.assets.open("live_player.html").bufferedReader().use { it.readText() }
         val base = if (state.talking) "http://localhost/" else client.baseUrl.toString()
         web.loadDataWithBaseURL(base, html, "text/html", "utf-8", null)
@@ -206,6 +212,7 @@ private class PlayerBridge(val client: FrigateClient, val camera: String, val st
             o["audio"].bool()?.let { state.hasAudio = it }
             val w = o["width"].dbl(); val h = o["height"].dbl()
             if (w != null && h != null && w > 0) { state.videoWidth = w; state.videoHeight = h }
+            o["codecs"].str()?.let { c -> if (w != null && h != null) state.mseInfo = MseInfo(c, w.toInt(), h.toInt()) }
         }
     }
 

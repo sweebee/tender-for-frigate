@@ -72,8 +72,14 @@ setInterval(() => {
   }
 }, 2000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && playingNow) video.play().catch(()=>{}); });
-video.addEventListener('resize', () => post({width: video.videoWidth, height: video.videoHeight}));
+// With MSE also go2rtc's codec string, so the app can tell whether this device decodes the stream at this size.
+video.addEventListener('resize', () => {
+  const o = {width: video.videoWidth, height: video.videoHeight};
+  if (P.modes[idx] === 'mse' && mseCodecs) o.codecs = mseCodecs;
+  post(o);
+});
 
+let mseCodecs = '';
 const CODECS = ['avc1.640029','avc1.64002A','avc1.640033','hvc1.1.6.L153.B0','mp4a.40.2','mp4a.40.5','flac','opus'];
 function startMSE(){
   const MS = window.ManagedMediaSource || window.MediaSource;
@@ -97,6 +103,7 @@ function startMSE(){
       if (typeof ev.data === 'string') {
         const msg = JSON.parse(ev.data);
         if (msg.type === 'mse') {
+          mseCodecs = msg.value;
           post({audio: /mp4a|opus|flac/.test(msg.value)});
           try { sb = ms.addSourceBuffer(msg.value); } catch(e) { next('codec ' + msg.value); return; }
           sb.mode = 'segments';
