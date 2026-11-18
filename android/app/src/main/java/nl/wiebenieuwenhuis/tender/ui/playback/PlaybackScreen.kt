@@ -444,6 +444,7 @@ private fun PortraitBody(state: PlaybackState, exporter: ClipExporter, actions: 
     Scaffold(topBar = { PlaybackTopBar(state, actions) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             VideoArea(state, exporter, actions, large = false, Modifier.fillMaxWidth().aspectRatio(16f / 9f))
+            PlaybackCameraStrip(state, 50.dp, Modifier.padding(top = 10.dp))
             TabBar(listOf(PlaybackState.Tab.Events, PlaybackState.Tab.Timeline, PlaybackState.Tab.Detail), state.tab, { state.tab = it },
                 Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp))
             FilterBar(state, Modifier.padding(bottom = 8.dp))
@@ -474,6 +475,7 @@ private fun WideBody(state: PlaybackState, exporter: ClipExporter, actions: Play
                 Column(Modifier.width(videoWidth), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     VideoArea(state, exporter, actions, large = true,
                         Modifier.width(videoHeight * 16f / 9f).height(videoHeight).clip(RoundedCornerShape(12.dp)))
+                    PlaybackCameraStrip(state, 60.dp, Modifier.fillMaxWidth(), margin = 0.dp)
                     TimelineCard(state)
                 }
                 Column(Modifier.width(side).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -840,6 +842,8 @@ private fun LandscapeBody(state: PlaybackState, exporter: ClipExporter, actions:
                     Modifier.fillMaxWidth().background(Color.Black.copy(alpha = 0.6f)).windowInsetsPadding(safe)
                         .padding(start = 8.dp, end = 8.dp, bottom = if (wide) 16.dp else 8.dp),
                 ) {
+                    // The other cameras at this moment, above the timeline.
+                    PlaybackCameraStrip(state, 46.dp, Modifier.padding(top = 8.dp), onVideo = true, margin = 8.dp, onUse = state::keepOverlay)
                     PlayheadTimeline(state, onVideo = true, onUse = state::keepOverlay)
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
                         HorizontalZoomButtons(state.timelineScale, { state.timelineScale = it }, Color.White.copy(alpha = 0.7f), state::keepOverlay)

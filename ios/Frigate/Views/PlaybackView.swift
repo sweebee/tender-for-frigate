@@ -285,6 +285,8 @@ struct PlaybackView: View {
                             .frame(width: videoHeight * 16 / 9, height: videoHeight)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .frame(maxWidth: .infinity)
+                        cameraStrip(height: 60, margin: 0)
+                            .frame(width: videoWidth)
                         horizontalTimeline
                             .frame(width: videoWidth)
                         Spacer(minLength: 0)
@@ -361,6 +363,7 @@ struct PlaybackView: View {
         VStack(spacing: 0) {
             header
             videoPlayer
+            cameraStrip(height: 50).padding(.top, 10)
             SegmentedBar(options: [Tab.events, .timeline, .detail], selection: $tab) { tabTitle($0) }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -552,10 +555,7 @@ struct PlaybackView: View {
     private var cameraMenu: some View {
             Menu {
                 ForEach(conn?.cameras ?? [], id: \.name) { cam in
-                    Button {
-                        if cam.name != camera && !loading && !map.isEmpty { switchTime = wallTime }
-                        camera = cam.name
-                    } label: {
+                    Button { selectCamera(cam.name) } label: {
                         if cam.name == camera { Label(cam.displayName, systemImage: "checkmark") } else { Text(cam.displayName) }
                     }
                 }
@@ -571,6 +571,24 @@ struct PlaybackView: View {
                 .foregroundStyle(Theme.text)
                 .frame(minHeight: 44)
             }
+    }
+
+    /// Plays another camera, at the moment the playhead is on.
+    private func selectCamera(_ name: String) {
+        if name != camera && !loading && !map.isEmpty { switchTime = wallTime }
+        camera = name
+    }
+
+    /// The server's other cameras at the playhead's moment (Frigate's preview row); a tap plays one.
+    @ViewBuilder
+    private func cameraStrip(height: CGFloat, onVideo: Bool = false, margin: CGFloat = 16) -> some View {
+        if let conn, conn.cameras.count > 1 {
+            PlaybackCameraStrip(conn: conn, current: camera, wallTime: wallTime, dayStart: dayStart, dayEnd: dayEnd,
+                                height: height, onVideo: onVideo, margin: margin) { name in
+                selectCamera(name)
+                keepOverlay()
+            }
+        }
     }
 
     // MARK: Player
@@ -1407,6 +1425,13 @@ extension PlaybackView {
                 }
             }
             .frame(maxHeight: .infinity)
+
+            // The other cameras at this moment, above the timeline.
+            cameraStrip(height: 46, onVideo: true, margin: 20)
+                .padding(.top, 8)
+                // One dark block with the timeline, so the names read on any picture.
+                .background(Color.black.opacity(0.6).ignoresSafeArea(edges: .horizontal))
+                .pointerOver($pointerOnControls)
 
             // Bottom: horizontal timeline.
             ZStack(alignment: .top) {

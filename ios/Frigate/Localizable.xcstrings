@@ -5040,6 +5040,16 @@
         }
       }
     },
+    "Plays this camera at the same moment": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speelt deze camera af op hetzelfde moment"
+          }
+        }
+      }
+    },
     "PTZ": {
       "shouldTranslate": false
     },
