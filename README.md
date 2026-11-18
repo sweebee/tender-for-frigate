@@ -9,7 +9,7 @@ not affiliated with or endorsed by the Frigate project.
 | App | Folder | Built with | Requires | Get it |
 | --- | --- | --- | --- | --- |
 | iPhone, iPad and Mac | [`ios/`](ios) | SwiftUI, Mac Catalyst, no third-party dependencies | iOS 17, Xcode 26 | [TestFlight](https://testflight.apple.com/join/s6KEWhy1) |
-| Android | [`android/`](android) | Kotlin, Jetpack Compose, Material 3 | Android 9 (API 28) | Build it yourself, see [android/README.md](android/README.md) |
+| Android | [`android/`](android) | Kotlin, Jetpack Compose, Material 3 | Android 9 (API 28) | [Google Play](https://play.google.com/store/apps/details?id=nl.wiebenieuwenhuis.tender) |
 
 Both apps have the same screens and follow Frigate's web UI for names and flows. A feature or
 fix in one goes into the other too, unless the platform does not allow it.
@@ -87,7 +87,8 @@ open ios/Frigate.xcodeproj
 
 Pick an iPhone simulator, or "My Mac (Mac Catalyst)", and run.
 
-**Android:** from `android/`:
+**Android:** install it from [Google Play](https://play.google.com/store/apps/details?id=nl.wiebenieuwenhuis.tender).
+To build it yourself, from `android/`:
 
 ```bash
 ./gradlew :app:installDebug
