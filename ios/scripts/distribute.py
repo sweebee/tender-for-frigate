@@ -73,6 +73,14 @@ def what_to_test() -> str:
     return log or "Bug fixes and improvements."
 
 
+def plain(text: str) -> str:
+    """App Store Connect rejects symbols such as "✕" in What to Test ("invalid characters"):
+    arrows become "->", crosses "x", and other symbols, dingbats and emoji are dropped."""
+    for a, b in (("→", "->"), ("←", "<-"), ("✕", "x"), ("✖", "x"), ("×", "x")):
+        text = text.replace(a, b)
+    return "".join(c for c in text if not (0x2190 <= ord(c) <= 0x2BFF or ord(c) > 0xFFFF))
+
+
 PLATFORMS = ("IOS", "MAC_OS")
 
 
@@ -176,7 +184,7 @@ def main():
         sys.exit(__doc__)
     version = args[0]
     text = args[1] if len(args) > 1 else what_to_test()
-    text = text[:4000]
+    text = plain(text)[:4000]
 
     app = must(api("GET", f"/v1/apps?filter[bundleId]={BUNDLE_ID}"), "Find app")["data"][0]["id"]
     groups = must(api("GET", f"/v1/apps/{app}/betaGroups"), "Find groups")["data"]
