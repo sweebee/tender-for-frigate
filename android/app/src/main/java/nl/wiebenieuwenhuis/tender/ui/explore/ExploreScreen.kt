@@ -53,6 +53,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import nl.wiebenieuwenhuis.tender.ui.components.LucideIcon
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -287,12 +290,9 @@ private fun FilterRow(vm: ExploreViewModel, canSearchText: Boolean) {
         // First, so the way back to the default view needs no scrolling and stays put.
         if (filter.isActive) {
             val clearLabel = stringResource(R.string.explore_clear_filters)
-            FilterChip(
-                selected = false, onClick = { vm.filter = ExploreFilter() },
-                label = { Text(stringResource(R.string.explore_clear), maxLines = 1, softWrap = false) },
-                leadingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) },
-                modifier = Modifier.semantics { contentDescription = clearLabel },
-            )
+            OutlinedIconButton(onClick = { vm.filter = ExploreFilter() }, modifier = Modifier.size(36.dp).semantics { contentDescription = clearLabel }) {
+                LucideIcon("LuFilterX", Modifier.clearAndSetSemantics {}, size = 18.dp)
+            }
         }
         val similar = filter.similar
         if (similar != null) {

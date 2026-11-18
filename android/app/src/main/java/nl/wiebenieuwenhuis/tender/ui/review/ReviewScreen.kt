@@ -41,6 +41,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import nl.wiebenieuwenhuis.tender.ui.components.LucideIcon
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material.icons.filled.Close
@@ -337,12 +340,9 @@ private fun Filters(vm: ReviewModel, onPickDay: () -> Unit, modifier: Modifier, 
         // First, so the way back to the default view needs no scrolling and stays put.
         if (vm.filtersActive) {
             val clearLabel = stringResource(R.string.explore_clear_filters)
-            FilterChip(
-                selected = false, onClick = { vm.clearFilters() },
-                label = { Text(stringResource(R.string.explore_clear), maxLines = 1, softWrap = false) },
-                leadingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) },
-                modifier = Modifier.semantics { contentDescription = clearLabel },
-            )
+            OutlinedIconButton(onClick = { vm.clearFilters() }, modifier = Modifier.size(36.dp).semantics { contentDescription = clearLabel }) {
+                LucideIcon("LuFilterX", Modifier.clearAndSetSemantics {}, size = 18.dp)
+            }
         }
         val camTitle = if (vm.cameraFilter.isEmpty()) stringResource(R.string.review_cameras)
         else vm.cameraFilter.singleOrNull()?.let { name -> cameraName(conns.firstOrNull { it.camera(name) != null }, name) }

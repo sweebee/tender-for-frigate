@@ -1935,16 +1935,6 @@
         }
       }
     },
-    "Clear": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wissen"
-          }
-        }
-      }
-    },
     "Clear filters": {
       "localizations": {
         "nl": {

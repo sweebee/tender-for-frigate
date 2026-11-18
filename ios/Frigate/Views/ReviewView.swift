@@ -201,7 +201,12 @@ struct ReviewView: View {
                     Button {
                         cameraFilter = []; labelFilter = []; zoneFilter = []; range = .last24Hours
                     } label: {
-                        Chip(title: L("Clear"), systemImage: "xmark")
+                        LucideIcon(name: "LuFilterX", size: 17)
+                            .foregroundStyle(Theme.text)
+                            .frame(width: 36, height: 34)
+                            .background(Theme.card, in: Capsule())
+                            .overlay(Capsule().stroke(Theme.controlBorder, lineWidth: 1))
+                            .padding(1)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Clear filters")
