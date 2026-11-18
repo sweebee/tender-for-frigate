@@ -1345,6 +1345,16 @@
         }
       }
     },
+    "Allow Tender to add photos in Settings to save pictures.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sta Tender in Instellingen toe om foto's toe te voegen om foto's op te slaan."
+          }
+        }
+      }
+    },
     "Allow Tender to use the microphone in Settings to talk through the camera.": {
       "localizations": {
         "nl": {
@@ -5922,6 +5932,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rol"
+          }
+        }
+      }
+    },
+    "Save picture as file…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto bewaren als bestand…"
+          }
+        }
+      }
+    },
+    "Save picture to Photos": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto bewaren in Foto's"
+          }
+        }
+      }
+    },
+    "Saving picture…": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto bewaren…"
           }
         }
       }

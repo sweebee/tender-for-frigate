@@ -439,6 +439,9 @@ struct PlaybackView: View {
                 }
             }
             Section("From the playhead") {
+                Button { savePicture() } label: {
+                    Label(LocalSave.toFiles ? L("Save picture as file…") : L("Save picture to Photos"), systemImage: "camera")
+                }
                 ForEach([30.0, 60, 300], id: \.self) { secs in
                     Menu {
                         Button { save(wallTime - secs / 2, wallTime + secs / 2) } label: {
@@ -518,6 +521,13 @@ struct PlaybackView: View {
         if !cams.contains(where: { $0.name == camera }), let own = conn?.config?.cameras[camera] { cams.insert(own, at: 0) }
         saveRequest = SaveToFrigateRequest(client: client, camera: camera, start: s, end: e, name: name, cameras: cams,
                                            isAdmin: conn?.isAdmin ?? false)
+    }
+
+    /// The recording's frame at the playhead, at full size.
+    private func savePicture() {
+        guard let client else { return }
+        let time = wallTime
+        Task { await exporter.savePicture(client: client, camera: camera, time: time) }
     }
 
     private func shareClip(_ start: Double, _ end: Double) {

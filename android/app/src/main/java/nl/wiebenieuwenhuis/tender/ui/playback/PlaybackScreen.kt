@@ -58,6 +58,7 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Movie
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Storage
@@ -237,6 +238,10 @@ fun PlaybackScreen(route: PlaybackRoute) {
                 scope.launch { exporter.share(context, c, state.camera, a, b) }
             }
         },
+        savePicture = { t ->
+            val c = state.client
+            if (c != null) AppModel.scope.launch { exporter.savePicture(c, state.camera, t) }
+        },
         exportSpan = {
             val c = state.client
             if (c != null) {
@@ -310,6 +315,8 @@ internal class PlaybackActions(
     val saveToGallery: (Double, Double) -> Unit,
     val saveToFrigate: (Double, Double, String?) -> Unit,
     val share: (Double, Double) -> Unit,
+    /** The recording's frame at a moment, to the gallery. */
+    val savePicture: (Double) -> Unit,
     val exportSpan: () -> Unit,
     val delete: (ReviewItem) -> Unit,
     val openLive: () -> Unit,
@@ -651,6 +658,8 @@ private fun SaveMenu(state: PlaybackState, exporter: ClipExporter, actions: Play
             }
             HorizontalDivider()
             MenuHeader(stringResource(R.string.playback_from_playhead))
+            DropdownMenuItem(text = { Text(stringResource(R.string.playback_save_picture_gallery)) }, leadingIcon = { Icon(Icons.Outlined.PhotoCamera, null) },
+                onClick = { close(); actions.savePicture(state.wallTime) })
             for (secs in listOf(30.0, 60.0, 300.0)) {
                 DropdownMenuItem(text = { Text(spanTitle(secs)) }, leadingIcon = { Icon(Icons.Outlined.Movie, null) },
                     trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null) }, onClick = { span = secs })

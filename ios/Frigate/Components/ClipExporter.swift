@@ -57,6 +57,27 @@ final class ClipExporter {
         try? await Task.sleep(for: .seconds(2.5))
         if case .working = state {} else { state = .idle }
     }
+
+    /// The recording's frame at `time`, at full size, as Frigate's recording view downloads it:
+    /// to Photos, or on the Mac to a file.
+    func savePicture(client: FrigateClient, camera: String, time: Double) async {
+        state = .working(L("Saving picture…"))
+        do {
+            guard await LocalSave.allowed() else {
+                state = .failed(L("Allow Tender to add photos in Settings to save pictures."))
+                return
+            }
+            let data = try await client.data("api/\(camera)/recordings/\(String(format: "%.3f", time))/snapshot.jpg")
+            let stamp = Int(time)
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent("\(camera)-\(stamp).jpg")
+            try data.write(to: file)
+            if let done = try await LocalSave.keep(file) { state = .done(done) } else { state = .idle; return }
+        } catch {
+            state = .failed(error.localizedDescription)
+        }
+        try? await Task.sleep(for: .seconds(2.5))
+        if case .working = state {} else { state = .idle }
+    }
 }
 
 extension ClipExporter {
@@ -197,7 +218,7 @@ enum LocalSave {
         private func finish(_ ok: Bool) { done?(ok); done = nil }
     }
 
-    /// Keeps a downloaded clip: Photos, or on the Mac a file of the user's choosing. The status for the pill.
+    /// Keeps a downloaded clip or picture (.jpg): Photos, or on the Mac a file of the user's choosing. The status for the pill.
     @MainActor
     static func keep(_ file: URL) async throws -> String? {
         defer { try? FileManager.default.removeItem(at: file) }
@@ -205,8 +226,13 @@ enum LocalSave {
             return await saveFile(file) ? L("Saved") : nil
         }
 
+        let isPicture = file.pathExtension == "jpg"
         try await PHPhotoLibrary.shared().performChanges {
-            PHAssetCreationRequest.creationRequestForAssetFromVideo(atFileURL: file)
+            if isPicture {
+                PHAssetCreationRequest.creationRequestForAssetFromImage(atFileURL: file)
+            } else {
+                PHAssetCreationRequest.creationRequestForAssetFromVideo(atFileURL: file)
+            }
         }
         return L("Saved to Photos")
     }

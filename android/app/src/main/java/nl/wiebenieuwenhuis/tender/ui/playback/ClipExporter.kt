@@ -126,6 +126,21 @@ class ClipExporter {
         }
     }
 
+    /** The recording's frame at a moment, at full size, to the gallery (Pictures/Tender), as Frigate's recording view downloads it. */
+    suspend fun savePicture(client: FrigateClient, camera: String, time: Double) {
+        state = State.Working(L(R.string.playback_saving_picture))
+        state = try {
+            val bytes = client.data("api/$camera/recordings/${String.format(Locale.US, "%.3f", time)}/snapshot.jpg")
+            State.Done(withContext(Dispatchers.IO) {
+                val file = File(TenderApplication.context.cacheDir, "$camera-${time.toLong()}.jpg").apply { writeBytes(bytes) }
+                keepInGallery(TenderApplication.context, file)
+            })
+        } catch (e: Exception) {
+            State.Failed(e.message ?: L(R.string.playback_something_wrong))
+        }
+        settle()
+    }
+
     /** Has Frigate export the span on the server, where it stays (Frigate's Exports). */
     suspend fun saveToFrigate(client: FrigateClient, camera: String, start: Double, end: Double, name: String, caseId: String? = null) {
         state = State.Working(L(R.string.playback_saving_to_frigate))
@@ -166,36 +181,41 @@ class ClipExporter {
         }
 
         /**
-         * Copies a downloaded clip into the gallery and deletes the download. From Android 10 on
+         * Copies a downloaded clip (or a .jpg picture, into Pictures) into the gallery and deletes the download. From Android 10 on
          * MediaStore needs no permission. On Android 9 writing to the shared Movies folder needs
          * WRITE_EXTERNAL_STORAGE, which the app does not ask for: there the clip goes to the
          * app's own Movies folder, which the media scanner then indexes.
          */
         fun keepInGallery(context: Context, file: File): String {
+            val picture = file.extension == "jpg"
+            val mime = if (picture) "image/jpeg" else "video/mp4"
+            val folder = if (picture) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_MOVIES
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     val resolver = context.contentResolver
                     val values = ContentValues().apply {
-                        put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
-                        put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                        put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/Tender")
-                        put(MediaStore.Video.Media.IS_PENDING, 1)
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
+                        put(MediaStore.MediaColumns.MIME_TYPE, mime)
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, "$folder/Tender")
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
                     }
-                    val uri = resolver.insert(MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
+                    val collection = if (picture) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                        else MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                    val uri = resolver.insert(collection, values)
                         ?: throw java.io.IOException(L(R.string.playback_not_saved_gallery))
                     try {
                         resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
                             ?: throw java.io.IOException(L(R.string.playback_not_saved_gallery))
-                        resolver.update(uri, ContentValues().apply { put(MediaStore.Video.Media.IS_PENDING, 0) }, null, null)
+                        resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
                     } catch (e: Exception) {
                         resolver.delete(uri, null, null)
                         throw e
                     }
                 } else {
-                    val dir = File(context.getExternalFilesDir(Environment.DIRECTORY_MOVIES), "Tender").apply { mkdirs() }
+                    val dir = File(context.getExternalFilesDir(folder), "Tender").apply { mkdirs() }
                     val dest = File(dir, file.name)
                     file.copyTo(dest, overwrite = true)
-                    MediaScannerConnection.scanFile(context, arrayOf(dest.absolutePath), arrayOf("video/mp4"), null)
+                    MediaScannerConnection.scanFile(context, arrayOf(dest.absolutePath), arrayOf(mime), null)
                 }
                 return L(R.string.playback_saved_to_gallery)
             } finally {

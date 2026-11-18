@@ -78,6 +78,8 @@
     <string name="playback_save_event_frigate">Save event to Frigate</string>
     <string name="playback_share_event">Share event</string>
     <string name="playback_delete_event">Delete event</string>
+    <string name="playback_save_picture_gallery">Save picture to gallery</string>
+    <string name="playback_saving_picture">Saving picture…</string>
     <string name="playback_from_playhead">From the playhead</string>
     <string name="playback_save_seconds">Save %1$d seconds</string>
     <plurals name="playback_save_minutes">

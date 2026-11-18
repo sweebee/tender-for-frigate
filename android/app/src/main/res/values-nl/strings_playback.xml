@@ -77,6 +77,8 @@
     <string name="playback_save_event_frigate">Bewaar gebeurtenis in Frigate</string>
     <string name="playback_share_event">Deel gebeurtenis</string>
     <string name="playback_delete_event">Verwijder gebeurtenis</string>
+    <string name="playback_save_picture_gallery">Foto bewaren in galerij</string>
+    <string name="playback_saving_picture">Foto bewaren…</string>
     <string name="playback_from_playhead">Vanaf de afspeelpositie</string>
     <string name="playback_save_seconds">%1$d seconden opslaan</string>
     <plurals name="playback_save_minutes">
