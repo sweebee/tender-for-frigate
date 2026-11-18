@@ -18,6 +18,7 @@
         <item quantity="other">%1$d camera\'s</item>
     </plurals>
     <string name="explore_clear_filters">Filters wissen</string>
+    <string name="explore_clear">Wissen</string>
     <string name="explore_labels">Labels</string>
     <string name="explore_all_labels">Alle labels</string>
     <string name="explore_zones">Zones</string>

@@ -259,9 +259,10 @@ struct ExploreView: View {
                 // First, so the way back to the default view needs no scrolling and stays put.
                 if filter.isActive {
                     Button { filter = ExploreFilter() } label: {
-                        Chip(title: L("Clear filters"), systemImage: "xmark")
+                        Chip(title: L("Clear"), systemImage: "xmark")
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Clear filters")
                 }
                 if let similar = filter.similar {
                     // Frigate's "Similarity search active", with a way out.

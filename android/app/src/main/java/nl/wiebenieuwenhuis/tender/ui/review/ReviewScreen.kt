@@ -41,6 +41,8 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -334,10 +336,12 @@ private fun Filters(vm: ReviewModel, onPickDay: () -> Unit, modifier: Modifier, 
     ) {
         // First, so the way back to the default view needs no scrolling and stays put.
         if (vm.filtersActive) {
+            val clearLabel = stringResource(R.string.explore_clear_filters)
             FilterChip(
                 selected = false, onClick = { vm.clearFilters() },
-                label = { Text(stringResource(R.string.explore_clear_filters), maxLines = 1, softWrap = false) },
+                label = { Text(stringResource(R.string.explore_clear), maxLines = 1, softWrap = false) },
                 leadingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) },
+                modifier = Modifier.semantics { contentDescription = clearLabel },
             )
         }
         val camTitle = if (vm.cameraFilter.isEmpty()) stringResource(R.string.review_cameras)

@@ -18,6 +18,7 @@
         <item quantity="other">%1$d cameras</item>
     </plurals>
     <string name="explore_clear_filters">Clear filters</string>
+    <string name="explore_clear">Clear</string>
     <string name="explore_labels">Labels</string>
     <string name="explore_all_labels">All labels</string>
     <string name="explore_zones">Zones</string>

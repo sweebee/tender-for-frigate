@@ -286,10 +286,12 @@ private fun FilterRow(vm: ExploreViewModel, canSearchText: Boolean) {
     ) {
         // First, so the way back to the default view needs no scrolling and stays put.
         if (filter.isActive) {
+            val clearLabel = stringResource(R.string.explore_clear_filters)
             FilterChip(
                 selected = false, onClick = { vm.filter = ExploreFilter() },
-                label = { Text(stringResource(R.string.explore_clear_filters), maxLines = 1, softWrap = false) },
+                label = { Text(stringResource(R.string.explore_clear), maxLines = 1, softWrap = false) },
                 leadingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) },
+                modifier = Modifier.semantics { contentDescription = clearLabel },
             )
         }
         val similar = filter.similar
