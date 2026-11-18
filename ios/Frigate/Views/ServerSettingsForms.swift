@@ -39,6 +39,8 @@ struct ConfigField: Identifiable {
     /// What Frigate uses when the config does not set it.
     var defaultNumber: Double? = nil
     var defaultBool: Bool? = nil
+    /// Shown only while the toggle at this path is on (an alert's labels while alerts are on).
+    var shownWhen: String? = nil
     var id: String { path }
 }
 
@@ -109,13 +111,13 @@ struct ConfigFormView: View {
                         ForEach(shownGroups) { group in
                             if let t = group.title { SectionLabel(text: t).padding(.top, 10) }
                             VStack(spacing: 0) {
-                                ForEach(Array(group.fields.enumerated()), id: \.element.id) { i, field in
+                                ForEach(Array(shownFields(group).enumerated()), id: \.element.id) { i, field in
                                     if i > 0 { Divider().overlay(Theme.cardBorder) }
                                     row(field)
                                 }
                             }
                             .card(radius: 12)
-                            ForEach(group.fields.compactMap(\.footer), id: \.self) { f in
+                            ForEach(shownFields(group).compactMap(\.footer), id: \.self) { f in
                                 Text(f).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).padding(.horizontal, 4)
                             }
                         }
@@ -133,6 +135,7 @@ struct ConfigFormView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: changed.isEmpty)
+        .animation(.easeOut(duration: 0.2), value: switchedOn)
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
@@ -140,6 +143,18 @@ struct ConfigFormView: View {
             Button("OK", role: .cancel) {}
         } message: { Text(errorMessage ?? "") }
     }
+
+    private func isOn(_ path: String) -> Bool {
+        if case .bool(let b) = values[path] { return b }
+        return false
+    }
+
+    private func shownFields(_ group: ConfigGroup) -> [ConfigField] {
+        group.fields.filter { f in f.shownWhen.map(isOn) ?? true }
+    }
+
+    /// The toggles that show or hide other fields, to animate the change.
+    private var switchedOn: [Bool] { Set(fields.compactMap(\.shownWhen)).sorted().map(isOn) }
 
     private var fullTitle: String {
         guard let camera else { return title }
@@ -495,15 +510,16 @@ enum ServerSections {
                        intro: L("Which objects become an alert and which a detection.")) { config in
             let options = objectLabels(config)
             var alerts = [ConfigField(path: "alerts.enabled", title: L("Alerts"), kind: .toggle),
-                          ConfigField(path: "alerts.labels", title: L("Alerts for"), kind: .labels(options: options, display: label))]
+                          ConfigField(path: "alerts.labels", title: L("Alerts for"), kind: .labels(options: options, display: label),
+                                      shownWhen: "alerts.enabled")]
             var detections = [ConfigField(path: "detections.enabled", title: L("Detections"), kind: .toggle)]
             let zones = zones(config, camera: camera)
             if !zones.isEmpty {
                 alerts.append(ConfigField(path: "alerts.required_zones", title: L("Only in zones"),
                                           kind: .labels(options: zones, display: zoneName),
-                                          footer: L("None selected: anywhere in the picture.")))
+                                          footer: L("None selected: anywhere in the picture."), shownWhen: "alerts.enabled"))
                 detections.append(ConfigField(path: "detections.required_zones", title: L("Only in zones"),
-                                              kind: .labels(options: zones, display: zoneName)))
+                                              kind: .labels(options: zones, display: zoneName), shownWhen: "detections.enabled"))
             }
             return [ConfigGroup(title: L("Alerts"), fields: alerts), ConfigGroup(title: L("Detections"), fields: detections)]
         }

@@ -3,6 +3,8 @@ package nl.wiebenieuwenhuis.tender.ui.settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.border
@@ -119,6 +121,8 @@ data class ConfigField(
     /** What Frigate uses when the config does not set it. */
     val defaultNumber: Double? = null,
     val defaultBool: Boolean? = null,
+    /** Shown only while the toggle at this path is on (an alert's labels while alerts are on). */
+    val shownWhen: String? = null,
 )
 
 data class ConfigGroup(
@@ -242,14 +246,15 @@ object ServerSections {
             val options = objectLabels(config)
             val alerts = mutableListOf(
                 ConfigField("alerts.enabled", L(R.string.settings_alerts), FieldKind.Toggle),
-                ConfigField("alerts.labels", L(R.string.settings_alerts_for), FieldKind.Labels(options, label)),
+                ConfigField("alerts.labels", L(R.string.settings_alerts_for), FieldKind.Labels(options, label), shownWhen = "alerts.enabled"),
             )
             val detections = mutableListOf(ConfigField("detections.enabled", L(R.string.settings_detections), FieldKind.Toggle))
             val zones = zones(config, camera)
             if (zones.isNotEmpty()) {
                 alerts.add(ConfigField("alerts.required_zones", L(R.string.settings_only_in_zones), FieldKind.Labels(zones, zoneName),
-                    footer = L(R.string.settings_zones_footer)))
-                detections.add(ConfigField("detections.required_zones", L(R.string.settings_only_in_zones), FieldKind.Labels(zones, zoneName)))
+                    footer = L(R.string.settings_zones_footer), shownWhen = "alerts.enabled"))
+                detections.add(ConfigField("detections.required_zones", L(R.string.settings_only_in_zones), FieldKind.Labels(zones, zoneName),
+                    shownWhen = "detections.enabled"))
             }
             listOf(ConfigGroup(L(R.string.settings_alerts), alerts), ConfigGroup(L(R.string.settings_detections), detections))
         }
@@ -331,6 +336,7 @@ fun ConfigFormScreen(route: ConfigSectionRoute) {
     LaunchedEffect(route) { load() }
 
     val shown = groups.filter { it.visible?.invoke(values) ?: true }
+    fun shown(field: ConfigField) = field.shownWhen?.let { (values[it] as? ConfigValue.B)?.value == true } ?: true
     val fields = shown.flatMap { it.fields }
     val changed = fields.filter { values[it.path] != original[it.path] }
     val needsRestart = changed.any { it.restart }
@@ -403,11 +409,15 @@ fun ConfigFormScreen(route: ConfigSectionRoute) {
                     group.title?.let { SectionLabel(it, Modifier.padding(top = 10.dp)) }
                     SectionCard {
                         group.fields.forEachIndexed { i, field ->
-                            if (i > 0) RowDivider()
-                            FieldRow(field, values[field.path], values[field.path] != original[field.path], isAdmin) { values[field.path] = it }
+                            Revealed(shown(field)) {
+                                Column {
+                                    if (i > 0) RowDivider()
+                                    FieldRow(field, values[field.path], values[field.path] != original[field.path], isAdmin) { values[field.path] = it }
+                                }
+                            }
                         }
                     }
-                    group.fields.mapNotNull { it.footer }.forEach { Footnote(it) }
+                    group.fields.filter { it.footer != null }.forEach { Revealed(shown(it)) { Footnote(it.footer!!) } }
                 }
                 if (route.section == "ui" && camera != null) CameraPlaceCard(route.serverId, camera)
             }
@@ -599,3 +609,9 @@ fun CameraPlaceCard(serverId: String, camera: String) {
 fun orderedCameras(serverId: String) = (AppModel.connection(serverId)?.config?.cameras?.values ?: emptyList())
     .filter { it.enabledInConfig != false }
     .sortedWith(compareBy({ it.uiOrder ?: 0 }, { it.name }))
+
+/** A field that shows only while its toggle is on: it folds open and shut. */
+@Composable
+private fun Revealed(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(visible, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) { content() }
+}
