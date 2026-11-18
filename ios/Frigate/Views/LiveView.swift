@@ -433,7 +433,7 @@ struct CameraTile: View {
             }
             // Top left, like the label icons on events and recent alerts.
             .overlay(alignment: .topLeading) {
-                if model.tileLabels && online && !objects.isEmpty {
+                if model.liveLabels && online && !objects.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(objects.prefix(3), id: \.self) { LabelIcon(label: $0) }
                     }
@@ -441,10 +441,10 @@ struct CameraTile: View {
                 }
             }
             .overlay(alignment: .topTrailing) {
-                if model.tileLabels && activity?.motion == true { MotionDot().padding(8) }
+                if model.liveLabels && activity?.motion == true { MotionDot().padding(8) }
             }
             .overlay(alignment: .bottomTrailing) {
-                if model.tileLabels && (detectOff || recordOff) {
+                if model.liveLabels && (detectOff || recordOff) {
                     HStack(spacing: 4) {
                         if detectOff { SwitchedOffIcon(kind: .detect) }
                         if recordOff { SwitchedOffIcon(kind: .record) }

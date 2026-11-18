@@ -437,7 +437,7 @@ fun CameraScreen(route: CameraRoute) {
                             onOpen = { menuOpen = true; keepOverlay() }, onClose = { menuOpen = false; keepOverlay() }) { s ->
                             pickStream(s)
                         }
-                        Clock(recordingNow == true && !conn.isRecordSwitchedOff(camera))
+                        if (AppModel.liveLabels) Clock(recordingNow == true && !conn.isRecordSwitchedOff(camera))
                         MoreMenu(Color.White)
                     }
                     Column(Modifier.align(Alignment.CenterEnd).padding(end = 12.dp).alpha(if (cameraOn) 1f else 0.4f),
@@ -455,7 +455,7 @@ fun CameraScreen(route: CameraRoute) {
                     }
                     Row(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        objects.forEach { LabelIcon(it, size = 22.dp) }
+                        if (AppModel.liveLabels) objects.forEach { LabelIcon(it, size = 22.dp) }
                         Spacer(Modifier.weight(1f))
                         OutlinedButton(onClick = { nav.navigate(PlaybackRoute(route.serverId, route.camera, startOfToday())) },
                             colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = Color.Black.copy(alpha = 0.55f))) {
@@ -614,9 +614,9 @@ private fun VideoBox(
         }
         if (!cameraOn || (switchingOn && !player.playing)) OffCover(conn, camera, switching = cameraOn)
         if (chrome && cameraOn) Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Clock(recordingNow == true && !conn.isRecordSwitchedOff(camera))
+            if (AppModel.liveLabels) Clock(recordingNow == true && !conn.isRecordSwitchedOff(camera))
             StatusChips(conn, camera, recordingNow, manualRecording, manualStarted)
-            (conn.activeObjects[camera.name] ?: emptyList()).forEach { LabelIcon(it, size = 22.dp) }
+            if (AppModel.liveLabels) (conn.activeObjects[camera.name] ?: emptyList()).forEach { LabelIcon(it, size = 22.dp) }
         }
         if (chrome && cameraOn && streams.size > 1) StreamChip(streams, player.stream, Modifier.align(Alignment.BottomEnd).padding(8.dp), onPick = onPickStream)
     }
@@ -625,6 +625,8 @@ private fun VideoBox(
 /** "Not recording", detection or recording switched off (tap to switch on), and a running manual recording. */
 @Composable
 private fun StatusChips(conn: ServerConnection, camera: CameraConfig, recordingNow: Boolean?, manualRecording: Boolean, manualStarted: Double) {
+    // A running manual recording always shows: it is the way to see it is on.
+    if (!AppModel.liveLabels) { if (manualRecording) ManualRecordingBadge(manualStarted); return }
     if (recordingNow == false) WarningChip(stringResource(R.string.not_recording))
     if (conn.isCameraEnabled(camera)) {
         if (!conn.isDetectEnabled(camera)) WarningChip(stringResource(R.string.detect_off), stringResource(R.string.switch_detection_on)) { conn.setDetectEnabled(camera, true) }

@@ -64,9 +64,11 @@ fun LiveSettingsScreen() {
                     RowDivider()
                     SwitchRow(stringResource(R.string.tile_whole_picture), AppModel.tileWholePicture, { AppModel.updateTileWholePicture(it) },
                         subtitle = stringResource(R.string.tile_whole_picture_info))
-                    RowDivider()
-                    SwitchRow(stringResource(R.string.tile_labels), AppModel.tileLabels, { AppModel.updateTileLabels(it) },
-                        subtitle = stringResource(R.string.tile_labels_info))
+                }
+                SectionLabel(stringResource(R.string.live_video), Modifier.padding(top = 14.dp))
+                SectionCard {
+                    SwitchRow(stringResource(R.string.live_labels), AppModel.liveLabels, { AppModel.updateLiveLabels(it) },
+                        subtitle = stringResource(R.string.live_labels_info))
                 }
                 SectionLabel(stringResource(R.string.alerts), Modifier.padding(top = 14.dp))
                 SectionCard {

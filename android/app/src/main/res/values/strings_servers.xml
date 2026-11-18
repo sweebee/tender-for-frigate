@@ -57,8 +57,8 @@
     <string name="also_on_mobile_data_info">Otherwise tiles go live only on activity while on mobile data.</string>
     <string name="tile_whole_picture">Whole picture</string>
     <string name="tile_whole_picture_info">Tiles keep the camera\'s own shape instead of being cropped to the same size. Wide cameras take two columns and standing ones two rows, as in Frigate.</string>
-    <string name="tile_labels">Labels on tiles</string>
-    <string name="tile_labels_info">Object icons, the motion dot and switched-off icons on the picture. A time in the picture comes from the camera itself.</string>
+    <string name="live_labels">Labels on live video</string>
+    <string name="live_labels_info">The clock, recording status, switched-off chips, object icons and motion dot over the live picture, on the tiles and in a camera\'s live view. A time in the picture itself comes from the camera.</string>
     <string name="alerts">Alerts</string>
     <string name="show_recent_alerts">Show recent alerts</string>
     <string name="show_recent_alerts_info">Shows unreviewed alerts of the last day at the top of Live.</string>

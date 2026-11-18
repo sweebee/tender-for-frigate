@@ -267,10 +267,14 @@ struct LiveSettingsView: View {
                     row(ToggleRow(title: L("Whole picture"),
                                   subtitle: L("Tiles keep the camera's own shape instead of being cropped to the same size. Wide cameras take two columns and standing ones two rows, as in Frigate."),
                                   isOn: model.tileWholePicture) { on in withAnimation { model.tileWholePicture = on } })
-                    divider
-                    row(ToggleRow(title: L("Labels on tiles"),
-                                  subtitle: L("Object icons, the motion dot and switched-off icons on the picture. A time in the picture comes from the camera itself."),
-                                  isOn: model.tileLabels) { on in withAnimation { model.tileLabels = on } })
+                }
+                .card()
+
+                SectionLabel(text: L("Live video")).padding(.top, 14)
+                VStack(spacing: 0) {
+                    row(ToggleRow(title: L("Labels on live video"),
+                                  subtitle: L("The clock, recording status, switched-off chips, object icons and motion dot over the live picture, on the tiles and in a camera's live view. A time in the picture itself comes from the camera."),
+                                  isOn: model.liveLabels) { on in withAnimation { model.liveLabels = on } })
                 }
                 .card()
 

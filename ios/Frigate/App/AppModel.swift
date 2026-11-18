@@ -652,9 +652,11 @@ final class AppModel {
     var tileWholePicture: Bool = UserDefaults.standard.bool(forKey: "tileWholePicture") {
         didSet { UserDefaults.standard.set(tileWholePicture, forKey: "tileWholePicture") }
     }
-    /// Object icons, the motion dot and switched-off icons on the tiles' picture. On by default.
-    var tileLabels: Bool = UserDefaults.standard.object(forKey: "tileLabels") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(tileLabels, forKey: "tileLabels") }
+    /// What the app draws over live video: on the tiles object icons, the motion dot and
+    /// switched-off icons; in a camera's live view the clock, recording status, switched-off chips
+    /// and object icons. On by default.
+    var liveLabels: Bool = UserDefaults.standard.object(forKey: "liveLabels") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(liveLabels, forKey: "liveLabels") }
     }
     /// Whether the overview should show live video right now.
     var showsLiveGrid: Bool { liveGrid && (liveGridOnCellular || !NetworkStatus.shared.isExpensive) }

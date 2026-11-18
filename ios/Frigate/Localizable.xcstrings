@@ -3525,12 +3525,12 @@
         }
       }
     },
-    "Labels on tiles": {
+    "Labels on live video": {
       "localizations": {
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Labels op tegels"
+            "value": "Labels op live video"
           }
         }
       }
@@ -4610,16 +4610,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nu"
-          }
-        }
-      }
-    },
-    "Object icons, the motion dot and switched-off icons on the picture. A time in the picture comes from the camera itself.": {
-      "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objecticonen, de bewegingsstip en uit-icoontjes op het beeld. Een tijd in het beeld komt van de camera zelf."
           }
         }
       }
@@ -7092,6 +7082,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "De klassen zijn veranderd sinds de laatste training."
+          }
+        }
+      }
+    },
+    "The clock, recording status, switched-off chips, object icons and motion dot over the live picture, on the tiles and in a camera's live view. A time in the picture itself comes from the camera.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De klok, opnamestatus, uit-chips, objecticonen en bewegingsstip over het live beeld, op de tegels en in de live weergave van een camera. Een tijd in het beeld zelf komt van de camera."
           }
         }
       }

@@ -126,11 +126,11 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
                 Text(stringResource(R.string.offline).uppercase(), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
             // Top left, like the label icons on events and recent alerts.
-            if (AppModel.tileLabels && online && objects.isNotEmpty()) Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (AppModel.liveLabels && online && objects.isNotEmpty()) Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 objects.take(3).forEach { LabelIcon(it) }
             }
-            if (AppModel.tileLabels && activity?.motion == true) MotionDot(Modifier.align(Alignment.TopEnd).padding(8.dp))
-            if (AppModel.tileLabels && (detectOff || recordOff)) Row(Modifier.align(Alignment.BottomEnd).padding(7.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (AppModel.liveLabels && activity?.motion == true) MotionDot(Modifier.align(Alignment.TopEnd).padding(8.dp))
+            if (AppModel.liveLabels && (detectOff || recordOff)) Row(Modifier.align(Alignment.BottomEnd).padding(7.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (detectOff) SwitchedOffIcon(detect = true)
                 if (recordOff) SwitchedOffIcon(detect = false)
             }

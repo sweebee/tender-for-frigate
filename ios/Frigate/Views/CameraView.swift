@@ -354,12 +354,17 @@ struct CameraView: View {
         .overlay(alignment: .topLeading) {
             if cameraOn {
             HStack(spacing: 6) {
-                clock(size: 12)
-                recBadge
-                if let conn { SwitchedOffChips(conn: conn, camera: camera) }
+                // A running manual recording always shows: it is the way to see it is on.
+                if model.liveLabels {
+                    clock(size: 12)
+                    recBadge
+                    if let conn { SwitchedOffChips(conn: conn, camera: camera) }
+                }
                 manualRecordingBadge
                 // Objects being tracked, like the label beside the time in playback.
-                ForEach(conn?.activeObjects[camera.name] ?? [], id: \.self) { LabelIcon(label: $0, size: VideoChip.height) }
+                if model.liveLabels {
+                    ForEach(conn?.activeObjects[camera.name] ?? [], id: \.self) { LabelIcon(label: $0, size: VideoChip.height) }
+                }
             }
             .padding(10)
             }
@@ -542,10 +547,12 @@ struct CameraView: View {
                             Text(subtitle).font(.system(size: 12)).foregroundStyle(Theme.textSecondary).lineLimit(1)
                         }
                         Spacer()
-                        recBadge
-                        SwitchedOffChips(conn: conn, camera: camera)
+                        if model.liveLabels {
+                            recBadge
+                            SwitchedOffChips(conn: conn, camera: camera)
+                        }
                         streamChip.simultaneousGesture(TapGesture().onEnded { menuOpen = true; keepOverlay() })
-                        clock(size: 13)
+                        if model.liveLabels { clock(size: 13) }
                         moreMenu.simultaneousGesture(TapGesture().onEnded { menuOpen = true; keepOverlay() })
                     }
                     .foregroundStyle(Theme.text)
