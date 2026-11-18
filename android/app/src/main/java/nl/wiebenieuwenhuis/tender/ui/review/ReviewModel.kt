@@ -68,6 +68,15 @@ class ReviewModel : ViewModel() {
         set(v) { unreviewedOnlyState.value = v; Prefs.setBool("reviewUnreviewedOnly", v) }
     var range by mutableStateOf<ReviewRange>(ReviewRange.Last24Hours)
 
+    /** Cameras, labels, zones or a day other than the default. "Unreviewed" is a remembered
+     *  choice rather than a filter, so clearing leaves it as it is. */
+    val filtersActive: Boolean
+        get() = cameraFilter.isNotEmpty() || labelFilter.isNotEmpty() || zoneFilter.isNotEmpty() || range != ReviewRange.Last24Hours
+
+    fun clearFilters() {
+        cameraFilter = emptySet(); labelFilter = emptySet(); zoneFilter = emptySet(); range = ReviewRange.Last24Hours
+    }
+
     var entries by mutableStateOf<List<ReviewEntry>>(emptyList())
         private set
     var loading by mutableStateOf(false)

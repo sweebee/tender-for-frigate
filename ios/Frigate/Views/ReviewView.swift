@@ -188,8 +188,27 @@ struct ReviewView: View {
         .padding(.horizontal, -16)
     }
 
+    /// Cameras, labels, zones or a day other than the default. "Unreviewed" is a remembered
+    /// choice rather than a filter, so clearing leaves it as it is.
+    private var filtersActive: Bool {
+        !cameraFilter.isEmpty || !labelFilter.isEmpty || !zoneFilter.isEmpty || range != .last24Hours
+    }
+
     private var filterChips: some View {
             HStack(spacing: 8) {
+                // First, so the way back to the default view needs no scrolling and stays put.
+                if filtersActive {
+                    Button {
+                        cameraFilter = []; labelFilter = []; zoneFilter = []; range = .last24Hours
+                    } label: {
+                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Theme.textSecondary)
+                            .frame(width: 34, height: 34)
+                            .background(Theme.card, in: Circle())
+                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
+                    }
+                    .accessibilityLabel("Clear filters")
+                }
                 Menu {
                     Button { cameraFilter = [] } label: { checkLabel(L("All cameras"), cameraFilter.isEmpty) }
                     // With several servers, cameras are grouped under their server's name.
