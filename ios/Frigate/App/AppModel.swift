@@ -647,6 +647,15 @@ final class AppModel {
     var showRecentAlerts: Bool = UserDefaults.standard.object(forKey: "showRecentAlerts") as? Bool ?? true {
         didSet { UserDefaults.standard.set(showRecentAlerts, forKey: "showRecentAlerts") }
     }
+    /// Live tiles show the camera's whole picture in its own shape instead of a 16:10 crop;
+    /// wide cameras take two columns and standing ones two rows, as in Frigate's dashboard.
+    var tileWholePicture: Bool = UserDefaults.standard.bool(forKey: "tileWholePicture") {
+        didSet { UserDefaults.standard.set(tileWholePicture, forKey: "tileWholePicture") }
+    }
+    /// Object icons, the motion dot and switched-off icons on the tiles' picture. On by default.
+    var tileLabels: Bool = UserDefaults.standard.object(forKey: "tileLabels") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(tileLabels, forKey: "tileLabels") }
+    }
     /// Whether the overview should show live video right now.
     var showsLiveGrid: Bool { liveGrid && (liveGridOnCellular || !NetworkStatus.shared.isExpensive) }
 

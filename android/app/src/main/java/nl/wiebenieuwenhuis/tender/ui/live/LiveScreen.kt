@@ -223,7 +223,20 @@ fun LiveScreen() {
                                 else EmptyState(Icons.Outlined.VideocamOff, stringResource(R.string.no_cameras),
                                     if (group == null) null else stringResource(R.string.group_has_no_cameras_on, conn.server.name))
                             }
-                            items(cams, key = { "${conn.id}|${it.name}" }) { cam -> TileWithMenu(conn, cam, wholePicture = large && !wide) }
+                            if (AppModel.tileWholePicture && columns > 1) {
+                                // Frigate's dashboard shapes, in bands of rows so the grid stays lazy.
+                                val cells = placeTiles(cams.map { it.tileSpan }, columns)
+                                for (band in tileBands(cells)) {
+                                    val top = cells[band.first()].row
+                                    item(span = { GridItemSpan(maxLineSpan) }, key = "b-${conn.id}|${cams[band.first()].name}") {
+                                        TileBand(columns, 10.dp, 12.dp, band.map { cells[it].copy(row = cells[it].row - top) }) {
+                                            for (i in band) TileWithMenu(conn, cams[i], wholePicture = false, fill = true)
+                                        }
+                                    }
+                                }
+                            } else {
+                                items(cams, key = { "${conn.id}|${it.name}" }) { cam -> TileWithMenu(conn, cam, wholePicture = large && !wide) }
+                            }
                         }
                     }
                 }
@@ -287,14 +300,14 @@ private fun GroupChip(name: String, selected: Boolean, busy: Boolean, icon: Stri
 
 /** A tile that opens the camera; a long press offers live, playback and Frigate's switches. */
 @Composable
-private fun TileWithMenu(conn: ServerConnection, cam: CameraConfig, wholePicture: Boolean) {
+private fun TileWithMenu(conn: ServerConnection, cam: CameraConfig, wholePicture: Boolean, fill: Boolean = false) {
     val nav = LocalNav.current
     var menu by remember { mutableStateOf(false) }
     Box {
         CameraTile(conn, cam, Modifier.combinedClickable(
             onClick = { nav.navigate(CameraRoute(conn.id, cam.name)) },
             onLongClick = { menu = true },
-        ), wholePicture = wholePicture)
+        ), wholePicture = wholePicture, fill = fill)
         DropdownMenu(menu, { menu = false }) {
             DropdownMenuItem(text = { Text(stringResource(R.string.open_live)) }, onClick = { menu = false; nav.navigate(CameraRoute(conn.id, cam.name)) })
             DropdownMenuItem(text = { Text(stringResource(R.string.playback)) }, onClick = {

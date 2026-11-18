@@ -246,6 +246,14 @@ struct LiveView: View {
         return conn.cameras.filter { members.contains($0.name) }
     }
 
+    private func tileLink(_ conn: ServerConnection, _ cam: CameraConfig, fill: Bool) -> some View {
+        NavigationLink(value: CameraRoute(serverID: conn.server.id, camera: cam.name)) {
+            CameraTile(conn: conn, camera: cam, wholePicture: largeTiles && sizeClass != .regular, fill: fill)
+        }
+        .buttonStyle(.plain)
+        .contextMenu { tileMenu(conn, cam) }
+    }
+
     /// Long press on a tile (right click on the Mac).
     @ViewBuilder
     private func tileMenu(_ conn: ServerConnection, _ cam: CameraConfig) -> some View {
@@ -314,13 +322,25 @@ struct LiveView: View {
             if cams.isEmpty {
                 EmptyStateView(systemImage: "video.slash", title: L("No cameras"), message: group == nil ? nil : L("This group has no cameras on \(conn.server.name)."))
             } else {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(cams, id: \.name) { cam in
-                        NavigationLink(value: CameraRoute(serverID: conn.server.id, camera: cam.name)) {
-                            CameraTile(conn: conn, camera: cam, wholePicture: largeTiles && sizeClass != .regular)
+                if model.tileWholePicture && columns.count > 1 {
+                    // Frigate's dashboard shapes, in bands of rows so the grid stays lazy.
+                    let cells = TileGridPlacement.place(cams.map(\.tileSpan), columns: columns.count)
+                    LazyVStack(spacing: 12) {
+                        ForEach(TileGridPlacement.bands(cells), id: \.first) { band in
+                            let top = cells[band[0]].row
+                            TileBand(columns: columns.count, spacing: sizeClass == .regular ? 12 : 10, rowSpacing: 12,
+                                     cells: band.map { cells[$0].moved(rows: -top) }) {
+                                ForEach(band, id: \.self) { i in
+                                    tileLink(conn, cams[i], fill: true)
+                                }
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .contextMenu { tileMenu(conn, cam) }
+                    }
+                } else {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(cams, id: \.name) { cam in
+                            tileLink(conn, cam, fill: false)
+                        }
                     }
                 }
             }
@@ -333,6 +353,9 @@ struct CameraTile: View {
     let camera: CameraConfig
     /// The camera's own shape instead of 16:10, for one tile per row.
     var wholePicture = false
+    /// The picture fills the height the grid gives the tile (`TileBand`) and shows the camera's
+    /// whole picture inside it.
+    var fill = false
     @Environment(AppModel.self) private var model
     @Environment(\.displayScale) private var displayScale
     @State private var autoLiveOn = false
@@ -367,10 +390,7 @@ struct CameraTile: View {
         let recordOff = online && conn.isRecordSwitchedOff(camera)
         VStack(alignment: .leading, spacing: 6) {
             ZStack(alignment: .topLeading) {
-                Color.clear
-                    // One camera per row shows the whole picture at the camera's own shape; side by
-                    // side, tiles share one shape so the rows line up.
-                    .aspectRatio(wholePicture ? camera.aspectRatio : 16 / 10, contentMode: .fit)
+                picture
                     .overlay {
                         if !on {
                             // Switched off in Frigate: no picture to show, and not a fault like Offline.
@@ -383,10 +403,11 @@ struct CameraTile: View {
                         ZStack {
                             RemoteImage(url: conn.client?.latestImageURL(camera: camera.name, height: 270),
                                         session: conn.client?.session ?? .shared,
-                                        refresh: online ? (objects.isEmpty ? 6 : 2) * (NetworkStatus.shared.isExpensive ? 2.5 : 1) : nil)
+                                        refresh: online ? (objects.isEmpty ? 6 : 2) * (NetworkStatus.shared.isExpensive ? 2.5 : 1) : nil,
+                                        contentMode: fill ? .fit : .fill)
                             if online && (model.showsLiveGrid || (model.autoLive && autoLiveOn)), let client = conn.client,
                                let stream = tileStream {
-                                TileLivePlayer(client: client, camera: camera, stream: stream.name)
+                                TileLivePlayer(client: client, camera: camera, stream: stream.name, fill: !fill)
                                     // A new stream (the tile grew or shrank past the threshold) starts fresh.
                                     .id(stream.name)
                             }
@@ -412,7 +433,7 @@ struct CameraTile: View {
             }
             // Top left, like the label icons on events and recent alerts.
             .overlay(alignment: .topLeading) {
-                if online && !objects.isEmpty {
+                if model.tileLabels && online && !objects.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(objects.prefix(3), id: \.self) { LabelIcon(label: $0) }
                     }
@@ -420,10 +441,10 @@ struct CameraTile: View {
                 }
             }
             .overlay(alignment: .topTrailing) {
-                if activity?.motion == true { MotionDot().padding(8) }
+                if model.tileLabels && activity?.motion == true { MotionDot().padding(8) }
             }
             .overlay(alignment: .bottomTrailing) {
-                if detectOff || recordOff {
+                if model.tileLabels && (detectOff || recordOff) {
                     HStack(spacing: 4) {
                         if detectOff { SwitchedOffIcon(kind: .detect) }
                         if recordOff { SwitchedOffIcon(kind: .record) }
@@ -468,6 +489,17 @@ struct CameraTile: View {
         }
     }
 
+    /// The picture's area: the camera's own shape for one tile per row, the grid's cell with
+    /// `fill`, and otherwise 16:10 so tiles side by side line up.
+    @ViewBuilder
+    private var picture: some View {
+        if fill {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Color.clear.aspectRatio(wholePicture ? camera.aspectRatio : 16 / 10, contentMode: .fit)
+        }
+    }
+
     private func meta(online: Bool) -> String {
         if !online { return L("Offline") }
         if !(conn.activeObjects[camera.name] ?? []).isEmpty { return L("Now") }
@@ -482,14 +514,17 @@ struct TileLivePlayer: View {
     let client: FrigateClient
     let camera: CameraConfig
     let stream: String
+    /// Cropped to the tile; off to show the whole picture.
+    var fill = true
     @State private var state: LivePlayerState
     @State private var visible = false
     @Environment(\.scenePhase) private var scenePhase
 
-    init(client: FrigateClient, camera: CameraConfig, stream: String) {
+    init(client: FrigateClient, camera: CameraConfig, stream: String, fill: Bool = true) {
         self.client = client
         self.camera = camera
         self.stream = stream
+        self.fill = fill
         // The stream from the start: set only on appear, the player first tried the camera's
         // name, which on servers whose go2rtc streams are named otherwise ("bar_1") failed and
         // left the tile on the MJPEG fallback.
@@ -500,7 +535,7 @@ struct TileLivePlayer: View {
     }
 
     var body: some View {
-        LivePlayerView(client: client, camera: camera.name, state: state, fill: true)
+        LivePlayerView(client: client, camera: camera.name, state: state, fill: fill)
             .opacity(state.playing ? 1 : 0)
             .allowsHitTesting(false)
             .onAppear {

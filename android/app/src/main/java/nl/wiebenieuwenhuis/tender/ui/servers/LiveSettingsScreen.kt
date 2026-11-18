@@ -61,6 +61,12 @@ fun LiveSettingsScreen() {
                         SwitchRow(stringResource(R.string.also_on_mobile_data), AppModel.liveGridOnCellular, { AppModel.updateLiveGridOnCellular(it) },
                             subtitle = stringResource(R.string.also_on_mobile_data_info))
                     }
+                    RowDivider()
+                    SwitchRow(stringResource(R.string.tile_whole_picture), AppModel.tileWholePicture, { AppModel.updateTileWholePicture(it) },
+                        subtitle = stringResource(R.string.tile_whole_picture_info))
+                    RowDivider()
+                    SwitchRow(stringResource(R.string.tile_labels), AppModel.tileLabels, { AppModel.updateTileLabels(it) },
+                        subtitle = stringResource(R.string.tile_labels_info))
                 }
                 SectionLabel(stringResource(R.string.alerts), Modifier.padding(top = 14.dp))
                 SectionCard {

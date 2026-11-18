@@ -3525,6 +3525,16 @@
         }
       }
     },
+    "Labels on tiles": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Labels op tegels"
+          }
+        }
+      }
+    },
     "LIVE": {
       "shouldTranslate": false
     },
@@ -4600,6 +4610,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nu"
+          }
+        }
+      }
+    },
+    "Object icons, the motion dot and switched-off icons on the picture. A time in the picture comes from the camera itself.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objecticonen, de bewegingsstip en uit-icoontjes op het beeld. Een tijd in het beeld komt van de camera zelf."
           }
         }
       }
@@ -7446,6 +7466,16 @@
         }
       }
     },
+    "Tiles keep the camera's own shape instead of being cropped to the same size. Wide cameras take two columns and standing ones two rows, as in Frigate.": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegels houden de vorm van de camera in plaats van allemaal even groot bijgesneden te worden. Brede camera's nemen twee kolommen en staande twee rijen, zoals in Frigate."
+          }
+        }
+      }
+    },
     "Tiles show a picture that refreshes every few seconds.": {
       "localizations": {
         "nl": {
@@ -7855,6 +7885,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Welke objecten een melding worden en welke een detectie."
+          }
+        }
+      }
+    },
+    "Whole picture": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hele beeld"
           }
         }
       }

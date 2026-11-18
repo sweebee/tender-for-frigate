@@ -63,12 +63,18 @@ object AppModel {
     var playAlertPreviews by mutableStateOf(Prefs.bool("playAlertPreviews", true)); private set
     var showRecentAlerts by mutableStateOf(Prefs.bool("showRecentAlerts", true)); private set
     var largeTiles by mutableStateOf(Prefs.bool("liveLargeTiles", false)); private set
+    /** Tiles show the camera's whole picture in its own shape; wide cameras take two columns and standing ones two rows, as in Frigate. */
+    var tileWholePicture by mutableStateOf(Prefs.bool("tileWholePicture", false)); private set
+    /** Object icons, the motion dot and switched-off icons on the tiles' picture. */
+    var tileLabels by mutableStateOf(Prefs.bool("tileLabels", true)); private set
     var tileStream by mutableStateOf(TileStream.entries.firstOrNull { it.raw == Prefs.string("tileStream") } ?: TileStream.Automatic); private set
 
     fun updateLiveGridOnCellular(v: Boolean) { liveGridOnCellular = v; Prefs.setBool("liveGridOnCellular", v) }
     fun updatePlayAlertPreviews(v: Boolean) { playAlertPreviews = v; Prefs.setBool("playAlertPreviews", v) }
     fun updateShowRecentAlerts(v: Boolean) { showRecentAlerts = v; Prefs.setBool("showRecentAlerts", v) }
     fun updateLargeTiles(v: Boolean) { largeTiles = v; Prefs.setBool("liveLargeTiles", v) }
+    fun updateTileWholePicture(v: Boolean) { tileWholePicture = v; Prefs.setBool("tileWholePicture", v) }
+    fun updateTileLabels(v: Boolean) { tileLabels = v; Prefs.setBool("tileLabels", v) }
     fun updateTileStream(v: TileStream) { tileStream = v; Prefs.setString("tileStream", v.raw) }
 
     var tileLive: TileLive

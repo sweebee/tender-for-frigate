@@ -55,6 +55,10 @@
     <string name="tile_live_off_info">Tegels tonen een foto die elke paar seconden ververst.</string>
     <string name="also_on_mobile_data">Ook op mobiele data</string>
     <string name="also_on_mobile_data_info">Anders gaan tegels op mobiele data alleen live bij activiteit.</string>
+    <string name="tile_whole_picture">Hele beeld</string>
+    <string name="tile_whole_picture_info">Tegels houden de vorm van de camera in plaats van allemaal even groot bijgesneden te worden. Brede camera\'s nemen twee kolommen en staande twee rijen, zoals in Frigate.</string>
+    <string name="tile_labels">Labels op tegels</string>
+    <string name="tile_labels_info">Objecticonen, de bewegingsstip en uit-icoontjes op het beeld. Een tijd in het beeld komt van de camera zelf.</string>
     <string name="alerts">Meldingen</string>
     <string name="show_recent_alerts">Recente meldingen tonen</string>
     <string name="show_recent_alerts_info">Toont onbeoordeelde meldingen van het afgelopen etmaal bovenaan Live.</string>

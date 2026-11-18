@@ -55,6 +55,10 @@
     <string name="tile_live_off_info">Tiles show a picture that refreshes every few seconds.</string>
     <string name="also_on_mobile_data">Also on mobile data</string>
     <string name="also_on_mobile_data_info">Otherwise tiles go live only on activity while on mobile data.</string>
+    <string name="tile_whole_picture">Whole picture</string>
+    <string name="tile_whole_picture_info">Tiles keep the camera\'s own shape instead of being cropped to the same size. Wide cameras take two columns and standing ones two rows, as in Frigate.</string>
+    <string name="tile_labels">Labels on tiles</string>
+    <string name="tile_labels_info">Object icons, the motion dot and switched-off icons on the picture. A time in the picture comes from the camera itself.</string>
     <string name="alerts">Alerts</string>
     <string name="show_recent_alerts">Show recent alerts</string>
     <string name="show_recent_alerts_info">Shows unreviewed alerts of the last day at the top of Live.</string>

@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -67,7 +68,7 @@ import nl.wiebenieuwenhuis.tender.ui.theme.Palette
 
 /** A camera in the Live grid: its latest picture (or live video), objects, motion, and the red outline while an object moves. */
 @Composable
-fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier = Modifier, wholePicture: Boolean = false) {
+fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier = Modifier, wholePicture: Boolean = false, fill: Boolean = false) {
     val status = Palette.status
     val on = conn.isCameraEnabled(camera)
     val online = on && conn.isCameraOnline(camera.name)
@@ -90,7 +91,10 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
     val shape = RoundedCornerShape(12.dp)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Box(
-            Modifier.fillMaxWidth().aspectRatio(if (wholePicture) camera.aspectRatio else 16f / 10f)
+            // With `fill` the picture takes the height the grid gives the tile (TileBand) and shows the
+            // camera's whole picture inside it; otherwise the camera's own shape for one tile per row,
+            // or 16:10 so tiles side by side line up.
+            (if (fill) Modifier.fillMaxWidth().weight(1f) else Modifier.fillMaxWidth().aspectRatio(if (wholePicture) camera.aspectRatio else 16f / 10f))
                 .clip(shape)
                 .border(if (tracking) 1.5.dp else 1.dp, if (tracking) status.recording else MaterialTheme.colorScheme.outlineVariant, shape)
                 .onSizeChanged { widthPx = it.width },
@@ -105,10 +109,11 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
                 if (client != null) {
                     val factor = if (AppModel.isExpensiveNetwork) 2.5 else 1.0
                     val refresh = if (online) ((if (objects.isEmpty()) 6 else 2) * factor * 1000).toLong() else 0L
-                    RefreshingImage(client.latestImageUrl(camera.name, 270), refresh, Modifier.fillMaxSize().alpha(if (online) 1f else 0.4f))
+                    RefreshingImage(client.latestImageUrl(camera.name, 270), refresh, Modifier.fillMaxSize().alpha(if (online) 1f else 0.4f),
+                        contentScale = if (fill) ContentScale.Fit else ContentScale.Crop)
                     val stream = tileStream(conn, camera, widthPx)
                     if (online && stream != null && (AppModel.showsLiveGrid || (AppModel.autoLive && autoLiveOn))) {
-                        TileLivePlayer(conn, client, camera, stream.name, Modifier.fillMaxSize())
+                        TileLivePlayer(conn, client, camera, stream.name, Modifier.fillMaxSize(), fill = !fill)
                     }
                 }
             }
@@ -121,11 +126,11 @@ fun CameraTile(conn: ServerConnection, camera: CameraConfig, modifier: Modifier 
                 Text(stringResource(R.string.offline).uppercase(), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
             // Top left, like the label icons on events and recent alerts.
-            if (online && objects.isNotEmpty()) Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (AppModel.tileLabels && online && objects.isNotEmpty()) Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 objects.take(3).forEach { LabelIcon(it) }
             }
-            if (activity?.motion == true) MotionDot(Modifier.align(Alignment.TopEnd).padding(8.dp))
-            if (detectOff || recordOff) Row(Modifier.align(Alignment.BottomEnd).padding(7.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (AppModel.tileLabels && activity?.motion == true) MotionDot(Modifier.align(Alignment.TopEnd).padding(8.dp))
+            if (AppModel.tileLabels && (detectOff || recordOff)) Row(Modifier.align(Alignment.BottomEnd).padding(7.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (detectOff) SwitchedOffIcon(detect = true)
                 if (recordOff) SwitchedOffIcon(detect = false)
             }
@@ -164,13 +169,13 @@ private fun tileStream(conn: ServerConnection, camera: CameraConfig, widthPx: In
 
 /** Muted live video for a tile; the picture underneath stays visible until the video plays. */
 @Composable
-fun TileLivePlayer(conn: ServerConnection, client: FrigateClient, camera: CameraConfig, stream: String, modifier: Modifier = Modifier) {
+fun TileLivePlayer(conn: ServerConnection, client: FrigateClient, camera: CameraConfig, stream: String, modifier: Modifier = Modifier, fill: Boolean = true) {
     val state = remember(stream) { LivePlayerState(stream, LiveMode.Mse) }
     // A stream this device cannot decode is remembered; the tile then picks another one (tileStream).
     LaunchedEffect(state.mseInfo) { state.mseInfo?.let { StreamSupport.check(conn.id, stream, it) } }
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     state.suspended = !lifecycle.isAtLeast(Lifecycle.State.RESUMED)
-    LivePlayerView(client, camera.name, state, modifier.alpha(if (state.playing) 1f else 0f), fill = true)
+    LivePlayerView(client, camera.name, state, modifier.alpha(if (state.playing) 1f else 0f), fill = fill)
 }
 
 /** Pulsing red dot shown while Frigate sees motion, like the web UI. */
