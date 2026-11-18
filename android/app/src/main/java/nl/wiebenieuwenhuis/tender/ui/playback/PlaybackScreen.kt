@@ -470,12 +470,16 @@ private fun WideBody(state: PlaybackState, exporter: ClipExporter, actions: Play
             // Explicit size: the video fills the column at 16:9 but leaves room for the timeline.
             val side = minOf(380.dp, maxWidth * 0.34f)
             val videoWidth = maxOf(200.dp, maxWidth - 32.dp - 16.dp - side)
-            val videoHeight = minOf(videoWidth * 9f / 16f, maxOf(160.dp, maxHeight - 150.dp))
+            // The camera row takes about 90 dp; in a low window it gives way, so the video and the
+            // timeline still fit.
+            val stripRoom = 90.dp
+            val showsStrip = (state.conn?.cameras?.size ?: 0) > 1 && maxHeight - 150.dp - stripRoom >= 220.dp
+            val videoHeight = minOf(videoWidth * 9f / 16f, maxOf(160.dp, maxHeight - 150.dp - if (showsStrip) stripRoom else 0.dp))
             Row(Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column(Modifier.width(videoWidth), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     VideoArea(state, exporter, actions, large = true,
                         Modifier.width(videoHeight * 16f / 9f).height(videoHeight).clip(RoundedCornerShape(12.dp)))
-                    PlaybackCameraStrip(state, 60.dp, Modifier.fillMaxWidth(), margin = 0.dp)
+                    if (showsStrip) PlaybackCameraStrip(state, 60.dp, Modifier.fillMaxWidth(), margin = 0.dp)
                     TimelineCard(state)
                 }
                 Column(Modifier.width(side).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -278,15 +278,21 @@ struct PlaybackView: View {
                 // Explicit size: the video fills the column at 16:9 but leaves room for the timeline.
                 let side = min(380, geo.size.width * 0.34)
                 let videoWidth = max(200, geo.size.width - 32 - 16 - side)
-                let videoHeight = min(videoWidth * 9 / 16, max(160, geo.size.height - 150))
+                // The camera row takes about 90 points; in a low window it gives way, so the
+                // video and the timeline still fit.
+                let stripRoom: CGFloat = 90
+                let showsStrip = (conn?.cameras.count ?? 0) > 1 && geo.size.height - 150 - stripRoom >= 220
+                let videoHeight = min(videoWidth * 9 / 16, max(160, geo.size.height - 150 - (showsStrip ? stripRoom : 0)))
                 HStack(alignment: .top, spacing: 16) {
                     VStack(spacing: 10) {
                         videoPlayer
                             .frame(width: videoHeight * 16 / 9, height: videoHeight)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .frame(maxWidth: .infinity)
-                        cameraStrip(height: 60, margin: 0)
-                            .frame(width: videoWidth)
+                        if showsStrip {
+                            cameraStrip(height: 60, margin: 0)
+                                .frame(width: videoWidth)
+                        }
                         horizontalTimeline
                             .frame(width: videoWidth)
                         Spacer(minLength: 0)
