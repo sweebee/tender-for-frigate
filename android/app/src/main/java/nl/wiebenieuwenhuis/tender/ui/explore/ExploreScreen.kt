@@ -57,7 +57,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
@@ -287,9 +286,11 @@ private fun FilterRow(vm: ExploreViewModel, canSearchText: Boolean) {
     ) {
         // First, so the way back to the default view needs no scrolling and stays put.
         if (filter.isActive) {
-            OutlinedIconButton(onClick = { vm.filter = ExploreFilter() }, modifier = Modifier.size(34.dp)) {
-                Icon(Icons.Filled.Close, stringResource(R.string.explore_clear_filters), Modifier.size(16.dp))
-            }
+            FilterChip(
+                selected = false, onClick = { vm.filter = ExploreFilter() },
+                label = { Text(stringResource(R.string.explore_clear_filters), maxLines = 1, softWrap = false) },
+                leadingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) },
+            )
         }
         val similar = filter.similar
         if (similar != null) {

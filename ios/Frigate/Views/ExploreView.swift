@@ -259,13 +259,9 @@ struct ExploreView: View {
                 // First, so the way back to the default view needs no scrolling and stays put.
                 if filter.isActive {
                     Button { filter = ExploreFilter() } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Theme.textSecondary)
-                            .frame(width: 34, height: 34)
-                            .background(Theme.card, in: Circle())
-                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
+                        Chip(title: L("Clear filters"), systemImage: "xmark")
                     }
-                    .accessibilityLabel("Clear filters")
+                    .buttonStyle(.plain)
                 }
                 if let similar = filter.similar {
                     // Frigate's "Similarity search active", with a way out.

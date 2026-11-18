@@ -201,13 +201,9 @@ struct ReviewView: View {
                     Button {
                         cameraFilter = []; labelFilter = []; zoneFilter = []; range = .last24Hours
                     } label: {
-                        Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Theme.textSecondary)
-                            .frame(width: 34, height: 34)
-                            .background(Theme.card, in: Circle())
-                            .overlay(Circle().stroke(Theme.controlBorder, lineWidth: 1))
+                        Chip(title: L("Clear filters"), systemImage: "xmark")
                     }
-                    .accessibilityLabel("Clear filters")
+                    .buttonStyle(.plain)
                 }
                 Menu {
                     Button { cameraFilter = [] } label: { checkLabel(L("All cameras"), cameraFilter.isEmpty) }

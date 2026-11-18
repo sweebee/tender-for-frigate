@@ -42,7 +42,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -335,9 +334,11 @@ private fun Filters(vm: ReviewModel, onPickDay: () -> Unit, modifier: Modifier, 
     ) {
         // First, so the way back to the default view needs no scrolling and stays put.
         if (vm.filtersActive) {
-            OutlinedIconButton(onClick = { vm.clearFilters() }, modifier = Modifier.size(34.dp)) {
-                Icon(Icons.Filled.Close, stringResource(R.string.explore_clear_filters), Modifier.size(16.dp))
-            }
+            FilterChip(
+                selected = false, onClick = { vm.clearFilters() },
+                label = { Text(stringResource(R.string.explore_clear_filters), maxLines = 1, softWrap = false) },
+                leadingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) },
+            )
         }
         val camTitle = if (vm.cameraFilter.isEmpty()) stringResource(R.string.review_cameras)
         else vm.cameraFilter.singleOrNull()?.let { name -> cameraName(conns.firstOrNull { it.camera(name) != null }, name) }
