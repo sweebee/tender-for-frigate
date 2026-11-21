@@ -51,7 +51,7 @@ struct LiveView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
-            .refreshable { await model.refreshAll(reloadConfig: true) }
+            .refreshable { await Task { await model.refreshAll(reloadConfig: true) }.value }
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
             .appDestinations()

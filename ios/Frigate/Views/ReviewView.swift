@@ -76,7 +76,7 @@ struct ReviewView: View {
                     }
                 }
             }
-            .refreshable { await reload() }
+            .refreshable { await Task { await reload() }.value }
             .screenBackground()
             .reviewActionsHost(reviewActions)
             .onChange(of: reviewActions.deletedIDs) { _, ids in entries.removeAll { ids.contains($0.item.id) } }
@@ -617,7 +617,7 @@ struct ThreatChip: View {
     }
 }
 
-private extension Error {
+extension Error {
     /// A cancelled task: Swift's CancellationError, or URLSession's own "cancelled".
     var isCancellation: Bool {
         self is CancellationError || (self as? URLError)?.code == .cancelled

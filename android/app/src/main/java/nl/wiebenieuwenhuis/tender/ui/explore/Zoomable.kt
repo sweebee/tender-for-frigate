@@ -16,6 +16,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.unit.IntSize
@@ -37,6 +38,27 @@ fun pinchStep(scale: Float, offset: Offset, centroid: Offset, pan: Offset, zoom:
 }
 
 /**
+ * Pinch and pan, calling `onStep` with the fingers' centroid, pan and zoom for each move. Two
+ * fingers always; one finger only while `zoomed()`. An event in which a finger goes down or lifts
+ * is skipped: the centroid leaps there (to the finger that stays), and following it would throw
+ * the picture aside when one finger is lifted while zooming and panning at once.
+ */
+suspend fun PointerInputScope.detectPinch(zoomed: () -> Boolean, onStep: (centroid: Offset, pan: Offset, zoom: Float) -> Unit) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false)
+        do {
+            val event = awaitPointerEvent()
+            val fingers = event.changes.count { it.pressed }
+            val settled = event.changes.none { it.pressed != it.previousPressed }
+            if (settled && (fingers >= 2 || (fingers == 1 && zoomed()))) {
+                onStep(event.calculateCentroid(), event.calculatePan(), event.calculateZoom())
+                event.changes.forEach { if (it.positionChanged()) it.consume() }
+            }
+        } while (event.changes.any { it.pressed })
+    }
+}
+
+/**
  * Pinch to zoom a picture, drag to move it while zoomed, double-tap to zoom in or back out.
  * A single finger on an unzoomed picture is left alone, so the screen around it still scrolls.
  * `onTap`: a single tap (a video's controls).
@@ -47,18 +69,8 @@ fun Modifier.zoomable(maxScale: Float = 5f, onTap: (() -> Unit)? = null): Modifi
     this
         .clipToBounds()
         .pointerInput(Unit) {
-            awaitEachGesture {
-                awaitFirstDown(requireUnconsumed = false)
-                do {
-                    val event = awaitPointerEvent()
-                    val fingers = event.changes.count { it.pressed }
-                    if (fingers >= 2 || scale > 1f) {
-                        val (next, moved) = pinchStep(scale, offset, event.calculateCentroid(), event.calculatePan(),
-                            event.calculateZoom(), size, maxScale)
-                        scale = next; offset = moved
-                        event.changes.forEach { if (it.positionChanged()) it.consume() }
-                    }
-                } while (event.changes.any { it.pressed })
+            detectPinch({ scale > 1f }) { centroid, pan, zoom ->
+                pinchStep(scale, offset, centroid, pan, zoom, size, maxScale).let { (s, o) -> scale = s; offset = o }
             }
         }
         .pointerInput(Unit) {

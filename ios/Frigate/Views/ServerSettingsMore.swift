@@ -65,7 +65,7 @@ struct ProfilesView: View {
             }
             .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
-        .refreshable { await load() }
+        .refreshable { await Task { await load() }.value }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
@@ -391,7 +391,7 @@ struct UsersView: View {
             }
             .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
-        .refreshable { await load() }
+        .refreshable { await Task { await load() }.value }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }
@@ -935,7 +935,7 @@ struct SystemStatusView: View {
             }
             .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
-        .refreshable { await conn?.refresh(); await loadLogs() }
+        .refreshable { await Task { await conn?.refresh(); await loadLogs() }.value }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task(id: logService) { logs = []; await loadLogs() }

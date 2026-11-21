@@ -15,8 +15,12 @@ struct Zoomable: ViewModifier {
     @State private var pinching = false
     /// Where the current drag started from, so a drag that goes on after a pinch does not jump.
     @State private var dragBase: CGSize?
-    /// The pinch's first centroid (from the frame's centre), scale and offset.
-    @State private var pinchStart: (location: CGPoint, scale: CGFloat, offset: CGSize)?
+    /// The drag's previous translation: a sudden leap means the tracked finger changed (one of
+    /// two fingers lifted), and the drag starts again from where the picture is.
+    @State private var lastTranslation: CGSize?
+    /// The pinch's centroid (from the frame's centre), scale, offset and the recognizer's factor
+    /// when it was last anchored: again whenever two fingers are back down.
+    @State private var pinchStart: (location: CGPoint, scale: CGFloat, offset: CGSize, factor: CGFloat)?
 
     func body(content: Content) -> some View {
         GeometryReader { geo in
@@ -27,8 +31,8 @@ struct Zoomable: ViewModifier {
                 .frame(width: geo.size.width, height: geo.size.height)
                 .clipped()
                 .contentShape(Rectangle())
-                .pinch(magnify: magnify(in: geo.size)) { state, factor, location in
-                    pinch(state, factor: factor, location: location, size: geo.size)
+                .pinch(magnify: magnify(in: geo.size)) { state, factor, location, touches in
+                    pinch(state, factor: factor, location: location, touches: touches, size: geo.size)
                 }
                 .simultaneousGesture(scale > 1 ? pan(in: geo.size) : nil)
                 .onTapGesture(count: 2) { location in
@@ -65,7 +69,12 @@ struct Zoomable: ViewModifier {
     private func pan(in size: CGSize) -> some Gesture {
         DragGesture(minimumDistance: 4)
             .onChanged { v in
+                defer { lastTranslation = v.translation }
                 guard !pinching else { dragBase = nil; return }
+                if let last = lastTranslation,
+                   hypot(v.translation.width - last.width, v.translation.height - last.height) > 40 {
+                    dragBase = nil
+                }
                 let base = dragBase ?? CGSize(width: offset.width - v.translation.width, height: offset.height - v.translation.height)
                 dragBase = base
                 offset = clamp(CGSize(width: base.width + v.translation.width,
@@ -73,20 +82,24 @@ struct Zoomable: ViewModifier {
             }
             .onEnded { _ in
                 dragBase = nil
+                lastTranslation = nil
                 if !pinching { lastOffset = offset }
             }
     }
 
     /// A UIKit pinch (iOS 18+): zooms around the fingers and follows them as they move.
-    private func pinch(_ state: UIGestureRecognizer.State, factor: CGFloat, location: CGPoint, size: CGSize) {
+    /// Only with two fingers down: when one lifts, the centroid leaps to the other finger, and
+    /// following it would throw the picture aside; a second finger coming back anchors anew.
+    private func pinch(_ state: UIGestureRecognizer.State, factor: CGFloat, location: CGPoint, touches: Int, size: CGSize) {
         let point = CGPoint(x: location.x - size.width / 2, y: location.y - size.height / 2)
         switch state {
         case .began:
             pinching = true
-            pinchStart = (point, scale, offset)
+            pinchStart = (point, scale, offset, factor)
         case .changed:
-            guard let start = pinchStart else { return }
-            scale = min(max(start.scale * factor, 1), maxScale)
+            guard touches >= 2 else { pinchStart = nil; return }
+            guard let start = pinchStart else { pinchStart = (point, scale, offset, factor); return }
+            scale = min(max(start.scale * factor / max(start.factor, 0.01), 1), maxScale)
             // The content that was under the fingers at the start stays under them.
             let content = CGPoint(x: (start.location.x - start.offset.width) / start.scale,
                                   y: (start.location.y - start.offset.height) / start.scale)
@@ -126,7 +139,7 @@ private extension View {
     /// A pinch that follows the fingers on iOS 18 and later; SwiftUI's fixed-anchor magnify before.
     @ViewBuilder
     func pinch(magnify: some Gesture,
-               _ action: @escaping (UIGestureRecognizer.State, CGFloat, CGPoint) -> Void) -> some View {
+               _ action: @escaping (UIGestureRecognizer.State, CGFloat, CGPoint, Int) -> Void) -> some View {
         if #available(iOS 18.0, *) {
             gesture(PinchRecognizer(action: action))
         } else {
@@ -137,12 +150,12 @@ private extension View {
 
 @available(iOS 18.0, *)
 private struct PinchRecognizer: UIGestureRecognizerRepresentable {
-    let action: (UIGestureRecognizer.State, CGFloat, CGPoint) -> Void
+    let action: (UIGestureRecognizer.State, CGFloat, CGPoint, Int) -> Void
 
     func makeUIGestureRecognizer(context: Context) -> UIPinchGestureRecognizer { UIPinchGestureRecognizer() }
 
     func handleUIGestureRecognizerAction(_ recognizer: UIPinchGestureRecognizer, context: Context) {
-        action(recognizer.state, recognizer.scale, context.converter.localLocation)
+        action(recognizer.state, recognizer.scale, context.converter.localLocation, recognizer.numberOfTouches)
     }
 }
 

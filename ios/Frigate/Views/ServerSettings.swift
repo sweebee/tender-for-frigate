@@ -141,7 +141,7 @@ struct ServerSettingsView: View {
             .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, 24)
         }
-        .refreshable { await load() }
+        .refreshable { await Task { await load() }.value }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task { await load() }

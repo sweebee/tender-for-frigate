@@ -1,5 +1,6 @@
 package nl.wiebenieuwenhuis.tender.ui.camera
 
+import nl.wiebenieuwenhuis.tender.ui.explore.detectPinch
 import nl.wiebenieuwenhuis.tender.ui.explore.pinchStep
 import android.Manifest
 import android.content.Intent
@@ -17,7 +18,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -590,7 +590,7 @@ private fun VideoBox(
         // view, which would otherwise take the touches itself.
         Box(Modifier.fillMaxSize()
             .pointerInput(Unit) {
-                detectTransformGestures { centroid, pan, zoom, _ ->
+                detectPinch({ scale > 1f }) { centroid, pan, zoom ->
                     pinchStep(scale, offset, centroid, pan, zoom, size, 6f).let { (s, o) -> scale = s; offset = o }
                 }
             }

@@ -277,7 +277,7 @@ struct ExportsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
-            .refreshable { await load() }
+            .refreshable { await Task { await load() }.value }
         }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)

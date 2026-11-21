@@ -41,6 +41,8 @@ struct ExploreView: View {
     @State private var rows: [LabelRow] = []
     @State private var grid: [ExploreEntry] = []
     @State private var loading = false
+    /// Counts loads, so only the latest one writes the results, the error and the spinner.
+    @State private var loads = 0
     @State private var canLoadMore = false
     @State private var loadError: String?
     @State private var knownLabels: [String] = []
@@ -84,7 +86,9 @@ struct ExploreView: View {
                 // A new filter shows other (often shorter) content. A fresh scroll view starts at
                 // the top; the old one stayed scrolled past the new content, a black screen.
                 .id("\(filter)|\(gridByDefault)")
-                .refreshable { await reload() }
+                // In a task of its own: the refresh's task is cancelled when the view redraws
+                // (loading starts), which cancelled the requests and kept the old results.
+                .refreshable { await Task { await reload() }.value }
                 .scrollDismissesKeyboard(.immediately)
             }
             .screenBackground()
@@ -561,26 +565,33 @@ struct ExploreView: View {
     }
 
     private func reload() async {
+        loads += 1
+        let generation = loads
         loading = true
         loadError = nil
         do {
             if filter.isSearch {
-                grid = try await semanticResults()
+                let result = try await semanticResults()
+                guard generation == loads else { return }
+                grid = result
                 // Frigate's search returns its best matches at once; there are no further pages.
                 canLoadMore = false
             } else if showsGrid {
                 let range = dayRange
                 let result = try await search(labels: filter.labels.isEmpty ? nil : Array(filter.labels),
                                               before: range.before, after: range.after, limit: pageSize)
+                guard generation == loads else { return }
                 grid = result
                 // Frigate pages by time; sorting by score shows the best matches only.
                 canLoadMore = filter.sort != .score && result.count >= pageSize
             } else {
-                rows = try await loadRows()
+                let result = try await loadRows()
+                guard generation == loads else { return }
+                rows = result
             }
-        } catch is CancellationError {
         } catch {
-            loadError = error.localizedDescription
+            guard generation == loads else { return }
+            if !Task.isCancelled && !error.isCancellation { loadError = error.localizedDescription }
         }
         loading = false
     }

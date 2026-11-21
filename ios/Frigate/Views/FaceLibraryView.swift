@@ -101,7 +101,7 @@ struct FaceLibraryView: View {
             .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, selecting ? 90 : 24)
         }
-        .refreshable { await load() }
+        .refreshable { await Task { await load() }.value }
         .overlay(alignment: .bottom) { if selecting { selectionBar } }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)

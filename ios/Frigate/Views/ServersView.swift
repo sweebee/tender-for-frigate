@@ -111,7 +111,7 @@ struct ServersView: View {
                 .padding(.horizontal, 16).readableWidth()
                 .padding(.bottom, 24)
             }
-            .refreshable { await model.refreshAll(reloadConfig: true) }
+            .refreshable { await Task { await model.refreshAll(reloadConfig: true) }.value }
             .screenBackground()
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $reordering) { ReorderServersSheet() }

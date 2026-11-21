@@ -74,7 +74,7 @@ struct ClassificationView: View {
             .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, 24)
         }
-        .refreshable { await load() }
+        .refreshable { await Task { await load() }.value }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(for: ClassificationModel.self) { ClassificationModelView(initial: $0) }
@@ -356,7 +356,7 @@ struct ClassificationModelView: View {
             .padding(.horizontal, 16).readableWidth()
             .padding(.bottom, selecting ? 90 : 24)
         }
-        .refreshable { await load() }
+        .refreshable { await Task { await load() }.value }
         .overlay(alignment: .bottom) { if selecting { selectionBar } }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
