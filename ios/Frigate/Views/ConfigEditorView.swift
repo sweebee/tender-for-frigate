@@ -309,7 +309,7 @@ struct YAMLTextView: UIViewRepresentable {
         tv.textContainerInset = UIEdgeInsets(top: 10, left: LinedTextView.gutter + 8, bottom: 40, right: 10)
         // The keyboard asks for the font at the caret: without one set here UIKit crashes on a nil value.
         tv.font = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
-        tv.textColor = UIColor(Theme.text)
+        tv.textColor = LinedTextView.plain(Theme.text)
         tv.setCode(text)
         controller.textView = tv
         return tv
@@ -353,8 +353,25 @@ struct YAMLTextView: UIViewRepresentable {
     /// A text view with line numbers in a gutter on the left and YAML colours.
     final class LinedTextView: UITextView {
         static let gutter: CGFloat = 40
+
+        /// A UIKit colour for the text storage. A colour bridged from SwiftUI (`UIColor(Color)`)
+        /// answers `copy` with nil, and UIKit copies the typing attributes on backspace
+        /// (-[NSDictionary initWithDictionary:copyItems:]): "attempt to insert nil object", a crash.
+        static func plain(_ color: Color) -> UIColor {
+            UIColor { traits in
+                var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+                UIColor(color).resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a)
+                return UIColor(red: r, green: g, blue: b, alpha: a)
+            }
+        }
         var errorLine: Int?
         private let codeFont = UIFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        /// Every attribute UIKit may read back at the caret. Without a paragraph style, backspace
+        /// (which resets the writing direction from the typing attributes) inserts a nil value and
+        /// crashes in -[UITextInputController _addToTypingAttributes:value:].
+        private var codeAttributes: [NSAttributedString.Key: Any] {
+            [.font: codeFont, .foregroundColor: LinedTextView.plain(Theme.text), .paragraphStyle: NSParagraphStyle.default]
+        }
 
         override func draw(_ rect: CGRect) {
             super.draw(rect)
@@ -394,7 +411,7 @@ struct YAMLTextView: UIViewRepresentable {
         /// The keyboard asks this for the caret's font; UIKit's own answer comes up nil for this text
         /// view and crashes ("attempt to insert nil object"), so answer it here.
         override func textStyling(at position: UITextPosition, in direction: UITextStorageDirection) -> [NSAttributedString.Key: Any]? {
-            [.font: codeFont, .foregroundColor: UIColor(Theme.text)]
+            codeAttributes
         }
 
         override func layoutSubviews() {
@@ -405,7 +422,7 @@ struct YAMLTextView: UIViewRepresentable {
         /// Replaces all text through the storage, with the code font: UITextView's own `text` setter asks
         /// UIKit for default attributes that come up nil for this view and crash.
         func setCode(_ string: String) {
-            let attrs: [NSAttributedString.Key: Any] = [.font: codeFont, .foregroundColor: UIColor(Theme.text)]
+            let attrs = codeAttributes
             textStorage.beginEditing()
             textStorage.replaceCharacters(in: NSRange(location: 0, length: textStorage.length),
                                           with: NSAttributedString(string: string, attributes: attrs))
@@ -420,7 +437,7 @@ struct YAMLTextView: UIViewRepresentable {
             let selected = selectedRange
             let storage = textStorage
             storage.beginEditing()
-            storage.setAttributes([.font: codeFont, .foregroundColor: UIColor(Theme.text)], range: full)
+            storage.setAttributes(codeAttributes, range: full)
             func paint(_ pattern: String, _ color: UIColor, group: Int = 0, options: NSRegularExpression.Options = [.anchorsMatchLines]) {
                 guard let re = try? NSRegularExpression(pattern: pattern, options: options) else { return }
                 for m in re.matches(in: text, range: full) {
@@ -428,11 +445,11 @@ struct YAMLTextView: UIViewRepresentable {
                     if r.location != NSNotFound { storage.addAttribute(.foregroundColor, value: color, range: r) }
                 }
             }
-            paint(#":\s*(-?\d+(\.\d+)?)\s*$"#, UIColor(Theme.warning), group: 1)
-            paint(#"(?:^|:\s)\s*(true|false|null)\s*$"#, UIColor(Theme.warning), group: 1)
-            paint(#"^\s*-?\s*([A-Za-z0-9_\-. ]+?):(?=\s|$)"#, UIColor(Theme.accent), group: 1)
-            paint(#"(["'])(?:(?!\1).)*\1"#, UIColor(Theme.online))
-            paint(#"(^|\s)#.*$"#, UIColor(Theme.textSecondary).withAlphaComponent(0.7))
+            paint(#":\s*(-?\d+(\.\d+)?)\s*$"#, LinedTextView.plain(Theme.warning), group: 1)
+            paint(#"(?:^|:\s)\s*(true|false|null)\s*$"#, LinedTextView.plain(Theme.warning), group: 1)
+            paint(#"^\s*-?\s*([A-Za-z0-9_\-. ]+?):(?=\s|$)"#, LinedTextView.plain(Theme.accent), group: 1)
+            paint(#"(["'])(?:(?!\1).)*\1"#, LinedTextView.plain(Theme.online))
+            paint(#"(^|\s)#.*$"#, LinedTextView.plain(Theme.textSecondary).withAlphaComponent(0.7))
             if let errorLine {
                 var index = 0, current = 1
                 while current < errorLine, index < ns.length {
@@ -440,13 +457,13 @@ struct YAMLTextView: UIViewRepresentable {
                     current += 1
                 }
                 if index < ns.length {
-                    storage.addAttribute(.backgroundColor, value: UIColor(Theme.destructive).withAlphaComponent(0.25),
+                    storage.addAttribute(.backgroundColor, value: LinedTextView.plain(Theme.destructive).withAlphaComponent(0.25),
                                          range: ns.lineRange(for: NSRange(location: index, length: 0)))
                 }
             }
             storage.endEditing()
             selectedRange = selected
-            typingAttributes = [.font: codeFont, .foregroundColor: UIColor(Theme.text)]
+            typingAttributes = codeAttributes
             setNeedsDisplay()
         }
     }
