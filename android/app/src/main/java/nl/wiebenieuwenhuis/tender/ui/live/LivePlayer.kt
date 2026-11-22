@@ -74,6 +74,8 @@ class LivePlayerState(stream: String = "", preferred: LiveMode = LiveMode.Auto, 
     var micError by mutableStateOf<String?>(null)
     /** The native player could not play this stream; the web player takes over without MSE. */
     var nativeFailed by mutableStateOf(false)
+    /** Opened from a tile that plays another stream of this camera: shown until this stream has a frame. */
+    var bridgeStream by mutableStateOf<String?>(null)
 
     internal var web: WebView? = null
 
@@ -113,7 +115,7 @@ fun LivePlayerView(client: FrigateClient, camera: String, state: LivePlayerState
         (state.preferred == LiveMode.Auto || state.preferred == LiveMode.Mse)
     if (native) {
         key(stream, state.reloadToken) {
-            NativeLivePlayer(client, stream, state, fill, modifier) { reason ->
+            NativeLivePlayer(client, stream, state, fill, modifier, state.bridgeStream) { reason ->
                 if (nl.wiebenieuwenhuis.tender.BuildConfig.DEBUG) android.util.Log.d("TenderLive", "$camera $stream: native failed: $reason")
                 state.nativeFailed = true
             }

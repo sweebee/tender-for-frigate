@@ -97,6 +97,10 @@ import nl.wiebenieuwenhuis.tender.ui.setup.setupDestinations
 /** Hides the tab bar or rail while a video fills the screen. */
 object AppChrome {
     var immersive by mutableStateOf(false)
+    /** The window is a picture-in-picture window: only the camera's video shows. */
+    var pip by mutableStateOf(false)
+    /** Set while a camera plays: leaving the app takes it into picture in picture (before Android 12). */
+    var pipParams: android.app.PictureInPictureParams? = null
 }
 
 private data class Section(val route: Any, val title: Int, val icon: ImageVector, val badge: () -> Int = { 0 })
@@ -164,10 +168,10 @@ fun AppRoot(activity: MainActivity) {
         // Settings at the bottom; a phone gets the tab bar. The NavHost stays in one place so
         // going full screen does not rebuild the screen.
         Row(Modifier.fillMaxSize()) {
-        if (wide && !AppChrome.immersive) SectionRail(list, nav, section)
+        if (wide && !AppChrome.immersive && !AppChrome.pip) SectionRail(list, nav, section)
         NavigationSuiteScaffold(
             modifier = Modifier.weight(1f),
-            layoutType = if (wide || AppChrome.immersive || hideBar) NavigationSuiteType.None else NavigationSuiteType.NavigationBar,
+            layoutType = if (wide || AppChrome.immersive || AppChrome.pip || hideBar) NavigationSuiteType.None else NavigationSuiteType.NavigationBar,
             navigationSuiteItems = {
                 for (s in list) {
                     val selected = section == s.route

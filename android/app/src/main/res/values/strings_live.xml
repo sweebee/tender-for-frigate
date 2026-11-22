@@ -53,6 +53,7 @@
     <string name="retry">Retry</string>
     <string name="not_recording">Not recording</string>
     <string name="more">More</string>
+    <string name="picture_in_picture">Picture in picture</string>
     <string name="reload_stream">Reload stream</string>
     <string name="debug">Debug</string>
     <string name="audio">Audio</string>

@@ -38,6 +38,18 @@ class MainActivity : ComponentActivity() {
         intent.data?.let { pendingUri = it }
     }
 
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: android.content.res.Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        nl.wiebenieuwenhuis.tender.ui.AppChrome.pip = isInPictureInPictureMode
+    }
+
+    /** Leaving the app while a camera plays: on into picture in picture (Android 12 and later do this themselves). */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        val params = nl.wiebenieuwenhuis.tender.ui.AppChrome.pipParams ?: return
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) runCatching { enterPictureInPictureMode(params) }
+    }
+
     override fun onDestroy() {
         ProcessLifecycleOwner.get().lifecycle.removeObserver(foreground)
         if (current === this) current = null

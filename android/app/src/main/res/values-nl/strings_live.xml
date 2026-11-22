@@ -53,6 +53,7 @@
     <string name="retry">Opnieuw</string>
     <string name="not_recording">Geen opname</string>
     <string name="more">Meer</string>
+    <string name="picture_in_picture">Beeld-in-beeld</string>
     <string name="reload_stream">Stream herladen</string>
     <string name="debug">Foutopsporing</string>
     <string name="audio">Geluid</string>

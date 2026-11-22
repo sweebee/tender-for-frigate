@@ -60,6 +60,7 @@ import androidx.compose.material.icons.outlined.FiberManualRecord
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.OpenWith
+import androidx.compose.material.icons.outlined.PictureInPictureAlt
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.VideocamOff
 import androidx.compose.material3.AlertDialog
@@ -152,6 +153,7 @@ import nl.wiebenieuwenhuis.tender.ui.live.StreamSupport
 import nl.wiebenieuwenhuis.tender.ui.live.CameraSwitchItems
 import nl.wiebenieuwenhuis.tender.ui.live.LiveMode
 import nl.wiebenieuwenhuis.tender.ui.live.LivePlayerState
+import nl.wiebenieuwenhuis.tender.ui.live.LivePool
 import nl.wiebenieuwenhuis.tender.ui.live.LivePlayerView
 import nl.wiebenieuwenhuis.tender.ui.live.startOfToday
 import nl.wiebenieuwenhuis.tender.ui.theme.Palette
@@ -190,7 +192,11 @@ fun CameraScreen(route: CameraRoute) {
         val first = if (AppModel.isExpensiveNetwork && usable.size > 1) usable.last() else usable.firstOrNull()
         // No restream to play: straight to snapshots instead of waiting for MSE and WebRTC to time out.
         val mode = if (streams.isEmpty() && conn.go2rtcStreams != null) LiveMode.Mjpeg else LiveMode.Auto
-        LivePlayerState(saved ?: first?.name ?: camera.name, mode, muted = !LivePlayerState.soundOn)
+        LivePlayerState(saved ?: first?.name ?: camera.name, mode, muted = !LivePlayerState.soundOn).apply {
+            // Opened from its overview tile: the tile's stream shows at once, until the stream
+            // picked here has a frame of its own.
+            bridgeStream = streams.firstOrNull { LivePool.isPlaying(client, it.name) }?.name
+        }
     }
     // A stream the user picked in the menu is kept, even one this device turns out not to decode.
     var pickedStream by remember { mutableStateOf(false) }
@@ -389,6 +395,39 @@ fun CameraScreen(route: CameraRoute) {
         }
     }
 
+    // Picture in picture: offered while the video plays, shaped as the video; leaving the app
+    // takes it along (Android 12 and later by itself, earlier through the activity).
+    val pipParams = remember(player.playing, player.videoWidth, player.videoHeight, cameraOn) {
+        if (!player.playing || !cameraOn) null else {
+            val w = player.videoWidth.takeIf { it > 0 } ?: 16.0
+            val h = player.videoHeight.takeIf { it > 0 } ?: 9.0
+            val ratio = (w / h).coerceIn(1 / 2.39, 2.39)
+            android.app.PictureInPictureParams.Builder()
+                .setAspectRatio(android.util.Rational((ratio * 1000).toInt(), 1000))
+                .apply {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        setAutoEnterEnabled(true)
+                        setSeamlessResizeEnabled(true)
+                    }
+                }
+                .build()
+        }
+    }
+    DisposableEffect(pipParams) {
+        AppChrome.pipParams = pipParams
+        val activity = MainActivity.current
+        if (activity != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            runCatching {
+                activity.setPictureInPictureParams(pipParams ?: android.app.PictureInPictureParams.Builder().setAutoEnterEnabled(false).build())
+            }
+        }
+        onDispose {
+            if (AppChrome.pipParams === pipParams) AppChrome.pipParams = null
+            if (activity != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                runCatching { activity.setPictureInPictureParams(android.app.PictureInPictureParams.Builder().setAutoEnterEnabled(false).build()) }
+            }
+        }
+    }
     @Composable
     fun MoreMenu(tint: Color = MaterialTheme.colorScheme.onSurface) {
         Box {
@@ -401,6 +440,11 @@ fun CameraScreen(route: CameraRoute) {
                 HorizontalDivider()
                 DropdownMenuItem(text = { Text(stringResource(R.string.reload_stream)) }, leadingIcon = { Icon(Icons.Outlined.Refresh, null) },
                     onClick = { menuOpen = false; player.reloadToken++ })
+                pipParams?.let { params ->
+                    DropdownMenuItem(text = { Text(stringResource(R.string.picture_in_picture)) },
+                        leadingIcon = { Icon(Icons.Outlined.PictureInPictureAlt, null) },
+                        onClick = { menuOpen = false; runCatching { MainActivity.current?.enterPictureInPictureMode(params) } })
+                }
                 if (cameraOn) DropdownMenuItem(text = { Text(stringResource(R.string.debug)) }, leadingIcon = { Icon(Icons.Outlined.BugReport, null) },
                     onClick = { menuOpen = false; nav.navigate(CameraDebugRoute(route.serverId, route.camera)) })
                 CameraSwitchItems(conn, camera) { menuOpen = false }
@@ -409,6 +453,14 @@ fun CameraScreen(route: CameraRoute) {
     }
 
     val audioEnabled = player.hasAudio || player.activeMode != "mjpeg"
+
+    if (AppChrome.pip) {
+        // In the small window: the video alone.
+        Box(Modifier.fillMaxSize().background(Color.Black)) {
+            LivePlayerView(client, camera.name, player, Modifier.fillMaxSize())
+        }
+        return
+    }
 
     nl.wiebenieuwenhuis.tender.ui.review.ReviewActionsHost(reviewActions, Modifier.fillMaxSize()) {
     if (landscapeLayout) {
