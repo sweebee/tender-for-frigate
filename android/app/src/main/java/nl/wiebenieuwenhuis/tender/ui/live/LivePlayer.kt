@@ -16,6 +16,8 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -70,6 +72,8 @@ class LivePlayerState(stream: String = "", preferred: LiveMode = LiveMode.Auto, 
     var talking by mutableStateOf(false)
     /** Set when the microphone could not be used. */
     var micError by mutableStateOf<String?>(null)
+    /** The native player could not play this stream; the web player takes over without MSE. */
+    var nativeFailed by mutableStateOf(false)
 
     internal var web: WebView? = null
 
@@ -96,17 +100,40 @@ class LivePlayerState(stream: String = "", preferred: LiveMode = LiveMode.Auto, 
 }
 
 /**
- * Plays a go2rtc stream through Frigate's proxy in a web view: MSE over websocket first, then
- * WebRTC, then MJPEG snapshots from the Frigate API as the last fallback. Android's web view
- * has MediaSource and WebRTC, so this is the whole player (the iOS app also has a native one).
- * While talking the page runs from http://localhost (a secure page, needed for the microphone)
- * and the WebRTC handshake goes through the app.
+ * Live video of a camera, as in the iOS app: the native player (go2rtc's MSE stream played by
+ * ExoPlayer) first, and the web player (WebRTC, then MJPEG snapshots) when that fails or a mode
+ * needs it: talking (WebRTC), or WebRTC or MJPEG picked by hand.
+ */
+@Composable
+fun LivePlayerView(client: FrigateClient, camera: String, state: LivePlayerState, modifier: Modifier = Modifier, fill: Boolean = false) {
+    val stream = state.stream.ifEmpty { camera }
+    // A new stream, a retry or coming back on screen gets another native attempt.
+    LaunchedEffect(stream, state.reloadToken, state.suspended) { if (!state.suspended) state.nativeFailed = false }
+    val native = !state.suspended && !state.talking && !state.nativeFailed &&
+        (state.preferred == LiveMode.Auto || state.preferred == LiveMode.Mse)
+    if (native) {
+        key(stream, state.reloadToken) {
+            NativeLivePlayer(client, stream, state, fill, modifier) { reason ->
+                if (nl.wiebenieuwenhuis.tender.BuildConfig.DEBUG) android.util.Log.d("TenderLive", "$camera $stream: native failed: $reason")
+                state.nativeFailed = true
+            }
+        }
+    } else {
+        WebLivePlayerView(client, camera, state, modifier, fill)
+    }
+}
+
+/**
+ * Plays a go2rtc stream through Frigate's proxy in a web view: MSE over websocket first (unless
+ * the native player already failed it), then WebRTC, then MJPEG snapshots from the Frigate API
+ * as the last fallback. While talking the page runs from http://localhost (a secure page, needed
+ * for the microphone) and the WebRTC handshake goes through the app.
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun LivePlayerView(client: FrigateClient, camera: String, state: LivePlayerState, modifier: Modifier = Modifier, fill: Boolean = false) {
+private fun WebLivePlayerView(client: FrigateClient, camera: String, state: LivePlayerState, modifier: Modifier = Modifier, fill: Boolean = false) {
     val bridge = remember(client, camera, state) { PlayerBridge(client, camera, state) }
-    val key = "${state.stream}|${state.preferred}|${state.reloadToken}|${state.suspended}|${state.talking}|$fill"
+    val key = "${state.stream}|${state.preferred}|${state.reloadToken}|${state.suspended}|${state.talking}|$fill|${state.nativeFailed}"
     DisposableEffect(bridge) {
         onDispose { bridge.dispose() }
     }
@@ -175,6 +202,8 @@ private class PlayerBridge(val client: FrigateClient, val camera: String, val st
             LiveMode.Mjpeg -> listOf("mjpeg")
         }
         if (fill) modes = listOf("mse")
+        // MSE already failed in the native player.
+        if (state.nativeFailed && modes.size > 1) modes = modes - "mse"
         // Talking needs WebRTC (the only transport that sends audio back).
         if (state.talking) modes = listOf("webrtc")
         params = jsonOf(mapOf(
