@@ -936,6 +936,8 @@ struct SystemStatusView: View {
     @State private var loadingLogs = false
     @State private var logError: String?
     @State private var cameraStorage: [CameraStorage]?
+    /// Frigate could not add up the recordings (or this user may not ask): the section stays away.
+    @State private var cameraStorageFailed = false
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
 
@@ -977,10 +979,15 @@ struct SystemStatusView: View {
                     }
                     .card(radius: 12)
 
-                    if let cameraStorage, !cameraStorage.isEmpty, let disk = stats.recordingStorage {
+                    if conn.isAdmin, !cameraStorageFailed, cameraStorage?.isEmpty != true, let disk = stats.recordingStorage {
                         SectionLabel(text: L("Camera storage")).padding(.top, 10)
-                        CameraStorageCard(cameras: cameraStorage, disk: disk,
-                                          name: { conn.config?.cameras[$0]?.displayName ?? FrigateFormat.prettyName($0) })
+                        if let cameraStorage {
+                            CameraStorageCard(cameras: cameraStorage, disk: disk,
+                                              name: { conn.config?.cameras[$0]?.displayName ?? FrigateFormat.prettyName($0) })
+                        } else {
+                            // Frigate adds up every recording for this, which can take a few seconds.
+                            ProgressView().frame(maxWidth: .infinity, minHeight: 80).card(radius: 12)
+                        }
                     }
                 }
 
@@ -1057,7 +1064,12 @@ struct SystemStatusView: View {
 
     private func loadCameraStorage() async {
         guard let conn, conn.isAdmin, let client = conn.client else { return }
-        if let list = try? await client.cameraStorage() { cameraStorage = list }
+        do {
+            cameraStorage = try await client.cameraStorage()
+            cameraStorageFailed = false
+        } catch {
+            if !error.isCancellation, cameraStorage == nil { cameraStorageFailed = true }
+        }
     }
 
     private func fps(_ v: Double?) -> String { String(format: "%.1f", v ?? 0) }

@@ -1,5 +1,6 @@
 package nl.wiebenieuwenhuis.tender.ui.settings
 
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.foundation.Canvas
@@ -427,11 +428,20 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
     var loadingLogs by remember { mutableStateOf(false) }
     var logError by remember { mutableStateOf<String?>(null) }
     var cameraStorage by remember { mutableStateOf<List<CameraStorage>?>(null) }
+    // Frigate could not add up the recordings (or this user may not ask): the section stays away.
+    var cameraStorageFailed by remember { mutableStateOf(false) }
 
     suspend fun loadCameraStorage() {
         val client = conn?.client ?: return
         if (!conn.isAdmin) return
-        runCatching { client.cameraStorage() }.getOrNull()?.let { cameraStorage = it }
+        try {
+            cameraStorage = client.cameraStorage()
+            cameraStorageFailed = false
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (cameraStorage == null) cameraStorageFailed = true
+        }
     }
 
     suspend fun loadLogs() {
@@ -502,9 +512,13 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
 
                 val cams = cameraStorage
                 val disk = stats.recordingStorage
-                if (!cams.isNullOrEmpty() && disk != null) {
+                if (conn.isAdmin && !cameraStorageFailed && cams?.isEmpty() != true && disk != null) {
                     SectionLabel(stringResource(R.string.settings_camera_storage), Modifier.padding(top = 10.dp))
-                    CameraStorageCard(cams, disk) { conn.camera(it)?.displayName ?: Format.prettyName(it) }
+                    if (cams != null) CameraStorageCard(cams, disk) { conn.camera(it)?.displayName ?: Format.prettyName(it) }
+                    // Frigate adds up every recording for this, which can take a few seconds.
+                    else SectionCard {
+                        Box(Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(Modifier.size(28.dp)) }
+                    }
                 }
             }
 
