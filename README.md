@@ -151,6 +151,7 @@ frigate://live | review | explore | chat | settings
 frigate://review?view=motion
 frigate://camera/<camera>[?server=<name>]
 frigate://playback/<camera>[?day=yyyy-MM-dd&review=<id>&view=timeline]
+frigate://playback/<camera>?t=<unix seconds>
 frigate://event/<review id>
 ```
 

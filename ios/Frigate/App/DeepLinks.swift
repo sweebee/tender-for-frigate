@@ -6,6 +6,7 @@ import SwiftUI
 ///   frigate://live | review | explore | settings      switch tab
 ///   frigate://camera/<camera>[?server=<name>]         open a camera's live view
 ///   frigate://playback/<camera>[?day=yyyy-MM-dd&view=timeline]  open playback
+///   frigate://playback/<camera>?t=<unix seconds>          open playback at that moment
 ///   frigate://event/<review id>[?server=<name>]       open a review item
 extension AppModel {
     func handle(_ url: URL) async {
@@ -45,8 +46,9 @@ extension AppModel {
             explorePath = NavigationPath()
             let f = DateFormatter()
             f.dateFormat = "yyyy-MM-dd"
-            let day = q("day").flatMap { f.date(from: $0) } ?? Date()
-            explorePath.append(PlaybackRoute(serverID: conn.server.id, camera: arg, day: Calendar.current.startOfDay(for: day), reviewID: q("review"), showTimeline: q("view") == "timeline"))
+            let start = q("t").flatMap(Double.init)
+            let day = q("day").flatMap { f.date(from: $0) } ?? start.map { Date(timeIntervalSince1970: $0) } ?? Date()
+            explorePath.append(PlaybackRoute(serverID: conn.server.id, camera: arg, day: Calendar.current.startOfDay(for: day), reviewID: q("review"), showTimeline: q("view") == "timeline", startTime: start))
         case "event":
             guard let conn, let arg, let client = conn.client else { return }
             let item: ReviewItem
