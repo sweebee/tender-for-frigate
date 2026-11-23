@@ -8,6 +8,7 @@ struct FrigateApp: App {
     private let network = NetworkStatus.shared
 
     init() {
+        TextViewSafety.install()
         let tab = UITabBarAppearance()
         tab.configureWithOpaqueBackground()
         tab.backgroundColor = UIColor(red: 16 / 255, green: 18 / 255, blue: 21 / 255, alpha: 0.96)
