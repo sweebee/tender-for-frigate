@@ -62,6 +62,17 @@ struct DayAvailability {
     }
 }
 
+/// Mac: a sheet as large as the calendar. iPhone and iPad keep their own sheet sizes.
+private struct MacCalendarSize: ViewModifier {
+    func body(content: Content) -> some View {
+        if ProcessInfo.processInfo.isMacCatalystApp {
+            content.frame(width: 440, height: 560).fittedSheet()
+        } else {
+            content
+        }
+    }
+}
+
 /// Month calendar that marks days with recordings and events.
 struct RecordingCalendarSheet: View {
     @Binding var day: Date
@@ -99,6 +110,8 @@ struct RecordingCalendarSheet: View {
             }
             .background(Theme.background)
         }
+        // The Mac's standard sheet is lower than the calendar: the month header and the legend fell off.
+        .modifier(MacCalendarSize())
         .presentationDetents([.height(520), .large])
         .presentationBackground(Theme.background)
         .task {
