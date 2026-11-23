@@ -93,6 +93,11 @@ import nl.wiebenieuwenhuis.tender.ui.components.StatusDot
 import nl.wiebenieuwenhuis.tender.ui.theme.Palette
 import java.util.Locale
 import kotlin.math.roundToInt
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
+import nl.wiebenieuwenhuis.tender.api.CameraStorage
+import nl.wiebenieuwenhuis.tender.api.StorageStats
 
 // MARK: - Zones and masks
 
@@ -421,6 +426,13 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
     var service by remember { mutableStateOf("frigate") }
     var loadingLogs by remember { mutableStateOf(false) }
     var logError by remember { mutableStateOf<String?>(null) }
+    var cameraStorage by remember { mutableStateOf<List<CameraStorage>?>(null) }
+
+    suspend fun loadCameraStorage() {
+        val client = conn?.client ?: return
+        if (!conn.isAdmin) return
+        runCatching { client.cameraStorage() }.getOrNull()?.let { cameraStorage = it }
+    }
 
     suspend fun loadLogs() {
         val client = conn?.client ?: return
@@ -438,6 +450,8 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
         }
     }
     LaunchedEffect(service) { logs = emptyList(); loadLogs() }
+    // Frigate adds up every recording for this, so once on opening rather than with the stats.
+    LaunchedEffect(conn) { loadCameraStorage() }
     // Stats every five seconds while open, as Frigate's system page does.
     LaunchedEffect(conn) {
         while (isActive) {
@@ -447,7 +461,7 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
     }
 
     ScreenScaffold(stringResource(R.string.settings_system_status), subtitle = conn?.server?.name) { inner ->
-        SettingsPage(inner, onRefresh = { conn?.refresh(); loadLogs() }) {
+        SettingsPage(inner, onRefresh = { conn?.refresh(); loadLogs(); loadCameraStorage() }) {
             val stats = conn?.stats
             // The version and uptime are on the server page's status card; this page starts with the cameras.
             if (conn != null && stats != null) {
@@ -484,6 +498,13 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
                         InfoRow(path.replace("/media/frigate/", ""),
                             if (used != null && total != null) "${SettingsFormat.size(used)} / ${SettingsFormat.size(total)}" else "", mono = true)
                     }
+                }
+
+                val cams = cameraStorage
+                val disk = stats.recordingStorage
+                if (!cams.isNullOrEmpty() && disk != null) {
+                    SectionLabel(stringResource(R.string.settings_camera_storage), Modifier.padding(top = 10.dp))
+                    CameraStorageCard(cams, disk) { conn.camera(it)?.displayName ?: Format.prettyName(it) }
                 }
             }
 
@@ -527,6 +548,57 @@ fun SystemStatusScreen(route: SystemStatusRoute) {
                 }
             }
             Footnote(stringResource(R.string.settings_logs_footer))
+        }
+    }
+}
+
+/** Frigate's chart colours, in the same order, so a camera has the same colour in both. */
+private val storagePalette = listOf(0xFF008FFB, 0xFF00E396, 0xFFFEB019, 0xFFFF4560, 0xFF775DD0,
+    0xFF3F51B5, 0xFF03A9F4, 0xFF4CAF50, 0xFFF9CE1D, 0xFFFF9800).map { Color(it) }
+
+/**
+ * What each camera's recordings take of the recordings disk, as on Frigate's Storage page: one bar
+ * with a colour per camera, then per camera its size, share of the disk and recording rate.
+ */
+@Composable
+private fun CameraStorageCard(cameras: List<CameraStorage>, disk: StorageStats, name: (String) -> String) {
+    data class Row(val title: String, val usage: Double, val bandwidth: Double?, val color: Color)
+    val total = (disk.total ?: 0.0).coerceAtLeast(1.0)
+    val cameraUsage = cameras.sumOf { it.usage }
+    val used = disk.used ?: cameraUsage
+    val rows = cameras.mapIndexed { i, c -> Row(name(c.camera), c.usage, c.bandwidth, storagePalette[i % storagePalette.size]) } +
+        Row(stringResource(R.string.settings_storage_other), (used - cameraUsage).coerceAtLeast(0.0), null, Color(0xFF606060)) +
+        Row(stringResource(R.string.settings_storage_unused), (total - used).coerceAtLeast(0.0), null, Color(0xFF404040))
+    SectionCard {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row {
+                Text(SettingsFormat.size(cameraUsage), style = MaterialTheme.typography.labelLarge.merge(MonoDigits))
+                Text(" / ${SettingsFormat.size(disk.total ?: 0.0)}", style = MaterialTheme.typography.labelLarge.merge(MonoDigits),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Row(Modifier.fillMaxWidth().height(10.dp).clip(CircleShape).background(Color(0xFF404040))) {
+                rows.forEach { row ->
+                    val share = (row.usage / total).coerceIn(0.0, 1.0).toFloat()
+                    if (share > 0f) Box(Modifier.fillMaxHeight().weight(share).background(row.color))
+                }
+                // The rest of the bar when the rows add up to less than the disk.
+                val rest = 1f - rows.sumOf { (it.usage / total).coerceIn(0.0, 1.0) }.toFloat()
+                if (rest > 0.0001f) Spacer(Modifier.weight(rest))
+            }
+        }
+        rows.forEach { row ->
+            RowDivider()
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(Modifier.size(9.dp).clip(CircleShape).background(row.color))
+                Text(row.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, maxLines = 1)
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(SettingsFormat.size(row.usage), style = MaterialTheme.typography.bodyMedium.merge(MonoDigits))
+                    val percent = String.format(Locale.getDefault(), "%.2f%%", row.usage / total * 100)
+                    Text(row.bandwidth?.let { stringResource(R.string.settings_storage_share_rate, percent, SettingsFormat.size(it)) } ?: percent,
+                        style = MaterialTheme.typography.labelSmall.merge(MonoDigits), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
     }
 }

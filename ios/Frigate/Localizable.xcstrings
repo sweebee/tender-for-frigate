@@ -197,6 +197,16 @@
     "%@ · %@": {
       "shouldTranslate": false
     },
+    "%@ · %@ per hour": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@ per uur"
+          }
+        }
+      }
+    },
     "%@ · %lld events": {
       "localizations": {
         "en": {
@@ -1681,6 +1691,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Merk of adres"
+          }
+        }
+      }
+    },
+    "Camera storage": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera-opslag"
           }
         }
       }
@@ -5000,6 +5020,16 @@
         }
       }
     },
+    "Other": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overig"
+          }
+        }
+      }
+    },
     "Other (RTSP address)": {
       "localizations": {
         "nl": {
@@ -7792,6 +7822,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Onbeoordeelde meldingen"
+          }
+        }
+      }
+    },
+    "Unused": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongebruikt"
           }
         }
       }

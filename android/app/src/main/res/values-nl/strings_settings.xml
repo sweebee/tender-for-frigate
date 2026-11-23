@@ -176,6 +176,10 @@
     <string name="settings_starts_after_restart">Frigate start deze camera na een herstart.</string>
     <string name="settings_stats_interval">Statistieken elke</string>
     <string name="settings_storage">Opslag</string>
+    <string name="settings_camera_storage">Camera-opslag</string>
+    <string name="settings_storage_other">Overig</string>
+    <string name="settings_storage_unused">Ongebruikt</string>
+    <string name="settings_storage_share_rate">%1$s · %2$s per uur</string>
     <string name="settings_streams">Streams</string>
     <string name="settings_switches_footer">Werkt direct, net als in het menu van de camera; Frigate onthoudt het na een herstart.</string>
     <string name="settings_system">Systeem</string>

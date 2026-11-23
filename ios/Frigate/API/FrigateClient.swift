@@ -146,6 +146,18 @@ final class FrigateClient: @unchecked Sendable {
     }
     func stats() async throws -> FrigateStats { try await get(FrigateStats.self, "api/stats") }
 
+    /// Recordings on disk per camera (MB) and what each records per hour (MB), in Frigate's
+    /// order. Admins only.
+    func cameraStorage() async throws -> [CameraStorage] {
+        struct Entry: Decodable { var usage: Double?; var bandwidth: Double? }
+        let data = try await data("api/recordings/storage")
+        let entries = try decoder.decode([String: Entry].self, from: data)
+        let order = JSONKeyOrder.keys(in: data, at: []) ?? entries.keys.sorted()
+        return order.compactMap { name in
+            entries[name].map { CameraStorage(camera: name, usage: $0.usage ?? 0, bandwidth: $0.bandwidth ?? 0) }
+        }
+    }
+
     // MARK: Review
 
     func reviews(cameras: [String]? = nil, labels: [String]? = nil, zones: [String]? = nil, severity: Severity? = nil,

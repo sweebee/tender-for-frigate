@@ -139,6 +139,12 @@ class FrigateClient(val baseUrl: HttpUrl) {
     suspend fun rawConfig(): JsonObject = json("api/config") as? JsonObject ?: throw FrigateException.NotFrigate()
     suspend fun stats(): FrigateStats = FrigateStats(json("api/stats") as? JsonObject ?: JsonObject(emptyMap()))
 
+    /** Recordings on disk per camera (MB) and what each records per hour (MB), in Frigate's order. Admins only. */
+    suspend fun cameraStorage(): List<CameraStorage> =
+        (json("api/recordings/storage") as? JsonObject)?.map { (name, v) ->
+            CameraStorage(name, v["usage"].dbl() ?: 0.0, v["bandwidth"].dbl() ?: 0.0)
+        } ?: emptyList()
+
     // MARK: Review
 
     suspend fun reviews(

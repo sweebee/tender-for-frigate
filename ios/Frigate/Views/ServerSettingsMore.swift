@@ -843,6 +843,87 @@ struct CameraOrderView: View {
     }
 }
 
+// MARK: - Camera storage
+
+/// What each camera's recordings take of the recordings disk, as on Frigate's Storage page: one
+/// bar with a colour per camera, then per camera its size, share of the disk and recording rate.
+struct CameraStorageCard: View {
+    let cameras: [CameraStorage]
+    let disk: FrigateStats.Storage
+    let name: (String) -> String
+
+    /// Frigate's chart colours, in the same order, so a camera has the same colour in both.
+    private static let palette: [UInt32] = [0x008FFB, 0x00E396, 0xFEB019, 0xFF4560, 0x775DD0,
+                                            0x3F51B5, 0x03A9F4, 0x4CAF50, 0xF9CE1D, 0xFF9800]
+
+    private struct Row: Identifiable {
+        var id: String
+        var title: String
+        var usage: Double
+        var bandwidth: Double?
+        var color: Color
+    }
+
+    private var total: Double { max(disk.total ?? 0, 1) }
+    private var cameraUsage: Double { cameras.reduce(0) { $0 + $1.usage } }
+
+    private var rows: [Row] {
+        var out = cameras.enumerated().map { i, c in
+            Row(id: c.camera, title: name(c.camera), usage: c.usage, bandwidth: c.bandwidth,
+                color: Color(hex: Self.palette[i % Self.palette.count]))
+        }
+        let used = disk.used ?? cameraUsage
+        out.append(Row(id: "#other", title: L("Other"), usage: max(0, used - cameraUsage), bandwidth: nil, color: Color(hex: 0x606060)))
+        out.append(Row(id: "#unused", title: L("Unused"), usage: max(0, total - used), bandwidth: nil, color: Color(hex: 0x404040)))
+        return out
+    }
+
+    var body: some View {
+        let rows = rows
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 4) {
+                    Text(ServerSettingsView.size(cameraUsage)).foregroundStyle(Theme.text)
+                    Text("/ \(ServerSettingsView.size(disk.total ?? 0))").foregroundStyle(Theme.textSecondary)
+                }
+                .font(.system(size: 13, weight: .medium).monospacedDigit())
+                GeometryReader { geo in
+                    HStack(spacing: 0) {
+                        ForEach(rows) { row in
+                            row.color.frame(width: geo.size.width * min(1, row.usage / total))
+                        }
+                    }
+                    .frame(width: geo.size.width, alignment: .leading)
+                    .background(Color(hex: 0x404040))
+                    .clipShape(Capsule())
+                }
+                .frame(height: 10)
+            }
+            .padding(14)
+            ForEach(rows) { row in
+                Divider().overlay(Theme.cardBorder)
+                HStack(spacing: 10) {
+                    Circle().fill(row.color).frame(width: 9, height: 9)
+                    Text(row.title).font(.system(size: 15)).lineLimit(1)
+                    Spacer(minLength: 8)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(ServerSettingsView.size(row.usage)).font(.system(size: 14, weight: .semibold).monospacedDigit())
+                        Text(detail(row)).font(.system(size: 11).monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                    }
+                }
+                .padding(.horizontal, 14).padding(.vertical, 9)
+            }
+        }
+        .card(radius: 12)
+    }
+
+    private func detail(_ row: Row) -> String {
+        let percent = (row.usage / total).formatted(.percent.precision(.fractionLength(2)))
+        guard let bandwidth = row.bandwidth else { return percent }
+        return L("\(percent) · \(ServerSettingsView.size(bandwidth)) per hour")
+    }
+}
+
 // MARK: - System status
 
 /// How the server is doing: each camera's frames per second, the detectors, the processors and
@@ -854,6 +935,7 @@ struct SystemStatusView: View {
     @State private var logService = "frigate"
     @State private var loadingLogs = false
     @State private var logError: String?
+    @State private var cameraStorage: [CameraStorage]?
 
     private var conn: ServerConnection? { model.connection(for: serverID) }
 
@@ -894,6 +976,12 @@ struct SystemStatusView: View {
                         }
                     }
                     .card(radius: 12)
+
+                    if let cameraStorage, !cameraStorage.isEmpty, let disk = stats.recordingStorage {
+                        SectionLabel(text: L("Camera storage")).padding(.top, 10)
+                        CameraStorageCard(cameras: cameraStorage, disk: disk,
+                                          name: { conn.config?.cameras[$0]?.displayName ?? FrigateFormat.prettyName($0) })
+                    }
                 }
 
                 HStack {
@@ -935,10 +1023,12 @@ struct SystemStatusView: View {
             }
             .padding(.horizontal, 16).readableWidth().padding(.bottom, 24)
         }
-        .refreshable { await Task { await conn?.refresh(); await loadLogs() }.value }
+        .refreshable { await Task { await conn?.refresh(); await loadLogs(); await loadCameraStorage() }.value }
         .screenBackground()
         .toolbar(.hidden, for: .navigationBar)
         .task(id: logService) { logs = []; await loadLogs() }
+        // Frigate adds up every recording for this, so once on opening rather than with the stats.
+        .task { await loadCameraStorage() }
         .task {
             // Stats every five seconds while open, as Frigate's system page does.
             while !Task.isCancelled {
@@ -963,6 +1053,11 @@ struct SystemStatusView: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
+    }
+
+    private func loadCameraStorage() async {
+        guard let conn, conn.isAdmin, let client = conn.client else { return }
+        if let list = try? await client.cameraStorage() { cameraStorage = list }
     }
 
     private func fps(_ v: Double?) -> String { String(format: "%.1f", v ?? 0) }

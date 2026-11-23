@@ -726,3 +726,11 @@ struct FrigateProfile: Hashable, Identifiable {
     var title: String
     var id: String { name }
 }
+
+/// One camera's recordings on disk, from /api/recordings/storage. Sizes in MB.
+struct CameraStorage: Identifiable {
+    var camera: String
+    var usage: Double
+    var bandwidth: Double
+    var id: String { camera }
+}

@@ -161,6 +161,9 @@ data class CameraStats(
 
 data class StorageStats(val total: Double?, val used: Double?)
 
+/** One camera's recordings on disk, from /api/recordings/storage. Sizes in MB. */
+data class CameraStorage(val camera: String, val usage: Double, val bandwidth: Double)
+
 class FrigateStats(val raw: JsonObject) {
     val cameras: Map<String, CameraStats> = raw["cameras"].obj()?.mapValues { (_, v) ->
         CameraStats(v["camera_fps"].dbl(), v["detection_fps"].dbl(), v["process_fps"].dbl(), v["skipped_fps"].dbl(),

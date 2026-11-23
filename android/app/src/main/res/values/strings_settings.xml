@@ -176,6 +176,10 @@
     <string name="settings_starts_after_restart">Frigate starts this camera after a restart.</string>
     <string name="settings_stats_interval">Statistics every</string>
     <string name="settings_storage">Storage</string>
+    <string name="settings_camera_storage">Camera storage</string>
+    <string name="settings_storage_other">Other</string>
+    <string name="settings_storage_unused">Unused</string>
+    <string name="settings_storage_share_rate">%1$s · %2$s per hour</string>
     <string name="settings_streams">Streams</string>
     <string name="settings_switches_footer">Switched at once, as in the camera\'s menu; Frigate keeps it after a restart.</string>
     <string name="settings_system">System</string>
