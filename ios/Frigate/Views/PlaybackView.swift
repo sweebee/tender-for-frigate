@@ -341,7 +341,7 @@ struct PlaybackView: View {
                                    onScrubEnd: { t, snap in finishScrub(at: t, snap: snap) },
                                    onInteract: {},
                                    onScrubCancel: { scrubTime = nil; preview.hide() },
-                                   onSelect: { jump(toWall: $0.startTime - 1 + annotationOffset, autoplay: true, earlier: 2) },
+                                   onSelect: { play($0) },
                                    scale: $timelineScale)
                     .padding(.top, 6)
                 Rectangle().fill(Theme.accent).frame(width: 2, height: 74).allowsHitTesting(false)
@@ -386,7 +386,7 @@ struct PlaybackView: View {
             case .timeline:
                 PlaybackTimeline(dayStart: dayStart, dayEnd: dayEnd, wallTime: wallTime, motion: motion, reviews: visibleReviews,
                                  map: map, isFollowing: scrubTime == nil, annotationOffset: annotationOffset,
-                                 onSelect: { jump(toWall: $0.startTime - 1 + annotationOffset, autoplay: true, earlier: 2) },
+                                 onSelect: { play($0) },
                                  segments: segments,
                                  onScrub: { heldTime = nil; scrubTime = $0; preview.show($0 - annotationOffset) },
                                  onScrubEnd: { t, snap in finishScrub(at: t, snap: snap) },
@@ -739,7 +739,7 @@ struct PlaybackView: View {
                     }
                     ForEach(shown) { r in
                         let playing = playingID == r.id
-                        Button { jump(toWall: r.startTime - 1 + annotationOffset, autoplay: true, earlier: 2) } label: {
+                        Button { play(r) } label: {
                             HStack(spacing: 12) {
                                 RemoteImage(url: client?.thumbnailURL(for: r), session: client?.session ?? .shared)
                                     .frame(width: 96, height: 54)
@@ -824,9 +824,9 @@ struct PlaybackView: View {
             pendingStartTime = nil
             seek(toWall: t - 3 + annotationOffset, autoplay: true, skipGap: true)
         } else if let id = pendingReviewID, let item = reviews.first(where: { $0.id == id }) {
-            jump(toWall: item.startTime - 1 + annotationOffset, autoplay: true, earlier: 2)
+            play(item)
         } else if let latest = reviews.first(where: { map.hasRecording(at: $0.startTime + annotationOffset + 1) }) {
-            jump(toWall: latest.startTime - 1 + annotationOffset, autoplay: true, earlier: 2)
+            play(latest)
         } else {
             seek(toWall: max(last.wallStart, last.wallEnd - 60), autoplay: true)
         }
@@ -876,6 +876,19 @@ struct PlaybackView: View {
         if recorded <= 0 && map.hasRecording(at: s) { return FrigateFormat.duration(r.duration) }
         if recorded <= 0 && !map.isEmpty { return L("No video") }
         return recorded > 0 ? FrigateFormat.duration(recorded) : FrigateFormat.reviewDuration(r)
+    }
+
+    /// Plays a review item from just before it starts. When its first seconds were not recorded
+    /// (recording starts on motion, a moment later), from where its recording begins instead of
+    /// stopping on "No recording at this moment".
+    private func play(_ r: ReviewItem) {
+        let t = r.startTime - 1 + annotationOffset
+        var target = t
+        if !map.hasRecording(at: t) {
+            let end = (r.endTime ?? Date().timeIntervalSince1970) + annotationOffset
+            if let span = map.spans.first(where: { $0.wallEnd > t && $0.wallStart < end }) { target = span.wallStart }
+        }
+        jump(toWall: target, autoplay: true, earlier: target == t ? 2 : 0)
     }
 
     /// Released just beside a recording: move onto its nearest edge instead of showing a gap.
@@ -1460,7 +1473,7 @@ extension PlaybackView {
                                    },
                                    onInteract: keepOverlay,
                                    onScrubCancel: { scrubTime = nil; preview.hide() },
-                                   onSelect: { jump(toWall: $0.startTime - 1 + annotationOffset, autoplay: true, earlier: 2); keepOverlay() },
+                                   onSelect: { play($0); keepOverlay() },
                                    scale: $timelineScale)
                     .padding(.top, 6)
                 Rectangle().fill(Theme.accent).frame(width: 2, height: 74).allowsHitTesting(false)
@@ -1516,7 +1529,7 @@ extension PlaybackView {
                         ForEach(visibleReviews) { r in
                             let playing = currentReview?.id == r.id
                             Button {
-                                jump(toWall: r.startTime - 1 + annotationOffset, autoplay: true, earlier: 2)
+                                play(r)
                                 keepOverlay()
                             } label: {
                                 HStack(spacing: 10) {

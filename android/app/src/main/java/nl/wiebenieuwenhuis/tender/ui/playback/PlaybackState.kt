@@ -170,8 +170,20 @@ class PlaybackState(
         }
     }
 
-    /** Plays a review item from just before it starts. */
-    fun play(r: ReviewItem) = jump(r.startTime - 1 + annotationOffset, autoplay = true, earlier = 2.0)
+    /**
+     * Plays a review item from just before it starts. When its first seconds were not recorded
+     * (recording starts on motion, a moment later), from where its recording begins instead of
+     * stopping on "No recording at this moment".
+     */
+    fun play(r: ReviewItem) {
+        val t = r.startTime - 1 + annotationOffset
+        var target = t
+        if (!map.hasRecording(t)) {
+            val end = (r.endTime ?: (System.currentTimeMillis() / 1000.0)) + annotationOffset
+            map.spans.firstOrNull { it.wallEnd > t && it.wallStart < end }?.let { target = it.wallStart }
+        }
+        jump(target, autoplay = true, earlier = if (target == t) 2.0 else 0.0)
+    }
 
     /** Released just beside a recording: move onto its nearest edge instead of showing a gap. */
     fun snapToRecording(t: Double, window: Double): Double {
