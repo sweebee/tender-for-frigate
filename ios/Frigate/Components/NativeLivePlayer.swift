@@ -745,9 +745,22 @@ final class LivePiP: NSObject, AVPictureInPictureControllerDelegate {
         controller.invalidatePlaybackState()
     }
 
+    /// When the player goes. AVKit still has layout callbacks queued for the controller, and
+    /// one asking the video layer for the controller's parts after it was freed crashed the app
+    /// (EXC_BAD_ACCESS in `avkit_sampleBufferDisplayLayerPlayerController`). So the controller
+    /// lets go of the layer only once picture in picture has stopped, and stays alive until those
+    /// callbacks have run.
     func stop() {
-        if controller.isPictureInPictureActive { controller.stopPictureInPicture() }
+        let wasActive = controller.isPictureInPictureActive
+        if wasActive { controller.stopPictureInPicture() }
         possibleObservation = nil
+        controller.delegate = nil
+        let controller = controller
+        if !wasActive { controller.contentSource = nil }
+        DispatchQueue.main.asyncAfter(deadline: .now() + (wasActive ? 1 : 0.5)) {
+            if wasActive { controller.contentSource = nil }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { withExtendedLifetime(controller) {} }
+        }
     }
 
     nonisolated func pictureInPictureControllerWillStartPictureInPicture(_ c: AVPictureInPictureController) {
