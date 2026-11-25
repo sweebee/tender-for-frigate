@@ -115,10 +115,10 @@ private data class ZoneDraft(
 ) {
     val isNew: Boolean get() = name.isEmpty()
 
-    /** "0.123,0.456,…" with three decimals, as Frigate writes them. */
+    /** "0.123,0.5,1,…": at most three decimals and no trailing zeros, as Frigate's web interface writes them. */
     val coordinates: String
         get() = points.joinToString(",") { p ->
-            listOf(p.x, p.y).joinToString(",") { "%.3f".format(java.util.Locale.ROOT, it.coerceIn(0f, 1f)) }
+            listOf(p.x, p.y).joinToString(",") { coordinate(it) }
         }
 
     companion object {
@@ -131,6 +131,14 @@ private data class ZoneDraft(
             val folded = Normalizer.normalize(title, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
             return folded.split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotEmpty() }.joinToString("_")
         }
+
+        /**
+         * One coordinate, 0…1. A corner on the right or bottom edge must be "1", not "1.000": Frigate up to
+         * 0.18 compares the numbers as text, takes "1.000" > "1.0" for pixels and then fails to save
+         * ("invalid literal for int()").
+         */
+        fun coordinate(value: Float): String =
+            "%.3f".format(java.util.Locale.ROOT, value.coerceIn(0f, 1f) + 0f).trimEnd('0').trimEnd('.')
 
         /** Frigate's "x1,y1,x2,y2,…": fractions of the picture, or pixels of the detect size in older configs. */
         fun points(raw: JsonElement?, width: Double, height: Double): List<ZonePoint> {

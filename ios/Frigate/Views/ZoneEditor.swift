@@ -37,11 +37,22 @@ struct ZoneDraft {
         return parts.joined(separator: "_")
     }
 
-    /// "0.123,0.456,…" with three decimals, as Frigate writes them.
+    /// "0.123,0.5,1,…": at most three decimals and no trailing zeros, as Frigate's web interface
+    /// writes them.
     var coordinates: String {
         points.map { p in
-            [p.x, p.y].map { String(format: "%.3f", min(max($0, 0), 1)) }.joined(separator: ",")
+            [p.x, p.y].map { Self.coordinate($0) }.joined(separator: ",")
         }.joined(separator: ",")
+    }
+
+    /// One coordinate, 0…1. A corner on the right or bottom edge must be "1", not "1.000":
+    /// Frigate up to 0.18 compares the numbers as text, takes "1.000" > "1.0" for pixels and
+    /// then fails to save ("invalid literal for int()").
+    static func coordinate(_ value: Double) -> String {
+        var s = String(format: "%.3f", min(max(value, 0), 1))
+        while s.hasSuffix("0") { s.removeLast() }
+        if s.hasSuffix(".") { s.removeLast() }
+        return s
     }
 }
 
