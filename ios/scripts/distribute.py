@@ -69,7 +69,10 @@ def must(result, what):
 def what_to_test() -> str:
     has_tag = subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{TAG}"], capture_output=True).returncode == 0
     rng = [f"{TAG}..HEAD"] if has_tag else ["-15"]
-    log = subprocess.run(["git", "log", "--format=- %s", *rng], capture_output=True, text=True).stdout.strip()
+    # Only commits that change the iOS/Mac app: an Android-only change or a release script
+    # does not belong in the testers' list.
+    paths = ["--", ":(top)ios", ":(top,exclude)ios/scripts"]
+    log = subprocess.run(["git", "log", "--format=- %s", *rng, *paths], capture_output=True, text=True).stdout.strip()
     return log or "Bug fixes and improvements."
 
 
