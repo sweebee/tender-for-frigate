@@ -2,10 +2,16 @@ import SwiftUI
 
 struct LiveView: View {
     @Environment(AppModel.self) private var model
-    /// The chosen camera group, `Self.nowActive`, or nil for all cameras.
-    @State private var group: String? = nil
-    /// The "Now active" chip: cameras where an object moves, across all servers.
-    private static let nowActive = "\u{0}active"
+    /// The chosen camera group, `Self.nowActive`, or empty for all cameras. Kept across
+    /// sections (the wide layout builds Live anew each time) and app launches.
+    @AppStorage("liveGroup") private var storedGroup = ""
+    private var group: String? {
+        get { storedGroup.isEmpty ? nil : storedGroup }
+        nonmutating set { storedGroup = newValue ?? "" }
+    }
+    /// The "Now active" chip: cameras where an object moves, across all servers. Frigate
+    /// group names cannot hold a period, so it never clashes with one.
+    private static let nowActive = ".active"
     /// When each camera ("<server id>|<camera>") last had a moving object, so it stays a while
     /// after it goes quiet (as Birdseye does) instead of tiles jumping in and out.
     @State private var lastActive: [String: Date] = [:]
@@ -84,8 +90,10 @@ struct LiveView: View {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) { if let t = deletingGroup { Task { await deleteGroup(t) } } }
             } message: { Text("The group is removed from Frigate; its cameras stay.") }
-            // The group shown was removed (here or in Frigate): show all cameras again.
-            .onChange(of: groupNames) { _, names in
+            // The group shown was removed (here or in Frigate): show all cameras again. Only
+            // once every server has its config, so one still connecting doesn't drop it.
+            .onChange(of: loadedGroupNames, initial: true) { _, names in
+                guard let names else { return }
                 if let g = group, g != Self.nowActive, !names.contains(g) { group = nil }
             }
             .alert("Not saved", isPresented: Binding(get: { groupError != nil }, set: { if !$0 { groupError = nil } })) {
@@ -137,6 +145,12 @@ struct LiveView: View {
             for g in conn.config?.orderedGroups ?? [] where !names.contains(g.name) { names.append(g.name) }
         }
         return names
+    }
+
+    /// `groupNames` once every server in scope has its config, else nil.
+    private var loadedGroupNames: [String]? {
+        let conns = model.scopedConnections
+        return !conns.isEmpty && conns.allSatisfy({ $0.config != nil }) ? groupNames : nil
     }
 
     /// Servers where this user may change camera groups (admins, as in Frigate).

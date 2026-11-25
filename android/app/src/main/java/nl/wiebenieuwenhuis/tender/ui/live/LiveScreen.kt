@@ -49,7 +49,6 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,8 +82,8 @@ import nl.wiebenieuwenhuis.tender.ui.components.ServerBadge
 import nl.wiebenieuwenhuis.tender.ui.components.onLongPress
 import java.util.Calendar
 
-/** The "Now active" chip: cameras where an object moves, across all servers. */
-private const val NOW_ACTIVE = "\u0000active"
+/** The "Now active" chip: cameras where an object moves, across all servers. Frigate group names cannot hold a period, so it never clashes with one. */
+private const val NOW_ACTIVE = ".active"
 
 /** Columns on wide screens. */
 private val ColumnChoices = listOf(2, 3, 4)
@@ -101,7 +100,9 @@ fun startOfDay(epochSeconds: Double): Long = Calendar.getInstance().apply {
 @Composable
 fun LiveScreen() {
     val scope = rememberCoroutineScope()
-    var group by rememberSaveable { mutableStateOf<String?>(null) }
+    // Kept across sections and app launches.
+    val group = AppModel.liveGroup
+    fun setGroup(g: String?) = AppModel.updateLiveGroup(g)
     // When each camera ("<server id>|<camera>") last had a moving object, so it stays a while (as Birdseye does).
     val lastActive = remember { mutableStateMapOf<String, Double>() }
     var clock by remember { mutableStateOf(nowSeconds()) }
@@ -141,7 +142,12 @@ fun LiveScreen() {
     val groupNames = conns.flatMap { c -> c.config?.orderedGroups?.map { it.first } ?: emptyList() }.distinct()
     // Servers where this user may change camera groups (admins, as in Frigate).
     val groupAdmins = conns.filter { it.isOnline && it.config != null && it.isAdmin }
-    LaunchedEffect(groupNames) { if (group != null && group != NOW_ACTIVE && group !in groupNames) group = null }
+    // The group shown was removed (here or in Frigate): show all cameras again. Only once every server has its
+    // config, so one still connecting doesn't drop it.
+    val allLoaded = conns.isNotEmpty() && conns.all { it.config != null }
+    LaunchedEffect(groupNames, allLoaded) {
+        if (allLoaded && group != null && group != NOW_ACTIVE && group !in groupNames) setGroup(null)
+    }
 
     Scaffold(topBar = {
         TopAppBar(
@@ -175,15 +181,15 @@ fun LiveScreen() {
                 if (AppModel.showRecentAlerts) item(span = { GridItemSpan(maxLineSpan) }, key = "alerts") { RecentAlertsStrip() }
                 if (conns.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }, key = "groups") {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        item { Chip(stringResource(R.string.all), group == null, { group = null }) }
+                        item { Chip(stringResource(R.string.all), group == null, { setGroup(null) }) }
                         item {
-                            Chip(stringResource(R.string.now_active), group == NOW_ACTIVE, { group = NOW_ACTIVE },
+                            Chip(stringResource(R.string.now_active), group == NOW_ACTIVE, { setGroup(NOW_ACTIVE) },
                                 icon = { Icon(Icons.AutoMirrored.Filled.DirectionsRun, null, Modifier.size(16.dp)) })
                         }
                         items(groupNames, key = { it }) { name ->
                             GroupChip(name, selected = group == name, busy = busyGroup == name, icon = groupIcon(conns, name),
                                 canEdit = groupAdmins.any { it.config?.cameraGroups?.containsKey(name) == true },
-                                onClick = { group = name },
+                                onClick = { setGroup(name) },
                                 onEdit = { editingGroup = GroupTarget(name, groupAdmins.map { it.id }) },
                                 onDelete = { deletingGroup = GroupTarget(name, groupAdmins.map { it.id }) })
                         }
@@ -250,7 +256,7 @@ fun LiveScreen() {
 
     editingGroup?.let { t ->
         CameraGroupEditor(t, onDismiss = { editingGroup = null }) { newName ->
-            if (t.name != null && group == t.name) group = newName
+            if (t.name != null && group == t.name) setGroup(newName)
         }
     }
     deletingGroup?.let { t ->
