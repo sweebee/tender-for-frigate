@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Pinch to zoom (1x–6x) on the spot between the fingers, drag to pan while zoomed, double-tap
 /// to zoom in on the tapped spot or reset. On iOS 18 and later the picture follows the fingers
-/// while pinching, as in Photos: moving both fingers pans while zooming.
+/// while pinching, as in Photos: moving both fingers pans while zooming, and lifting one lets
+/// the other pan on.
 /// The content stays clipped to its frame, so overlays outside it are not affected.
 struct Zoomable: ViewModifier {
     var maxScale: CGFloat = 6
@@ -21,6 +22,8 @@ struct Zoomable: ViewModifier {
     /// The pinch's centroid (from the frame's centre), scale, offset and the recognizer's factor
     /// when it was last anchored: again whenever two fingers are back down.
     @State private var pinchStart: (location: CGPoint, scale: CGFloat, offset: CGSize, factor: CGFloat)?
+    /// Where the finger left down after a pinch was, and the offset then: it pans on from there.
+    @State private var fingerStart: (location: CGPoint, offset: CGSize)?
 
     func body(content: Content) -> some View {
         GeometryReader { geo in
@@ -88,15 +91,26 @@ struct Zoomable: ViewModifier {
     }
 
     /// A UIKit pinch (iOS 18+): zooms around the fingers and follows them as they move.
-    /// Only with two fingers down: when one lifts, the centroid leaps to the other finger, and
-    /// following it would throw the picture aside; a second finger coming back anchors anew.
+    /// When one finger lifts, the other one pans on, as in Photos: it is anchored where it is
+    /// (the centroid leaps to it, and following that leap would throw the picture aside). A
+    /// second finger coming back anchors the pinch anew.
     private func pinch(_ state: UIGestureRecognizer.State, factor: CGFloat, location: CGPoint, touches: Int, size: CGSize) {
         let point = CGPoint(x: location.x - size.width / 2, y: location.y - size.height / 2)
         switch state {
         case .began:
             pinching = true
             pinchStart = (point, scale, offset, factor)
+            fingerStart = nil
         case .changed:
+            if touches == 1 {
+                pinchStart = nil
+                guard scale > 1 else { fingerStart = nil; return }
+                guard let start = fingerStart else { fingerStart = (point, offset); return }
+                offset = clamp(CGSize(width: start.offset.width + point.x - start.location.x,
+                                      height: start.offset.height + point.y - start.location.y), size: size)
+                return
+            }
+            fingerStart = nil
             guard touches >= 2 else { pinchStart = nil; return }
             guard let start = pinchStart else { pinchStart = (point, scale, offset, factor); return }
             scale = min(max(start.scale * factor / max(start.factor, 0.01), 1), maxScale)
@@ -107,6 +121,7 @@ struct Zoomable: ViewModifier {
         default:
             pinching = false
             pinchStart = nil
+            fingerStart = nil
             lastScale = scale
             if scale <= 1.02 { withAnimation(.easeOut(duration: 0.15)) { reset() } }
             offset = clamp(offset, size: size)

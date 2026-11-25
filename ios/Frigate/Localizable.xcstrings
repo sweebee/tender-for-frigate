@@ -7496,6 +7496,16 @@
         }
       }
     },
+    "Three per row": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drie per rij"
+          }
+        }
+      }
+    },
     "Threshold": {
       "localizations": {
         "nl": {
@@ -7762,6 +7772,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Probeer opnieuw"
+          }
+        }
+      }
+    },
+    "Two per row": {
+      "localizations": {
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twee per rij"
           }
         }
       }

@@ -111,7 +111,7 @@ of them.
 | Review | Alerts and detections across servers, as a grid with a timeline on iPad, Mac and tablets; filter by camera, label, zone, unreviewed and date (last 24 hours by default); mark reviewed; GenAI summaries with threat level |
 | Motion | Every camera's preview at one moment with a motion timeline beside them; drag or play fast (4× to 16×), cameras with motion get a border, tap one to open its recording there |
 | Event | Clip playback with the event range highlighted, score, zones, object lifecycle, AI analysis, save to Frigate or the device, share, delete |
-| Explore | Tracked objects per label (like Frigate's Explore page), one search field for semantic search and license plates, Find similar, filters by camera, label, zone, sub label and date, object details with snapshot, lifecycle and GenAI description (edit, regenerate) |
+| Explore | Tracked objects per label (like Frigate's Explore page), one search field for semantic search and license plates, Find similar, two or three tiles per row in the grid on phones, filters by camera, label, zone, sub label and date, object details with snapshot, lifecycle and GenAI description (edit, regenerate) |
 | Playback | Recordings per camera and day, event list or scrubbable timeline with zoom and a live preview while dragging (like Frigate's web UI), calendar, filters by type, label and zone, gaps shown as "no recording", save a span to the device or export it to Frigate |
 | Exports | Frigate's exports and cases: play, share, save, rename, move between cases, delete |
 | Face Library | Recent recognitions and known faces: train, reclassify, upload, rename, delete |

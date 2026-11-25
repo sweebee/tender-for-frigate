@@ -38,6 +38,8 @@ struct ExploreView: View {
     /// One grid of everything, newest first, instead of rows per label: Frigate's "Unfiltered grid" default view.
     @AppStorage("exploreGrid") private var gridByDefault = false
     private var showsGrid: Bool { gridByDefault || filter.showsGrid }
+    /// Phones: two or three tiles per row in the grid. iPad and Mac fit as many as there is room for.
+    @AppStorage("exploreGridColumns") private var phoneColumns = 2
     @State private var rows: [LabelRow] = []
     @State private var grid: [ExploreEntry] = []
     @State private var loading = false
@@ -115,6 +117,13 @@ struct ExploreView: View {
             HStack {
                 LargeTitle(text: L("Explore"))
                 Spacer()
+                if showsGrid && sizeClass != .regular {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) { phoneColumns = phoneColumns == 3 ? 2 : 3 }
+                    } label: { HeaderIconLabel(systemName: phoneColumns == 3 ? "square.grid.2x2" : "square.grid.3x2") }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(phoneColumns == 3 ? "Two per row" : "Three per row")
+                }
                 Button { gridByDefault.toggle() } label: {
                     HeaderIconLabel(systemName: gridByDefault ? "rectangle.grid.1x2" : "square.grid.3x3")
                 }
@@ -446,12 +455,18 @@ struct ExploreView: View {
         return max(128, (rowWidth - 32 - 9 * 8) / 10)
     }
 
+    private var gridColumns: [GridItem] {
+        if sizeClass == .regular { return [GridItem(.adaptive(minimum: 150), spacing: 8)] }
+        return Array(repeating: GridItem(.flexible(), spacing: phoneColumns == 3 ? 6 : 8), count: phoneColumns == 3 ? 3 : 2)
+    }
+
     private var gridView: some View {
         VStack(spacing: 8) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: gridColumns, spacing: 8) {
                 ForEach(grid) { entry in
                     NavigationLink(value: ObjectRoute(serverID: entry.serverID, event: entry.event)) {
-                        ObjectTile(entry: entry, showLabel: true, match: filter.isSearch ? match(entry.event) : nil)
+                        ObjectTile(entry: entry, showLabel: true, match: filter.isSearch ? match(entry.event) : nil,
+                                   compact: sizeClass != .regular && phoneColumns == 3)
                             .aspectRatio(1, contentMode: .fit)
                     }
                     .buttonStyle(.plain)
@@ -667,6 +682,9 @@ struct ObjectTile: View {
     var showLabel: Bool
     /// A search result: how well it matched, and whether by its picture or its description.
     var match: Match? = nil
+    /// Small tiles (three per row on a phone): the camera above the date and time, without
+    /// "5 min ago", so the camera's name still fits.
+    var compact = false
     @Environment(AppModel.self) private var model
 
     struct Match { var byDescription: Bool; var percent: Int }
@@ -718,6 +736,22 @@ struct ObjectTile: View {
                 }
             }
             .overlay(alignment: .bottom) {
+                if compact {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if showLabel {
+                            Text(conn?.config?.cameras[event.camera]?.displayName ?? FrigateFormat.prettyName(event.camera))
+                                .lineLimit(1)
+                        }
+                        Text(Self.when(Date(timeIntervalSince1970: event.startTime)))
+                            .font(.system(size: 10, weight: .medium).monospacedDigit()).foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 6).padding(.vertical, 4)
+                    .background(LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom))
+                } else {
                 HStack(spacing: 4) {
                     if showLabel {
                         Text(conn?.config?.cameras[event.camera]?.displayName ?? FrigateFormat.prettyName(event.camera))
@@ -737,6 +771,7 @@ struct ObjectTile: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7).padding(.vertical, 5)
                 .background(LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom))
+                }
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .contentShape(RoundedRectangle(cornerRadius: 10))

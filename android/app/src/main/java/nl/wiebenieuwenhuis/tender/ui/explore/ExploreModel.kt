@@ -92,6 +92,15 @@ object ExplorePrefs {
         gridByDefault = !gridByDefault
         Prefs.setBool("exploreGrid", gridByDefault)
     }
+
+    /** Phones: three tiles per row in the grid instead of two. Tablets fit as many as there is room for. */
+    var threePerRow by mutableStateOf(Prefs.bool("exploreGridThree", false))
+        private set
+
+    fun toggleThreePerRow() {
+        threePerRow = !threePerRow
+        Prefs.setBool("exploreGridThree", threePerRow)
+    }
 }
 
 data class LabelRow(val label: String, val count: Int?, val entries: List<ExploreEntry>)

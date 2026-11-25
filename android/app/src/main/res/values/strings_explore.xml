@@ -2,6 +2,8 @@
 <resources>
     <string name="explore_per_label">Per label</string>
     <string name="explore_all_in_grid">All in a grid</string>
+    <string name="explore_two_per_row">Two per row</string>
+    <string name="explore_three_per_row">Three per row</string>
     <string name="explore_search">Search…</string>
     <string name="explore_search_plate">Search license plate</string>
     <string name="explore_clear_search">Clear search</string>

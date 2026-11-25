@@ -43,9 +43,11 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FilterNone
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Pin
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.ViewModule
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.DatePicker
@@ -175,6 +177,12 @@ private fun ExploreContent(similar: ExploreEntry?, showsBack: Boolean) {
     ScreenScaffold(
         stringResource(R.string.tab_explore), showsBack = showsBack,
         actions = {
+            if (vm.showsGrid && !nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()) {
+                IconButton(onClick = { ExplorePrefs.toggleThreePerRow() }) {
+                    if (ExplorePrefs.threePerRow) Icon(Icons.Outlined.GridView, stringResource(R.string.explore_two_per_row))
+                    else Icon(Icons.Outlined.ViewModule, stringResource(R.string.explore_three_per_row))
+                }
+            }
             IconButton(onClick = { ExplorePrefs.toggleGrid() }) {
                 if (ExplorePrefs.gridByDefault) Icon(Icons.Outlined.ViewAgenda, stringResource(R.string.explore_per_label))
                 else Icon(Icons.Outlined.Apps, stringResource(R.string.explore_all_in_grid))
@@ -504,6 +512,9 @@ private fun ResultGrid(vm: ExploreViewModel, open: (ExploreEntry) -> Unit) {
     val state = rememberLazyGridState()
     val similarity = vm.filter.similar != null
     val isSearch = vm.filter.isSearch
+    val wide = nl.wiebenieuwenhuis.tender.ui.components.isWideLayout()
+    val three = ExplorePrefs.threePerRow && !wide
+    val gap = if (three) 6.dp else 8.dp
     // Near the end: the next page.
     val nearEnd by remember {
         derivedStateOf { (state.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) >= state.layoutInfo.totalItemsCount - 6 }
@@ -512,13 +523,14 @@ private fun ResultGrid(vm: ExploreViewModel, open: (ExploreEntry) -> Unit) {
         snapshotFlow { nearEnd to vm.grid.size }.collect { (near, size) -> if (near && size > 0) vm.loadMore() }
     }
     LazyVerticalGrid(
-        GridCells.Adaptive(150.dp), state = state, modifier = Modifier.fillMaxSize(),
+        // Phones: two or three per row, as chosen at the top; tablets as many as fit.
+        if (wide) GridCells.Adaptive(150.dp) else GridCells.Fixed(if (three) 3 else 2), state = state, modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(gap),
     ) {
         items(vm.grid, key = { it.key }) { entry ->
             ObjectTile(entry, showLabel = true, match = if (isSearch) searchMatch(entry.event, similarity) else null,
-                modifier = Modifier.aspectRatio(1f).clickable { open(entry) })
+                modifier = Modifier.aspectRatio(1f).clickable { open(entry) }, compact = three)
         }
         if (vm.loading && vm.grid.isNotEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
@@ -570,7 +582,7 @@ private fun tileWhen(epoch: Double): String {
 
 /** Square thumbnail of a tracked object with its age, like the tiles on Frigate's Explore page. */
 @Composable
-fun ObjectTile(entry: ExploreEntry, showLabel: Boolean, modifier: Modifier = Modifier, match: SearchMatch? = null) {
+fun ObjectTile(entry: ExploreEntry, showLabel: Boolean, modifier: Modifier = Modifier, match: SearchMatch? = null, compact: Boolean = false) {
     val conn = AppModel.connection(entry.serverId)
     val event: FrigateEvent = entry.event
     Box(modifier.clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest)) {
@@ -590,7 +602,23 @@ fun ObjectTile(entry: ExploreEntry, showLabel: Boolean, modifier: Modifier = Mod
                 icon = if (match.byDescription) Icons.AutoMirrored.Filled.Notes else Icons.Filled.Image,
             )
         }
-        Row(
+        // Small tiles (three per row on a phone): the camera above the date and time, without
+        // "5 min ago", so the camera's name still fits.
+        if (compact) Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+        ) {
+            if (showLabel) Row(verticalAlignment = Alignment.CenterVertically) {
+                if (AppModel.orderedConnections.size > 1 && conn != null) {
+                    ServerBadge(conn.server, size = 14.dp); Spacer(Modifier.width(4.dp))
+                }
+                Text(conn?.camera(event.camera)?.displayName ?: Format.prettyName(event.camera), color = Color.White,
+                    fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text(tileWhen(event.startTime), color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Medium,
+                maxLines = 1, style = MonoDigits)
+        } else Row(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))))
                 .padding(horizontal = 7.dp, vertical = 5.dp),
