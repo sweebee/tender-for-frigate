@@ -67,6 +67,8 @@ object AppModel {
     var tileWholePicture by mutableStateOf(Prefs.bool("tileWholePicture", false)); private set
     /** Object icons, the motion dot and switched-off icons on the tiles' picture. */
     var liveLabels by mutableStateOf(Prefs.bool("liveLabels", true)); private set
+    /** The camera group Live shows (a name, or the "Now active" chip); null for all cameras. Kept across launches. */
+    var liveGroup by mutableStateOf(Prefs.string("liveGroup")); private set
     var tileStream by mutableStateOf(TileStream.entries.firstOrNull { it.raw == Prefs.string("tileStream") } ?: TileStream.Automatic); private set
 
     fun updateLiveGridOnCellular(v: Boolean) { liveGridOnCellular = v; Prefs.setBool("liveGridOnCellular", v) }
@@ -75,6 +77,7 @@ object AppModel {
     fun updateLargeTiles(v: Boolean) { largeTiles = v; Prefs.setBool("liveLargeTiles", v) }
     fun updateTileWholePicture(v: Boolean) { tileWholePicture = v; Prefs.setBool("tileWholePicture", v) }
     fun updateLiveLabels(v: Boolean) { liveLabels = v; Prefs.setBool("liveLabels", v) }
+    fun updateLiveGroup(v: String?) { liveGroup = v; Prefs.setString("liveGroup", v) }
     fun updateTileStream(v: TileStream) { tileStream = v; Prefs.setString("tileStream", v.raw) }
 
     var tileLive: TileLive
