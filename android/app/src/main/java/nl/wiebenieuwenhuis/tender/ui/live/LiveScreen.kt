@@ -132,7 +132,11 @@ fun LiveScreen() {
     fun cameras(conn: ServerConnection): List<CameraConfig> = when (group) {
         null -> conn.cameras
         NOW_ACTIVE -> conn.cameras.filter { isActive(conn, it.name) }
-        else -> conn.config?.cameraGroups?.get(group)?.cameras?.let { m -> conn.cameras.filter { it.name in m } } ?: emptyList()
+        // In the group's order, as set in the group editor.
+        else -> conn.config?.cameraGroups?.get(group)?.cameras?.let { m ->
+            val byName = conn.cameras.associateBy { it.name }
+            m.distinct().mapNotNull { byName[it] }
+        } ?: emptyList()
     }
     val groupNames = conns.flatMap { c -> c.config?.orderedGroups?.map { it.first } ?: emptyList() }.distinct()
     // Servers where this user may change camera groups (admins, as in Frigate).

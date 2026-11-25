@@ -24,6 +24,12 @@ struct CameraGroupEditor: View {
     @State private var icon = "LuHouse"
     /// Chosen cameras per server.
     @State private var cameras: [UUID: Set<String>] = [:]
+    /// Every camera per server in the order of the list; the chosen ones are saved in this order.
+    @State private var order: [UUID: [String]] = [:]
+    /// The row being dragged by its handle, where it started and how far it is from its slot.
+    @State private var dragging: (server: UUID, camera: String, from: Int)?
+    @State private var dragOffset: CGFloat = 0
+    private let rowHeight: CGFloat = 48
     @State private var saving = false
     @State private var errorMessage: String?
     @FocusState private var nameFocused: Bool
@@ -108,7 +114,7 @@ struct CameraGroupEditor: View {
     /// One server's cameras; with one server just "Cameras", as before.
     private func serverSection(_ conn: ServerConnection) -> some View {
         let id = conn.server.id
-        let cams = conn.config?.orderedCameras ?? []
+        let cams = listed(conn)
         return VStack(alignment: .leading, spacing: 8) {
             if conns.count > 1 {
                 HStack(spacing: 8) {
@@ -121,7 +127,10 @@ struct CameraGroupEditor: View {
             }
             VStack(spacing: 0) {
                 ForEach(Array(cams.enumerated()), id: \.element.name) { i, cam in
-                    Toggle(isOn: Binding(get: { cameras[id]?.contains(cam.name) == true },
+                    let lifted = dragging?.server == id && dragging?.camera == cam.name
+                    HStack(spacing: 4) {
+                        dragHandle(id, cam, index: i, count: cams.count)
+                        Toggle(isOn: Binding(get: { cameras[id]?.contains(cam.name) == true },
                                          set: { on in
                                              var set = cameras[id] ?? []
                                              if on { set.insert(cam.name) } else { set.remove(cam.name) }
@@ -129,15 +138,68 @@ struct CameraGroupEditor: View {
                                          })) {
                         Text(cam.displayName).font(.system(size: 15))
                     }
-                    // Explicitly: in a sheet the Mac drew the app-wide style as checkboxes.
-                    .toggleStyle(RowSwitchStyle())
-                    .padding(.horizontal, 14).frame(minHeight: 48)
+                        // Explicitly: in a sheet the Mac drew the app-wide style as checkboxes.
+                        .toggleStyle(RowSwitchStyle())
+                    }
+                    .padding(.leading, 2).padding(.trailing, 14).frame(height: rowHeight)
                     .frame(maxWidth: .infinity)
-                    .overlay(alignment: .top) { if i > 0 { Rectangle().fill(Theme.cardBorder).frame(height: 1) } }
+                    .overlay(alignment: .top) { if i > 0 && !lifted { Rectangle().fill(Theme.cardBorder).frame(height: 1) } }
+                    .background { if lifted { RoundedRectangle(cornerRadius: 12).fill(Theme.card).shadow(color: .black.opacity(0.4), radius: 8, y: 2) } }
+                    .offset(y: lifted ? dragOffset : 0)
+                    .zIndex(lifted ? 1 : 0)
                 }
             }
+            .coordinateSpace(.named("group-cameras"))
             .card(radius: 12)
         }
+    }
+
+    /// The cameras of a server in the order of the list: as set here, else the group's order
+    /// with the other cameras after it in Frigate's order.
+    private func listed(_ conn: ServerConnection) -> [CameraConfig] {
+        let cams = conn.config?.orderedCameras ?? []
+        guard let names = order[conn.server.id] else { return cams }
+        let byName = Dictionary(cams.map { ($0.name, $0) }, uniquingKeysWith: { a, _ in a })
+        return names.compactMap { byName[$0] } + cams.filter { !names.contains($0.name) }
+    }
+
+    /// Drag the row up or down by this handle; it takes the place of the rows it passes.
+    private func dragHandle(_ id: UUID, _ cam: CameraConfig, index: Int, count: Int) -> some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(Theme.textSecondary)
+            .frame(width: 40, height: rowHeight)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .named("group-cameras"))
+                    .onChanged { v in
+                        if dragging == nil { dragging = (id, cam.name, index) }
+                        guard let d = dragging, d.camera == cam.name else { return }
+                        let target = min(max(d.from + Int((v.translation.height / rowHeight).rounded()), 0), count - 1)
+                        if target != index { withAnimation(.easeOut(duration: 0.15)) { move(id, cam.name, to: target) } }
+                        dragOffset = v.translation.height - CGFloat(target - d.from) * rowHeight
+                    }
+                    .onEnded { _ in
+                        withAnimation(.easeOut(duration: 0.15)) { dragging = nil; dragOffset = 0 }
+                    }
+            )
+            .accessibilityLabel(L("Reorder"))
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: move(id, cam.name, to: min(index + 1, count - 1))
+                case .decrement: move(id, cam.name, to: max(index - 1, 0))
+                @unknown default: break
+                }
+            }
+    }
+
+    private func move(_ id: UUID, _ camera: String, to target: Int) {
+        guard let conn = conns.first(where: { $0.server.id == id }) else { return }
+        var names = listed(conn).map(\.name)
+        guard let from = names.firstIndex(of: camera) else { return }
+        names.remove(at: from)
+        names.insert(camera, at: min(target, names.count))
+        order[id] = names
     }
 
     private func fill() {
@@ -147,6 +209,8 @@ struct CameraGroupEditor: View {
         for conn in conns {
             guard let g = conn.config?.cameraGroups?[old] else { continue }
             cameras[conn.server.id] = Set(g.cameras)
+            let all = conn.config?.orderedCameras.map(\.name) ?? []
+            order[conn.server.id] = g.cameras.filter(all.contains) + all.filter { !g.cameras.contains($0) }
             if !foundIcon, let i = g.icon { icon = i; foundIcon = true }
         }
     }
@@ -163,9 +227,10 @@ struct CameraGroupEditor: View {
             let existing = conn.config?.cameraGroups ?? [:]
             let had = target.name.flatMap { existing[$0] }
             let chosen = cameras[conn.server.id] ?? []
-            let all = conn.config?.orderedCameras.map(\.name) ?? []
-            // Frigate's camera order, then any member the app does not list (kept as it was).
-            let members = all.filter(chosen.contains) + chosen.filter { !all.contains($0) }.sorted()
+            let all = listed(conn).map(\.name)
+            // The order of the list (Tender shows the group in it), then any member the app does
+            // not list, kept as it was.
+            let members = all.filter(chosen.contains) + (had?.cameras ?? chosen.sorted()).filter { chosen.contains($0) && !all.contains($0) }
             var groups: [String: Any] = [:]
             if !members.isEmpty {
                 // A group new on this server goes last, as in Frigate; an existing one keeps its place.

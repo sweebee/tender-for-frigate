@@ -243,7 +243,10 @@ struct LiveView: View {
         guard let group, let members = conn.config?.cameraGroups?[group]?.cameras else {
             return group == nil ? conn.cameras : []
         }
-        return conn.cameras.filter { members.contains($0.name) }
+        // In the group's order, as set in the group editor.
+        let byName = Dictionary(conn.cameras.map { ($0.name, $0) }, uniquingKeysWith: { a, _ in a })
+        var seen = Set<String>()
+        return members.compactMap { seen.insert($0).inserted ? byName[$0] : nil }
     }
 
     private func tileLink(_ conn: ServerConnection, _ cam: CameraConfig, fill: Bool) -> some View {

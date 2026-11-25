@@ -106,7 +106,7 @@ of them.
 | Screen | What it does |
 | --- | --- |
 | Live | Camera grid with refreshing snapshots, live objects and last activity from Frigate's websocket; red outline while an object moves and a dot for motion, automatic live view on activity, recent alerts as looping clips at the top (like Frigate's web UI); one or two columns |
-| Camera groups | Frigate's camera groups with its Lucide icons; one group can span all your servers (same name and icon on each); add, edit and delete; "Now active" shows the cameras where something moves, for as long as Birdseye's inactivity threshold |
+| Camera groups | Frigate's camera groups with its Lucide icons; one group can span all your servers (same name and icon on each); add, edit and delete, and drag its cameras into your own order; "Now active" shows the cameras where something moves, for as long as Birdseye's inactivity threshold |
 | Camera | Live stream through go2rtc (MSE, with WebRTC and MJPEG as fallbacks), audio, two-way talk for cameras with a speaker, snapshot, manual recording, PTZ (ONVIF cameras), full screen, Frigate's switches, today's events, debug view (boxes, zones, masks, motion, regions, object list) |
 | Review | Alerts and detections across servers, as a grid with a timeline on iPad, Mac and tablets; filter by camera, label, zone, unreviewed and date (last 24 hours by default); mark reviewed; GenAI summaries with threat level |
 | Motion | Every camera's preview at one moment with a motion timeline beside them; drag or play fast (4× to 16×), cameras with motion get a border, tap one to open its recording there |
