@@ -15,7 +15,7 @@ android {
         // Every commit on main counts up, so each upload has a higher version code.
         versionCode = providers.exec { commandLine("git", "rev-list", "--count", "HEAD"); isIgnoreExitValue = true }
             .standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }.getOrElse(1)
-        versionName = "1.0.4"
+        versionName = "1.0.5"
         // The commit the app was built from, shown in Settings next to the version.
         val commit = providers.exec { commandLine("git", "rev-parse", "--short", "HEAD"); isIgnoreExitValue = true }
             .standardOutput.asText.map { it.trim() }.getOrElse("")
