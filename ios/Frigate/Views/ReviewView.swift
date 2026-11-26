@@ -45,38 +45,41 @@ struct ReviewView: View {
         @Bindable var model = model
         NavigationStack(path: $model.reviewPath) {
             ScrollViewReader { proxy in
-                HStack(spacing: 0) {
+                // Title, kinds and filters stay put, as in Explore and Motion; only the items scroll.
+                VStack(spacing: 0) {
+                    header.padding(.horizontal, 16)
                     if kind == .motion {
                         // Motion fills the screen below the header: previews and a timeline.
-                        VStack(spacing: 0) {
-                            header.padding(.horizontal, 16)
-                            MotionReviewView(connections: connections, cameraFilter: cameraFilter,
-                                             start: range.bounds.after.timeIntervalSince1970,
-                                             end: range.bounds.before.timeIntervalSince1970)
-                        }
+                        MotionReviewView(connections: connections, cameraFilter: cameraFilter,
+                                         start: range.bounds.after.timeIntervalSince1970,
+                                         end: range.bounds.before.timeIntervalSince1970)
                     } else {
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 8, pinnedViews: []) {
-                            header
-                            list
+                        HStack(spacing: 0) {
+                            ScrollView {
+                                LazyVStack(alignment: .leading, spacing: 8) {
+                                    list
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.top, 4)
+                                .padding(.bottom, 24)
+                            }
+                            // Other filters show other items: start at the top again.
+                            .id(filterKey)
+                            .refreshable { await Task { await reload() }.value }
+                            if showsTimeline {
+                                // Beside the grid, like Frigate's review page; tap or drag to jump.
+                                ReviewTimeline(entries: entries, visibility: visibility) { entry in
+                                    withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(entry.id, anchor: .top) }
+                                }
+                                .frame(width: 76)
+                                .padding(.top, 8)
+                                .padding(.bottom, 16)
+                                .padding(.trailing, 12)
+                            }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 24)
-                    }
-                    }
-                    if showsTimeline {
-                        // Beside the grid, like Frigate's review page; tap or drag to jump.
-                        ReviewTimeline(entries: entries, visibility: visibility) { entry in
-                            withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(entry.id, anchor: .top) }
-                        }
-                        .frame(width: 76)
-                        .padding(.top, 70)
-                        .padding(.bottom, 16)
-                        .padding(.trailing, 12)
                     }
                 }
             }
-            .refreshable { await Task { await reload() }.value }
             .screenBackground()
             .reviewActionsHost(reviewActions)
             .onChange(of: reviewActions.deletedIDs) { _, ids in entries.removeAll { ids.contains($0.item.id) } }
@@ -342,6 +345,17 @@ struct ReviewView: View {
                         .frame(height: 44)
                 }
                 .padding(.top, 4)
+            }
+            if entries.contains(where: { !$0.item.hasBeenReviewed }) {
+                // Again below the last item, as in Frigate's web app: after scrolling through the
+                // list it is right there.
+                Button { Task { await markAllReviewed() } } label: {
+                    HeaderTextLabel(title: "Mark all reviewed", loading: markingAll)
+                }
+                .buttonStyle(.plain)
+                .disabled(markingAll)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
             }
         }
     }

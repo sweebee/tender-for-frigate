@@ -75,11 +75,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.layout.layout
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.window.core.layout.WindowSizeClass
@@ -150,20 +146,12 @@ fun ReviewScreen() {
     val hasUnreviewed = shown.any { !it.item.isReviewed }
     val selectedCount = vm.selectedEntries.size
 
-    // The title bar slides away with the list and comes back when scrolling up; the kinds and
-    // filters are the list's first item, so they scroll away with it (as on iOS).
-    val barState = rememberTopAppBarState()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(barState)
-    val scrolls = !vm.selecting && vm.kind != ReviewKind.Motion
-    LaunchedEffect(scrolls) { if (!scrolls) barState.heightOffset = 0f }
-
     // The progress pill of the long-press actions floats over the whole screen, as on the item screen.
     ReviewActionsHost(vm.actions, Modifier.fillMaxSize()) {
     ScreenScaffold(
         title = if (vm.selecting) pluralStringResource(R.plurals.review_n_selected, selectedCount, selectedCount) else stringResource(R.string.review_title),
         showsBack = vm.selecting,
         onBack = { vm.endSelecting() },
-        scrollBehavior = if (scrolls) scrollBehavior else null,
         actions = {
             if (vm.kind != ReviewKind.Motion) {
                 if (vm.selecting) {
@@ -195,22 +183,20 @@ fun ReviewScreen() {
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        // The title bar, kinds and filters stay put, as in Explore and Motion; only the items scroll.
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            Header(vm, wide, onPickDay = { pickingDay = true })
             if (vm.kind == ReviewKind.Motion) {
                 // Motion fills the screen below the header: previews and a timeline.
-                Column(Modifier.fillMaxSize()) {
-                    Header(vm, wide, onPickDay = { pickingDay = true })
-                    MotionReviewPane(Modifier.weight(1f).fillMaxWidth(), cameraFilter = vm.cameraFilter.toSet(),
-                        start = vm.range.bounds.first, end = vm.range.bounds.second)
-                }
+                MotionReviewPane(Modifier.weight(1f).fillMaxWidth(), cameraFilter = vm.cameraFilter.toSet(),
+                    start = vm.range.bounds.first, end = vm.range.bounds.second)
             } else {
                 PullToRefreshBox(
                     isRefreshing = refreshing,
                     onRefresh = { scope.launch { refreshing = true; try { vm.reload(silent = true) } finally { refreshing = false } } },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                 ) {
                     ReviewList(vm, shown, wide,
-                        header = { Header(vm, wide, onPickDay = { pickingDay = true }) },
                         onOpen = { entry ->
                             if (vm.selecting) vm.toggle(entry) else {
                                 // As in Frigate's web app: the camera's recordings from just before the item,
@@ -448,7 +434,7 @@ private fun DayPicker(day: Long?, onPick: (Long) -> Unit, onDismiss: () -> Unit)
 
 @Composable
 private fun ReviewList(
-    vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, header: @Composable () -> Unit,
+    vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean,
     onOpen: (ReviewEntry) -> Unit, onDetails: (ReviewEntry) -> Unit,
 ) {
     val all = AppModel.scopedConnections
@@ -459,14 +445,14 @@ private fun ReviewList(
         }
     }
     when {
-        all.isNotEmpty() && all.none { it.isOnline } -> Scrollable(header) {
+        all.isNotEmpty() && all.none { it.isOnline } -> Scrollable {
             EmptyState(Icons.Outlined.WifiOff, stringResource(R.string.review_no_servers_online), stringResource(R.string.review_no_servers_online_message))
         }
-        vm.loading && shown.isEmpty() -> Scrollable(header) { LoadingBox() }
-        vm.loadError != null && shown.isEmpty() -> Scrollable(header) {
+        vm.loading && shown.isEmpty() -> Scrollable { LoadingBox() }
+        vm.loadError != null && shown.isEmpty() -> Scrollable {
             EmptyState(Icons.Outlined.WarningAmber, stringResource(R.string.review_could_not_load), vm.loadError)
         }
-        shown.isEmpty() -> Scrollable(header) {
+        shown.isEmpty() -> Scrollable {
             EmptyState(
                 Icons.Outlined.TaskAlt,
                 stringResource(if (vm.unreviewedOnly) R.string.review_all_caught_up else R.string.review_nothing_here),
@@ -474,22 +460,21 @@ private fun ReviewList(
                 else stringResource(if (vm.kind == ReviewKind.Alert) R.string.review_no_unreviewed_alerts else R.string.review_no_unreviewed_detections),
             )
         }
-        else -> Items(vm, shown, wide, header, banner, onOpen, onDetails)
+        else -> Items(vm, shown, wide, banner, onOpen, onDetails)
     }
 }
 
-/** Empty states under the header, in a scrolling list, so pull to refresh works on them too. */
+/** Empty states in a scrolling list, so pull to refresh works on them too. */
 @Composable
-private fun Scrollable(header: @Composable () -> Unit, content: @Composable () -> Unit) {
+private fun Scrollable(content: @Composable () -> Unit) {
     LazyColumn(Modifier.fillMaxSize()) {
-        item(key = "header") { header() }
         item { content() }
     }
 }
 
 @Composable
 private fun Items(
-    vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, header: @Composable () -> Unit, banner: @Composable () -> Unit,
+    vm: ReviewModel, shown: List<ReviewEntry>, wide: Boolean, banner: @Composable () -> Unit,
     onOpen: (ReviewEntry) -> Unit, onDetails: (ReviewEntry) -> Unit,
 ) {
     val lines = remember(shown) {
@@ -504,8 +489,8 @@ private fun Items(
     }
     val showServer = AppModel.orderedConnections.size > 1
     val scope = rememberCoroutineScope()
-    /** Lazy items before the first line: the header and the banner. */
-    val lead = 2
+    /** Lazy items before the first line: the banner. */
+    val lead = 1
 
     if (wide) {
         // Tablets: large pictures in a grid, like Frigate's review page, with the timeline beside it.
@@ -519,8 +504,6 @@ private fun Items(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // The header brings its own margins (its filters scroll to the screen edge).
-                item(key = "header", span = { GridItemSpan(maxLineSpan) }) { Box(Modifier.bleed(16.dp)) { header() } }
                 item(key = "banner", span = { GridItemSpan(maxLineSpan) }) { banner() }
                 for (line in lines) when (line) {
                     is ReviewLine.Day -> item(key = "day-${line.start}", span = { GridItemSpan(maxLineSpan) }) {
@@ -530,7 +513,7 @@ private fun Items(
                         EntryItem(vm, line.entry, tile = true, showServer, onOpen, onDetails)
                     }
                 }
-                item(key = "more", span = { GridItemSpan(maxLineSpan) }) { LoadMore(vm) }
+                item(key = "more", span = { GridItemSpan(maxLineSpan) }) { Footer(vm, shown) }
             }
             ReviewTimeline(shown, visibleKeys, onJump = { entry ->
                 val i = lines.indexOfFirst { it is ReviewLine.Item && it.entry.key == entry.key }
@@ -544,8 +527,6 @@ private fun Items(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // The header brings its own margins (its filters scroll to the screen edge).
-            item(key = "header") { Box(Modifier.bleed(16.dp)) { header() } }
             item(key = "banner") { banner() }
             for (line in lines) when (line) {
                 is ReviewLine.Day -> item(key = "day-${line.start}") {
@@ -555,7 +536,7 @@ private fun Items(
                     EntryItem(vm, line.entry, tile = false, showServer, onOpen, onDetails)
                 }
             }
-            item(key = "more") { LoadMore(vm) }
+            item(key = "more") { Footer(vm, shown) }
         }
     }
 }
@@ -600,6 +581,19 @@ private fun EntryItem(vm: ReviewModel, entry: ReviewEntry, tile: Boolean, showSe
     }
 }
 
+/** "Load more", and below the last item "Mark all reviewed" again, as in Frigate's web app:
+ *  after scrolling through the list it is right there. */
+@Composable
+private fun Footer(vm: ReviewModel, shown: List<ReviewEntry>) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        LoadMore(vm)
+        if (!vm.selecting && shown.any { !it.item.isReviewed }) {
+            ProgressButton(stringResource(R.string.review_mark_all_reviewed), busy = vm.markingAll, onClick = { vm.markAllReviewed() },
+                modifier = Modifier.padding(top = 8.dp), filled = false)
+        }
+    }
+}
+
 @Composable
 private fun LoadMore(vm: ReviewModel) {
     if (!vm.canLoadMore) return
@@ -607,14 +601,4 @@ private fun LoadMore(vm: ReviewModel) {
         if (vm.loadingMore) SmallSpinner(size = 22.dp)
         else TextButton(onClick = { vm.loadMore() }) { Text(stringResource(R.string.review_load_more)) }
     }
-}
-
-/** Widens the content by `h` on both sides: a full-width item in a list with side padding. */
-private fun Modifier.bleed(h: Dp) = layout { measurable, constraints ->
-    val px = h.roundToPx()
-    val placeable = measurable.measure(constraints.copy(
-        minWidth = constraints.minWidth + 2 * px,
-        maxWidth = if (constraints.hasBoundedWidth) constraints.maxWidth + 2 * px else constraints.maxWidth,
-    ))
-    layout(placeable.width - 2 * px, placeable.height) { placeable.place(-px, 0) }
 }
